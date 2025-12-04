@@ -41,7 +41,7 @@ jobs:
           // Extract issue number from different trigger contexts
           let issueNumber;
           if (context.eventName === 'workflow_dispatch' && context.payload.inputs && context.payload.inputs.issue_number) {
-            issueNumber = parseInt(context.payload.inputs.issue_number);
+            issueNumber = parseInt(context.payload.inputs.issue_number, 10);
           } else if (context.payload.issue) {
             issueNumber = context.payload.issue.number;
           }
