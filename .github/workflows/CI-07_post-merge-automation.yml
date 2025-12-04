@@ -146,10 +146,8 @@ jobs:
             if grep -q "## Next Immediate Actions" ROADMAP.md; then
               # Add completion note
               DATE=$(date +%Y-%m-%d)
-              sed -i "/## Next Immediate Actions/a \\
-\\
-**Recently Completed ($DATE):**\\
-- ✅ Issue #${ISSUE_NUM}: ${ISSUE_TITLE} (PR #${PR_NUM})" ROADMAP.md
+              COMPLETION_NOTE="\n\n**Recently Completed ($DATE):**\n- ✅ Issue #${ISSUE_NUM}: ${ISSUE_TITLE} (PR #${PR_NUM})"
+              sed -i "/## Next Immediate Actions/a ${COMPLETION_NOTE}" ROADMAP.md
               echo "✅ Added completion note to ROADMAP.md"
               echo "roadmap_updated=true" >> $GITHUB_OUTPUT
             else
