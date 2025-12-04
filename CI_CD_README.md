@@ -38,6 +38,7 @@ gh issue list --label "jules-task"
 │   ├── Build_Rust.yml              # Haupt-CI/CD Pipeline
 │   ├── codeql.yml                  # Security Scanning
 │   ├── create-jules-issues.yml     # Jules Issues erstellen (einmalig)
+│   ├── jules-session-trigger.yml   # NEU: Triggert Jules API Sessions
 │   ├── jules-pr-automation.yml     # Auto-Merge für Jules PRs
 │   ├── update-documentation.yml    # Changelog Updates
 │   ├── sync-labels.yml             # Label Synchronisierung
@@ -54,23 +55,29 @@ gh issue list --label "jules-task"
 
 ## 🔄 Workflow-Ablauf
 
-### Normaler Jules Workflow:
+### Vollautomatischer Jules Workflow:
 
 ```
-Issue mit jules-task Label
+Issue mit jules-task Label erstellt/gelabelt
+    ↓
+jules-session-trigger.yml triggert automatisch
+    ↓
+Jules API Session wird erstellt (wenn Key vorhanden)
     ↓
 Jules bearbeitet Issue
     ↓
 Jules erstellt PR mit jules-pr Label
     ↓
-CI/CD Pipeline läuft automatisch
+CI/CD Pipeline (Build_Rust.yml) läuft automatisch
     ↓
-Auto-Merge wenn alle Checks ✅
+jules-pr-automation.yml: Auto-Merge wenn alle Checks ✅
     ↓
 Issue wird automatisch geschlossen
     ↓
-CHANGELOG.md wird aktualisiert
+update-documentation.yml: CHANGELOG.md wird aktualisiert
 ```
+
+**Neu:** Der Workflow ist jetzt vollständig automatisiert! Sobald ein Issue das `jules-task` Label erhält, wird automatisch eine Jules Session getriggert.
 
 ### CI/CD Pipeline (bei jedem PR):
 
@@ -100,17 +107,27 @@ Bereit zum Merge
 - **Was:** Erstellt 8 vordefinierte Development Issues
 - **Dauer:** ~1 Minute
 
-### 3. Jules Auto-Merge (`jules-pr-automation.yml`)
+### 3. Jules Session Trigger (`jules-session-trigger.yml`) 🆕
+- **Trigger:** Automatisch bei Issues mit `jules-task` Label oder manuell
+- **Was:** Erstellt Jules API Sessions für Issues
+- **Features:**
+  - Automatische Erkennung neuer jules-task Issues
+  - Tracking-Kommentare im Issue
+  - API-Integration (wenn JULES_API_KEY vorhanden)
+  - Batch-Processing aller offenen Issues
+- **Dauer:** Sekunden
+
+### 4. Jules Auto-Merge (`jules-pr-automation.yml`)
 - **Trigger:** Bei Jules PRs automatisch
 - **Was:** Merged PRs wenn alle Checks bestehen
 - **Dauer:** Sekunden
 
-### 4. Documentation Update (`update-documentation.yml`)
+### 5. Documentation Update (`update-documentation.yml`)
 - **Trigger:** Bei Merge in main
-- **Was:** Updated CHANGELOG.md
+- **Was:** Updates CHANGELOG.md
 - **Dauer:** Sekunden
 
-### 5. Security Scan (`codeql.yml`)
+### 6. Security Scan (`codeql.yml`)
 - **Trigger:** Push/PR + wöchentlich
 - **Was:** CodeQL Security Analysis
 - **Dauer:** ~5-10 Minuten

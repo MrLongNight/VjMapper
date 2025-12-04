@@ -63,7 +63,50 @@ gh workflow run create-jules-issues.yml
 
 **Note:** This should be run ONCE to create all initial issues. Issues are pre-defined in the workflow, not parsed from ROADMAP.md (simpler and more reliable).
 
-### 4. Jules PR Auto-Merge (`jules-pr-automation.yml`)
+### 4. Jules Session Trigger (`jules-session-trigger.yml`) 🆕
+
+**Purpose:** Automatically trigger Jules API sessions when issues are created or labeled
+
+**Triggers:**
+- Issue opened with `jules-task` label
+- `jules-task` label added to existing issue
+- Manual dispatch (single issue or batch processing)
+
+**Features:**
+- **Automatic Detection:** Monitors all issues with `jules-task` label
+- **Tracking Comments:** Adds status comments to issues
+- **API Integration:** Creates Jules sessions via API (if JULES_API_KEY configured)
+- **Batch Processing:** Can process all open jules-task issues at once
+- **Flexible Setup:** Works with or without API key (supports Jules GitHub App)
+
+**Usage:**
+```bash
+# Automatically triggered when issue gets jules-task label
+
+# Or manually trigger for specific issue:
+gh workflow run jules-session-trigger.yml -f issue_number=123
+
+# Or batch-process all open jules-task issues:
+gh workflow run jules-session-trigger.yml
+```
+
+**Configuration:**
+- **Optional:** Add `JULES_API_KEY` as repository secret for API-based automation
+- **Alternative:** Install Jules GitHub App (no API key needed)
+- **Fallback:** Manual session creation via jules.google.com
+
+**What it does:**
+1. Detects issues with `jules-task` label
+2. Adds tracking comment to issue
+3. If `JULES_API_KEY` is configured:
+   - Calls Jules API to create session
+   - Uses issue title and body as prompt
+   - Links session to repository
+4. If no API key:
+   - Still adds tracking comment
+   - Jules GitHub App takes over (if installed)
+
+### 5. Jules PR Auto-Merge (`jules-pr-automation.yml`)
 
 **Purpose:** Automatically merge Jules PRs when all checks pass
 
@@ -85,7 +128,7 @@ gh workflow run create-jules-issues.yml
 4. ✅ No review requested changes
 5. ✅ Not a draft PR
 
-### 5. Update Documentation (`update-documentation.yml`)
+### 6. Update Documentation (`update-documentation.yml`)
 
 **Purpose:** Keep CHANGELOG.md up to date automatically
 
