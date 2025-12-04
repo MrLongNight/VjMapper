@@ -361,10 +361,13 @@ brew install ffmpeg pkg-config
 
 ## 📚 Dokumentation
 
-- **[Jules API Setup](.github/JULES_API_SETUP.md)** - 🆕 Detaillierte Jules Setup-Anleitung
+- **[Implementation Summary](.github/IMPLEMENTATION_SUMMARY.md)** - 🆕 Vollständige Implementierungs-Übersicht
+- **[Complete Automation](.github/JULES_AUTOMATION_COMPLETE.md)** - 🆕 Detaillierter Workflow mit Diagrammen
+- **[Quick Reference](.github/WORKFLOW_QUICKREF.md)** - 🆕 Schnellreferenz & Commands
+- **[Workflows README](.github/workflows/README.md)** - Workflow Details
+- **[Jules API Setup](.github/JULES_API_SETUP.md)** - Detaillierte Jules Setup-Anleitung
 - **[Setup Guide](.github/SETUP_GUIDE.md)** - Schritt-für-Schritt Anleitung
 - **[Jules Integration](.github/JULES_INTEGRATION.md)** - Jules Konfiguration & Workflows
-- **[Workflows README](.github/workflows/README.md)** - Workflow Details
 - **[Issue Templates](.github/ISSUE_TEMPLATE/)** - Templates für Issues
 
 ## 💡 Tipps & Tricks
