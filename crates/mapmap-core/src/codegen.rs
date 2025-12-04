@@ -149,7 +149,7 @@ impl WGSLCodegen {
         for node_id in &self.node_execution_order {
             if let Some(node) = self.graph.nodes.get(node_id) {
                 if node.node_type == NodeType::ParameterInput {
-                    for (name, _) in &node.parameters {
+                    for name in node.parameters.keys() {
                         writeln!(code, "    param_{}: f32,", name).unwrap();
                     }
                 }

@@ -557,8 +557,10 @@ mod tests {
             release: 0.3,
         };
 
-        let mut analysis = AudioAnalysis::default();
-        analysis.rms_volume = 0.5;
+        let analysis = AudioAnalysis {
+            rms_volume: 0.5,
+            ..Default::default()
+        };
 
         let value = mapping.apply(&analysis, 0.0, 0.016);
         assert!(value > 0.0 && value <= 1.0);

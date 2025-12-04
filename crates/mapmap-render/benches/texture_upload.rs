@@ -22,7 +22,6 @@ fn bench_texture_upload(c: &mut Criterion) {
                 };
 
                 b.iter(|| {
-                    let mut backend_clone = backend.clone();
                     // Note: This is a stub benchmark. Full implementation would measure actual upload time
                     black_box(&data);
                 });

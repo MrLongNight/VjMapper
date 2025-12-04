@@ -234,7 +234,7 @@ mod tests {
     fn test_solo_mode() {
         let mut manager = MappingManager::new();
 
-        let mut mapping1 = Mapping::quad(0, "Normal", 10);
+        let mapping1 = Mapping::quad(0, "Normal", 10);
         manager.add_mapping(mapping1);
 
         let mut mapping2 = Mapping::quad(0, "Solo", 20);

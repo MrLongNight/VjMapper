@@ -7,9 +7,10 @@ use glam::{Mat4, Vec2, Vec3};
 use serde::{Deserialize, Serialize};
 
 /// Blend mode for compositing layers
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum BlendMode {
     /// Normal alpha blending (default)
+    #[default]
     Normal,
     /// Add colors (lighten)
     Add,
@@ -39,11 +40,7 @@ pub enum BlendMode {
     Exclusion,
 }
 
-impl Default for BlendMode {
-    fn default() -> Self {
-        BlendMode::Normal
-    }
-}
+
 
 impl BlendMode {
     /// Get shader function name for this blend mode
@@ -88,22 +85,17 @@ impl BlendMode {
 }
 
 /// Resize mode for automatic content fitting (Phase 1, Month 6)
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum ResizeMode {
     /// Fill - Scale to cover entire composition, crop excess
     Fill,
     /// Fit - Scale to fit within composition, letterbox/pillarbox
+    #[default]
     Fit,
     /// Stretch - Non-uniform scale to fill composition exactly
     Stretch,
     /// Original - 1:1 pixel mapping, no scaling
     Original,
-}
-
-impl Default for ResizeMode {
-    fn default() -> Self {
-        ResizeMode::Fit
-    }
 }
 
 impl ResizeMode {

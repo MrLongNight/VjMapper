@@ -34,6 +34,7 @@ pub struct ControlManager {
     pub key_bindings: KeyBindings,
 
     /// Event callback for control changes
+    #[allow(clippy::type_complexity)]
     control_callback: Option<Arc<Mutex<dyn FnMut(ControlTarget, ControlValue) + Send>>>,
 }
 

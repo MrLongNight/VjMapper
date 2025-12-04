@@ -289,6 +289,7 @@ impl MeshRenderer {
     }
 
     /// Render a mesh
+    #[allow(clippy::too_many_arguments)]
     pub fn draw<'a>(
         &'a self,
         render_pass: &mut wgpu::RenderPass<'a>,

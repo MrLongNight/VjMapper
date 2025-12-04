@@ -325,13 +325,11 @@ impl AnimationPlayer {
 
             if self.clip.looping {
                 if self.current_time >= self.clip.duration {
-                    self.current_time = self.current_time % self.clip.duration;
+                    self.current_time %= self.clip.duration;
                 }
-            } else {
-                if self.current_time >= self.clip.duration {
-                    self.current_time = self.clip.duration;
-                    self.playing = false;
-                }
+            } else if self.current_time >= self.clip.duration {
+                self.current_time = self.clip.duration;
+                self.playing = false;
             }
         }
 

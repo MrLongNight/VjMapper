@@ -478,10 +478,10 @@ mod tests {
     fn test_create_shader_graph() {
         let mut graph = ShaderGraph::new(1, "Test Graph".to_string());
 
-        let uv_node = graph.add_node(NodeType::UVInput);
-        let texture_node = graph.add_node(NodeType::TextureInput);
-        let sample_node = graph.add_node(NodeType::TextureSample);
-        let output_node = graph.add_node(NodeType::Output);
+        let _uv_node = graph.add_node(NodeType::UVInput);
+        let _texture_node = graph.add_node(NodeType::TextureInput);
+        let _sample_node = graph.add_node(NodeType::TextureSample);
+        let _output_node = graph.add_node(NodeType::Output);
 
         assert_eq!(graph.nodes.len(), 4);
     }

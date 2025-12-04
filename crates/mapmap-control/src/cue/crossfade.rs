@@ -169,7 +169,7 @@ mod tests {
 
         // Should start at 0
         let initial_progress = crossfade.progress();
-        assert!(initial_progress >= 0.0 && initial_progress < 0.1);
+        assert!((0.0..0.1).contains(&initial_progress));
 
         // Wait and check progress increases
         std::thread::sleep(Duration::from_millis(150));

@@ -423,8 +423,10 @@ mod tests {
 
         controller.add_mapping("1.opacity".to_string(), mapping);
 
-        let mut audio = AudioAnalysis::default();
-        audio.rms_volume = 0.8;
+        let audio = AudioAnalysis {
+            rms_volume: 0.8,
+            ..Default::default()
+        };
 
         let values = controller.update(&audio, 0.0);
         assert!(values.contains_key("1.opacity"));

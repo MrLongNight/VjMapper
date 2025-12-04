@@ -100,6 +100,7 @@ impl CueList {
     }
 
     /// Go to the next cue in the list
+    #[allow(clippy::should_implement_trait)]
     pub fn next(&mut self) -> Result<()> {
         if let Some(next_id) = self.next_cue {
             self.goto_cue(next_id, None)

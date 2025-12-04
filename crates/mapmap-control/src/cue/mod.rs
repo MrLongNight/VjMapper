@@ -62,6 +62,7 @@
 //! ```
 
 pub mod crossfade;
+#[allow(clippy::module_inception)]
 pub mod cue;
 pub mod cue_list;
 pub mod triggers;
