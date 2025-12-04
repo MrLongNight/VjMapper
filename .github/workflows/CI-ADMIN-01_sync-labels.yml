@@ -1,4 +1,4 @@
-name: Sync Labels
+name: "CI-ADMIN-01: Sync Labels"
 
 on:
   push:
