@@ -17,6 +17,8 @@ jobs:
   quality:
     name: Code Quality (Format & Lint)
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     
     steps:
     - uses: actions/checkout@v4
@@ -36,6 +38,8 @@ jobs:
   build-and-test:
     name: Build & Test (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
     strategy:
       fail-fast: false
       matrix:
@@ -149,6 +153,8 @@ jobs:
     needs: [quality, build-and-test, security]
     runs-on: ubuntu-latest
     if: always()
+    permissions:
+      contents: read
     
     steps:
     - name: Check all jobs succeeded
