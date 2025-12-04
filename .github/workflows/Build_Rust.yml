@@ -99,8 +99,10 @@ jobs:
     - name: Install system dependencies (Windows)
       if: runner.os == 'Windows'
       run: |
-        # FFmpeg will be installed via vcpkg or choco if needed
-        choco install ffmpeg -y
+        # Note: FFmpeg installation on Windows is complex
+        # For now, skip it and let the build fail gracefully if FFmpeg is required
+        # TODO: Use vcpkg for deterministic Windows builds
+        echo "Windows build - FFmpeg may need to be pre-installed"
 
     - name: Build (Debug)
       run: cargo build --verbose
@@ -121,7 +123,7 @@ jobs:
       if: runner.os == 'Linux'
       uses: actions/upload-artifact@v4
       with:
-        name: vjmapper-${{ runner.os }}-release
+        name: vjmapper-linux-release
         path: target/release/mapmap
         if-no-files-found: ignore
 

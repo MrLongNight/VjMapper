@@ -58,12 +58,20 @@ jobs:
             .filter(check => check.name !== 'Auto-Merge Jules PR')  // Ignore self
             .every(check => 
               check.conclusion === 'success' || 
-              check.conclusion === 'skipped' || 
-              check.conclusion === null
+              check.conclusion === 'skipped'
             );
           
+          const anyPending = checkRuns.check_runs
+            .filter(check => check.name !== 'Auto-Merge Jules PR')
+            .some(check => check.conclusion === null || check.status === 'in_progress');
+          
+          if (anyPending) {
+            console.log('⏳ Checks still running - waiting...');
+            return;
+          }
+          
           if (!allChecksPassed) {
-            console.log('⏳ Waiting for checks to pass...');
+            console.log('❌ Some checks failed - cannot auto-merge');
             return;
           }
           

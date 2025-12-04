@@ -3,8 +3,6 @@ name: Update Documentation
 on:
   pull_request:
     types: [closed]
-  push:
-    branches: [ "main" ]
 
 permissions:
   contents: write
@@ -22,12 +20,13 @@ jobs:
         token: ${{ secrets.GITHUB_TOKEN }}
     
     - name: Add changelog entry
+      env:
+        PR_TITLE: ${{ github.event.pull_request.title }}
+        PR_NUM: ${{ github.event.pull_request.number }}
       run: |
         # Simple changelog update
         CHANGELOG="CHANGELOG.md"
         DATE=$(date +%Y-%m-%d)
-        PR_NUM="${{ github.event.pull_request.number }}"
-        PR_TITLE="${{ github.event.pull_request.title }}"
         
         # Create changelog if it doesn't exist
         if [ ! -f "$CHANGELOG" ]; then
@@ -36,7 +35,7 @@ jobs:
           echo "## [Unreleased]" >> "$CHANGELOG"
         fi
         
-        # Add entry
+        # Add entry (use env vars to avoid injection)
         sed -i "/## \[Unreleased\]/a - $DATE: $PR_TITLE (#$PR_NUM)" "$CHANGELOG"
         
         echo "✅ Changelog updated"
