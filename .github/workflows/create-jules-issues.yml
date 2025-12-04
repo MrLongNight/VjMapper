@@ -2,9 +2,15 @@ name: Create Jules Development Issues
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - 'copilot/implement-ci-cd-workflow'
+    paths:
+      - '.github/workflows/create-jules-issues.yml'
 
 permissions:
   issues: write
+  contents: read
 
 jobs:
   create-issues:
