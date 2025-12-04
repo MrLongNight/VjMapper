@@ -144,40 +144,32 @@ jobs:
         # TODO: Use vcpkg for deterministic Windows builds
         echo "Windows build - FFmpeg may need to be pre-installed"
 
+    - name: Set build features
+      id: features
+      run: |
+        if [ "${{ matrix.audio }}" = "true" ]; then
+          echo "flags=--all-features" >> $GITHUB_OUTPUT
+        else
+          echo "flags=--no-default-features" >> $GITHUB_OUTPUT
+        fi
+      shell: bash
+
     - name: Build (Debug)
       env:
         RUST_BACKTRACE: full
-        CARGO_PROFILE_DEV_BUILD_OVERRIDE_DEBUG: "true"
-      run: |
-        if [ "${{ matrix.audio }}" = "true" ]; then
-          cargo build --verbose --all-features
-        else
-          cargo build --verbose --no-default-features
-        fi
-      shell: bash
+        CARGO_PROFILE_DEV_BUILD_OVERRIDE: "true"
+      run: cargo build --verbose ${{ steps.features.outputs.flags }}
 
     - name: Build (Release)
       env:
         RUST_BACKTRACE: full
-      run: |
-        if [ "${{ matrix.audio }}" = "true" ]; then
-          cargo build --release --verbose --all-features
-        else
-          cargo build --release --verbose --no-default-features
-        fi
-      shell: bash
+      run: cargo build --release --verbose ${{ steps.features.outputs.flags }}
 
     - name: Run tests
       if: inputs.skip_tests != 'true'
       env:
         RUST_BACKTRACE: full
-      run: |
-        if [ "${{ matrix.audio }}" = "true" ]; then
-          cargo test --verbose --all-features --workspace
-        else
-          cargo test --verbose --no-default-features --workspace
-        fi
-      shell: bash
+      run: cargo test --verbose ${{ steps.features.outputs.flags }} --workspace
 
     - name: Run doc tests
       if: inputs.skip_tests != 'true'

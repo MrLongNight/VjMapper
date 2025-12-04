@@ -542,11 +542,17 @@ mod tests {
         }
 
         pub fn provide_samples(&self, samples: &[f32]) {
-            self.samples_recorded.lock().unwrap().push(samples.to_vec());
+            self.samples_recorded
+                .lock()
+                .expect("MockAudioBackend mutex poisoned")
+                .push(samples.to_vec());
         }
 
         pub fn get_recorded_count(&self) -> usize {
-            self.samples_recorded.lock().unwrap().len()
+            self.samples_recorded
+                .lock()
+                .expect("MockAudioBackend mutex poisoned")
+                .len()
         }
     }
 
