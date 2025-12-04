@@ -53,20 +53,34 @@ jobs:
 
   # Build and test on multiple platforms
   build-and-test:
-    name: Build & Test (${{ matrix.os }})
+    name: Build & Test (${{ matrix.os }}${{ matrix.audio == 'true' && ' - with audio' || '' }})
     runs-on: ${{ matrix.os }}
     permissions:
       contents: read
     strategy:
       fail-fast: false
       matrix:
-        os: ${{ inputs.skip_platforms == 'true' && fromJSON('["ubuntu-latest"]') || fromJSON('["ubuntu-latest", "macos-latest", "windows-latest"]') }}
+        include:
+          # Linux with native audio support
+          - os: ubuntu-latest
+            audio: "true"
+          # Linux without audio (portable)
+          - os: ubuntu-latest
+            audio: "false"
+          # macOS without audio
+          - os: macos-latest
+            audio: "false"
+          # Windows without audio
+          - os: windows-latest
+            audio: "false"
         
     steps:
     - uses: actions/checkout@v4
 
     - name: Install Rust toolchain
       uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt, clippy
 
     - name: Cache Cargo registry and git
       uses: actions/cache@v4
@@ -95,7 +109,6 @@ jobs:
           pkg-config \
           libfontconfig1-dev \
           libfreetype6-dev \
-          libasound2-dev \
           libxcb1-dev \
           libxcb-render0-dev \
           libxcb-shape0-dev \
@@ -112,6 +125,12 @@ jobs:
         pkg-config --exists fontconfig && echo "✓ Fontconfig found" || echo "✗ Fontconfig not found"
         pkg-config --exists freetype2 && echo "✓ FreeType found" || echo "✗ FreeType not found"
 
+    - name: Install Linux audio dev packages
+      if: matrix.audio == 'true' && runner.os == 'Linux'
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libasound2-dev
+
     - name: Install system dependencies (macOS)
       if: runner.os == 'macOS'
       run: |
@@ -125,15 +144,32 @@ jobs:
         # TODO: Use vcpkg for deterministic Windows builds
         echo "Windows build - FFmpeg may need to be pre-installed"
 
+    - name: Set build features
+      id: features
+      run: |
+        if [ "${{ matrix.audio }}" = "true" ]; then
+          echo "flags=--all-features" >> $GITHUB_OUTPUT
+        else
+          echo "flags=--no-default-features" >> $GITHUB_OUTPUT
+        fi
+      shell: bash
+
     - name: Build (Debug)
-      run: cargo build --verbose
+      env:
+        RUST_BACKTRACE: full
+        CARGO_PROFILE_DEV_BUILD_OVERRIDE: "true"
+      run: cargo build --verbose ${{ steps.features.outputs.flags }}
 
     - name: Build (Release)
-      run: cargo build --release --verbose
+      env:
+        RUST_BACKTRACE: full
+      run: cargo build --release --verbose ${{ steps.features.outputs.flags }}
 
     - name: Run tests
       if: inputs.skip_tests != 'true'
-      run: cargo test --verbose --all-features
+      env:
+        RUST_BACKTRACE: full
+      run: cargo test --verbose ${{ steps.features.outputs.flags }} --workspace
 
     - name: Run doc tests
       if: inputs.skip_tests != 'true'
