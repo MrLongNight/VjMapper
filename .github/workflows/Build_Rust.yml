@@ -8,6 +8,7 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
+  FREETYPE_SYS_USE_PKG_CONFIG: 1
 
 jobs:
   build:
