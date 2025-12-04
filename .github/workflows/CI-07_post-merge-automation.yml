@@ -132,11 +132,12 @@ jobs:
           cp ROADMAP.md ROADMAP.md.backup
           
           # Update checkboxes related to this issue (best effort)
-          # This is a simple approach - we look for the issue title or number
-          SEARCH_PATTERN="Issue.*#${ISSUE_NUM}"
-          if grep -q "$SEARCH_PATTERN" ROADMAP.md; then
-            sed -i "s/- \[ \]\(.*#${ISSUE_NUM}.*\)/- [x]\1 (Completed in PR #${PR_NUM})/" ROADMAP.md
-            sed -i "s/- 🚧\(.*#${ISSUE_NUM}.*\)/- ✅\1 (Completed in PR #${PR_NUM})/" ROADMAP.md
+          # Look for any line containing the issue number
+          SEARCH_PATTERN="#${ISSUE_NUM}"
+          if grep -q "${SEARCH_PATTERN}" ROADMAP.md; then
+            # Use consistent pattern in sed - match any line containing the issue number
+            sed -i "s/- \[ \]\(.*#${ISSUE_NUM}[^0-9].*\)/- [x]\1 (Completed in PR #${PR_NUM})/" ROADMAP.md
+            sed -i "s/- 🚧\(.*#${ISSUE_NUM}[^0-9].*\)/- ✅\1 (Completed in PR #${PR_NUM})/" ROADMAP.md
             echo "✅ Updated ROADMAP.md with completion status"
             echo "roadmap_updated=true" >> $GITHUB_OUTPUT
           else
@@ -144,10 +145,16 @@ jobs:
             
             # Add to changelog section if it exists
             if grep -q "## Next Immediate Actions" ROADMAP.md; then
-              # Add completion note
+              # Add completion note using printf for better portability
               DATE=$(date +%Y-%m-%d)
-              COMPLETION_NOTE="\n\n**Recently Completed ($DATE):**\n- ✅ Issue #${ISSUE_NUM}: ${ISSUE_TITLE} (PR #${PR_NUM})"
-              sed -i "/## Next Immediate Actions/a ${COMPLETION_NOTE}" ROADMAP.md
+              {
+                echo ""
+                echo ""
+                echo "**Recently Completed ($DATE):**"
+                echo "- ✅ Issue #${ISSUE_NUM}: ${ISSUE_TITLE} (PR #${PR_NUM})"
+              } > /tmp/roadmap_insert.txt
+              sed -i "/## Next Immediate Actions/r /tmp/roadmap_insert.txt" ROADMAP.md
+              rm /tmp/roadmap_insert.txt
               echo "✅ Added completion note to ROADMAP.md"
               echo "roadmap_updated=true" >> $GITHUB_OUTPUT
             else

@@ -74,9 +74,19 @@ jobs:
                 issue_number: issue.number
               });
               
-              // Look for session creation comment
+              // Look for session creation comment - try multiple patterns
               for (const comment of comments) {
-                const sessionMatch = comment.body.match(/Jules session created.*?sessions\/([\w-]+)/);
+                // Pattern 1: From CI-04 workflow comment format
+                let sessionMatch = comment.body.match(/Jules session created.*?sessions\/([\w-]+)/);
+                // Pattern 2: Alternative format with session URL
+                if (!sessionMatch) {
+                  sessionMatch = comment.body.match(/Session.*?sessions\/([\w-]+)/);
+                }
+                // Pattern 3: Direct session ID format
+                if (!sessionMatch) {
+                  sessionMatch = comment.body.match(/session[:\s]+([a-zA-Z0-9_-]{10,})/i);
+                }
+                
                 if (sessionMatch) {
                   const sessionId = sessionMatch[1];
                   sessionsToCheck.push({
