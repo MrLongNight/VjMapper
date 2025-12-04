@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       issue_number:
-        description: 'Issue number to trigger Jules session for (optional - processes all open jules-task issues if not provided)'
+        description: 'Issue number to trigger Jules session for'
         required: false
         type: string
 
@@ -134,7 +134,7 @@ jobs:
       uses: actions/github-script@v7
       with:
         script: |
-          const issueNumber = parseInt('${{ steps.get-issue.outputs.issue_number }}');
+          const issueNumber = parseInt('${{ steps.get-issue.outputs.issue_number }}', 10);
           const actionResult = '${{ steps.jules-action.outcome }}';
           
           if (actionResult === 'success') {
