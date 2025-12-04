@@ -124,7 +124,7 @@ jobs:
         with:
           script: |
             const issueNumber = parseInt('${{ steps.get-issue.outputs.issue_number }}', 10);
-            const logsUrl = `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const logsUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
