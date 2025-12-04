@@ -27,7 +27,7 @@ open https://github.com/apps/jules
 
 # Option B: Jules API + GitHub Actions
 # → Siehe detaillierte Anleitung: .github/JULES_API_SETUP.md
-# → Generiere API Key bei https://jules.google.com
+# → Generiere API-Key bei https://jules.google.com
 # → Füge als Secret hinzu: gh secret set JULES_API_KEY
 
 # 3. Alle Jules Development Issues erstellen
@@ -237,11 +237,11 @@ gh workflow run CI-04_session-trigger.yml -f issue_number=<issue-number>
    - Option B: Konfiguriere JULES_API_KEY Secret
    - Siehe: `.github/JULES_API_SETUP.md`
 
-3. **API Key fehlt:**
+3. **API-Key fehlt:**
    ```bash
-   # API Key hinzufügen
+   # API-Key hinzufügen
    gh secret set JULES_API_KEY
-   # Key von https://jules.google.com (Settings → API Keys)
+   # Key von https://jules.google.com (Settings → API-Keys)
    ```
 
 ### Problem: Auto-Merge funktioniert nicht

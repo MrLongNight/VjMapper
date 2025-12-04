@@ -54,7 +54,7 @@ Es gibt **drei Möglichkeiten**, Jules zu aktivieren:
 1. **Installiere die Jules GitHub App:**
    - Besuche: https://github.com/apps/jules
    - Klicke auf "Install" und wähle dein Repository aus
-   - Erlaube Zugriff auf das VjMapper Repository
+   - Erlaube Zugriff auf das VjMapper-Repository
 
 2. **Fertig!** Jules überwacht automatisch:
    - Issues mit dem Label `jules-task` oder `jules`
@@ -69,13 +69,13 @@ Es gibt **drei Möglichkeiten**, Jules zu aktivieren:
 
 #### Option 2: Jules API mit GitHub Actions (Automatisch via Workflow)
 
-1. **API Key generieren:**
+1. **API-Key generieren:**
    - Besuche: https://jules.google.com
    - Melde dich an und verbinde deinen GitHub Account
-   - Gehe zu Settings → API Keys
-   - Generiere einen neuen API Key
+   - Gehe zu Settings → API-Keys
+   - Generiere einen neuen API-Key
 
-2. **API Key als Repository Secret hinzufügen:**
+2. **API-Key als Repository Secret hinzufügen:**
    ```bash
    # Via GitHub UI:
    # Repository Settings → Secrets and variables → Actions → New repository secret
@@ -131,7 +131,7 @@ curl 'https://jules.googleapis.com/v1alpha/sessions' \
 3. Fertig! ✅
 
 **Phase 2 - Erweiterte Automatisierung (optional):**
-1. Zusätzlich API Key als Secret hinzufügen
+1. Zusätzlich API-Key als Secret hinzufügen
 2. Ermöglicht erweiterte Workflow-Features
 3. Batch-Processing von Issues
 
@@ -224,7 +224,7 @@ gh workflow run CI-04_session-trigger.yml
      - Erstellt automatisch Jules API Session
      - Issue-Titel und Body werden als Prompt verwendet
      - Session-Link wird im Issue-Kommentar hinterlegt
-   - Ohne API Key:
+   - Ohne API-Key:
      - Workflow läuft trotzdem (Tracking-Kommentar)
      - Jules GitHub App übernimmt (wenn installiert)
 

@@ -17,7 +17,7 @@ Der CI/CD Prozess konnte Issues mit dem `jules-task` Label erstellen, aber es fe
 Ein vollautomatischer Workflow der:
 - **Automatisch triggert** wenn ein Issue das `jules-task` Label erhält
 - **Tracking-Kommentare** im Issue hinterlässt
-- **Jules API Sessions** erstellt (wenn API Key konfiguriert)
+- **Jules API Sessions** erstellt (wenn API-Key konfiguriert)
 - **Batch-Processing** unterstützt für alle offenen Issues
 
 **Datei:** `.github/workflows/CI-04_session-trigger.yml`
@@ -124,13 +124,13 @@ gh pr list --label "jules-pr"
 ### Für erweiterte Kontrolle (Option 2)
 
 ```bash
-# 1. API Key generieren
+# 1. API-Key generieren
 open https://jules.google.com
-# Settings → API Keys → Generate
+# Settings → API-Keys → Generate
 
 # 2. Als Secret hinzufügen
 gh secret set JULES_API_KEY
-# Paste den API Key
+# Paste den API-Key
 
 # 3. Fertig! Workflow nutzt jetzt die API
 ```
@@ -278,7 +278,7 @@ fetch('https://jules.googleapis.com/v1alpha/sessions', {
 
 ### Fallback-Mechanismus
 
-Workflow funktioniert auch **ohne** API Key:
+Workflow funktioniert auch **ohne** API-Key:
 1. Tracking-Kommentar wird hinzugefügt
 2. Jules GitHub App übernimmt (wenn installiert)
 3. Oder: Manuelle Session-Erstellung möglich
@@ -291,7 +291,7 @@ Workflow funktioniert auch **ohne** API Key:
 3. Fertig! ✅
 
 ### Für erweiterte Features:
-1. API Key generieren und als Secret hinzufügen
+1. API-Key generieren und als Secret hinzufügen
 2. Batch-Processing testen:
    ```bash
    gh workflow run CI-04_session-trigger.yml

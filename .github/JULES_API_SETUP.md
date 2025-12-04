@@ -97,17 +97,17 @@ In der Jules Web-UI:
 3. Wähle `MrLongNight/VjMapper`
 4. Erlaube Zugriff
 
-#### 3. API Key generieren
+#### 3. API-Key generieren
 
 In der Jules Web-UI:
-1. Gehe zu "Settings" → "API Keys"
+1. Gehe zu "Settings" → "API-Keys"
 2. Klicke "Generate new API key"
 3. Gib einen Namen ein: "VjMapper GitHub Actions"
-4. Kopiere den API Key (wird nur einmal angezeigt!)
+4. Kopiere den API-Key (wird nur einmal angezeigt!)
 
-**⚠️ Wichtig:** Speichere den API Key sicher, er wird nur einmal angezeigt!
+**⚠️ Wichtig:** Speichere den API-Key sicher, er wird nur einmal angezeigt!
 
-#### 4. API Key als GitHub Secret hinzufügen
+#### 4. API-Key als GitHub Secret hinzufügen
 
 **Via GitHub UI:**
 1. Gehe zu: `https://github.com/MrLongNight/VjMapper/settings/secrets/actions`
@@ -118,12 +118,12 @@ In der Jules Web-UI:
 
 **Via GitHub CLI:**
 ```bash
-# API Key aus Zwischenablage (macOS/Linux)
+# API-Key aus Zwischenablage (macOS/Linux)
 gh secret set JULES_API_KEY --body "$(pbpaste)"
 
 # Oder manuell eingeben
 gh secret set JULES_API_KEY
-# Paste den API Key und drücke Enter, dann Ctrl+D
+# Paste den API-Key und drücke Enter, dann Ctrl+D
 ```
 
 **Verifizieren:**
@@ -202,13 +202,13 @@ jules remote status
 
 #### Via cURL (REST API)
 
-⚠️ **Sicherheitshinweis:** API Keys sollten niemals direkt in der Shell oder Scripts hardcoded werden. Verwende sichere Methoden wie Environment-Variablen aus Credential Manager.
+⚠️ **Sicherheitshinweis:** API-Keys sollten niemals direkt in der Shell oder Scripts hardcoded werden. Verwende sichere Methoden wie Environment-Variablen aus Credential Manager.
 
 ```bash
-# ⚠️ NICHT EMPFOHLEN: API Key direkt in Shell
+# ⚠️ NICHT EMPFOHLEN: API-Key direkt in Shell
 # export JULES_API_KEY="your-api-key-here"  # Landet in Shell History!
 
-# ✅ BESSER: API Key aus sicherem Speicher laden
+# ✅ BESSER: API-Key aus sicherem Speicher laden
 # macOS: security find-generic-password -s jules-api-key -w
 # Linux: secret-tool lookup service jules api-key
 # Oder: Aus Password Manager (1Password, LastPass, etc.)
@@ -257,22 +257,22 @@ gh run view --log
 gh run watch
 ```
 
-### Check 3: API Key funktioniert?
+### Check 3: API-Key funktioniert?
 
 ```bash
-# Test API Key (wenn manuell konfiguriert)
-# WICHTIG: Für Sicherheit, API Key aus sicherem Speicher laden
+# Test API-Key (wenn manuell konfiguriert)
+# WICHTIG: Für Sicherheit, API-Key aus sicherem Speicher laden
 # Option 1: Von GitHub Secret (lokal nicht direkt verfügbar)
 # Option 2: Verwende Umgebungsvariable aus sicherem Storage
 
-# Test mit API Key aus Environment (bereits gesetzt)
+# Test mit API-Key aus Environment (bereits gesetzt)
 curl 'https://jules.googleapis.com/v1alpha/sources/github/MrLongNight/VjMapper' \
   -H "X-Goog-Api-Key: $JULES_API_KEY"
 
 # Sollte 200 OK zurückgeben mit Repository-Info
 
 # ⚠️ SICHERHEITSHINWEIS: 
-# - Niemals API Keys direkt in Shell-Befehlen verwenden
+# - Niemals API-Keys direkt in Shell-Befehlen verwenden
 # - Nicht in Shell History speichern (export HISTCONTROL=ignorespace)
 # - Verwende GitHub Secrets für Workflows
 # - Für lokale Tests: Verwende Credential Manager oder .netrc
@@ -299,7 +299,7 @@ gh secret list | grep JULES_API_KEY
    gh issue edit <issue-number> --add-label "jules-task"
    ```
 
-2. **Jules App nicht installiert UND kein API Key:**
+2. **Jules App nicht installiert UND kein API-Key:**
    - Wähle Option 1 oder Option 2 (siehe oben)
 
 3. **Issue ist geschlossen:**
@@ -323,10 +323,10 @@ open https://jules.google.com
 
 #### Problem: "API returns 401 Unauthorized"
 
-**Ursache:** API Key ungültig oder abgelaufen
+**Ursache:** API-Key ungültig oder abgelaufen
 
 **Lösung:**
-1. Neuen API Key in Jules Web-UI generieren
+1. Neuen API-Key in Jules Web-UI generieren
 2. Secret updaten:
    ```bash
    gh secret set JULES_API_KEY
@@ -429,7 +429,7 @@ open https://github.com/apps/jules
 # 1. Jules Account erstellen
 open https://jules.google.com
 
-# 2. API Key generieren und als Secret hinzufügen
+# 2. API-Key generieren und als Secret hinzufügen
 gh secret set JULES_API_KEY
 
 # 3. Fertig! 🎉

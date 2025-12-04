@@ -92,7 +92,7 @@ jobs:
             // Process single issue
             console.log(`🚀 Triggering Jules session for issue #${issueNumber}...`);
             await processIssue(parseInt(issueNumber));
-          } else if (context.event_name === 'workflow_dispatch' && !issueNumber) {
+          } else if (context.eventName === 'workflow_dispatch' && !issueNumber) {
             // Process all open jules-task issues (batch mode)
             console.log('🚀 Batch mode: Processing all open jules-task issues...\n');
             
@@ -110,7 +110,8 @@ jobs:
             for (const issue of issues) {
               const success = await processIssue(issue.number);
               if (success) processed++;
-              // Small delay to avoid rate limiting (reduced for efficiency)
+              // 500ms delay to avoid GitHub API secondary rate limits (5000 requests/hour)
+              // Balances efficiency with API guidelines - allows ~7200 issues/hour processing
               await new Promise(resolve => setTimeout(resolve, 500));
             }
             
@@ -261,14 +262,23 @@ jobs:
             });
             
           } catch (error) {
-            console.error('❌ Failed to create Jules session:', error.message);
+            console.error('❌ Failed to create Jules session:', error.message, error);
             
-            // Add error comment to issue
+            // Prepare detailed error information
+            let errorDetails = '';
+            if (error.stderr) {
+              errorDetails = `\n\nStderr Output:\n\`\`\`\n${error.stderr}\n\`\`\``;
+            }
+            if (error.stdout) {
+              errorDetails += `\n\nStdout Output:\n\`\`\`\n${error.stdout}\n\`\`\``;
+            }
+            
+            // Add error comment to issue with more context
             await github.rest.issues.createComment({
               owner: context.repo.owner,
               repo: context.repo.repo,
               issue_number: issueNumber,
-              body: `⚠️ **Jules API Session Creation Failed**\n\nError: ${error.message}\n\nPlease check the workflow logs for details or create a session manually at [jules.google.com](https://jules.google.com).`
+              body: `⚠️ **Jules API Session Creation Failed**\n\nError: ${error.message}${errorDetails}\n\nPlease check the workflow logs for details or create a session manually at [jules.google.com](https://jules.google.com).`
             });
             
             throw error;
