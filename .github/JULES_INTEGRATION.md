@@ -47,34 +47,99 @@ Empfohlene Branch-Protection-Einstellungen für `main`:
 
 ### Schritt 3: Jules API Konfiguration
 
-**Wichtig:** Die Jules API-Konfiguration ist nicht öffentlich und sollte separat bereitgestellt werden.
+Es gibt **drei Möglichkeiten**, Jules zu aktivieren:
 
-#### Erforderliche Konfiguration für Jules:
+#### Option 1: Jules GitHub App (Empfohlen - Einfachste Lösung) ⭐
 
-```yaml
-# jules-config.yml (Beispiel - nicht öffentlich!)
-repository:
-  owner: "MrLongNight"
-  repo: "VjMapper"
-  
-issue_monitoring:
-  labels: ["jules-task"]
-  check_interval: 300  # 5 Minuten
-  
-pull_request:
-  label: "jules-pr"
-  branch_prefix: "jules/"
-  auto_label: true
-  
-template:
-  use_pr_template: true
-  add_metadata: true
-  
-behavior:
-  max_concurrent_tasks: 3
-  timeout_minutes: 120
-  auto_close_on_failure: false
+1. **Installiere die Jules GitHub App:**
+   - Besuche: https://github.com/apps/jules
+   - Klicke auf "Install" und wähle dein Repository aus
+   - Erlaube Zugriff auf das VjMapper-Repository
+
+2. **Fertig!** Jules überwacht automatisch:
+   - Issues mit dem Label `jules-task` oder `jules`
+   - Erstellt automatisch PRs mit dem Label `jules-pr`
+   - Keine weitere Konfiguration nötig
+
+**Vorteile:**
+- ✅ Keine API-Keys erforderlich
+- ✅ Automatische Session-Erstellung bei neuen Issues
+- ✅ Native GitHub-Integration
+- ✅ Sicher und von Google verwaltet
+
+#### Option 2: Jules API mit GitHub Actions (Automatisch via Workflow)
+
+1. **API-Key generieren:**
+   - Besuche: https://jules.google.com
+   - Melde dich an und verbinde deinen GitHub Account
+   - Gehe zu Settings → API-Keys
+   - Generiere einen neuen API-Key
+
+2. **API-Key als Repository Secret hinzufügen:**
+   ```bash
+   # Via GitHub UI:
+   # Repository Settings → Secrets and variables → Actions → New repository secret
+   # Name: JULES_API_KEY
+   # Value: <dein-api-key>
+   ```
+
+3. **Workflow aktivieren:**
+   - Der Workflow `.github/workflows/CI-04_session-trigger.yml` ist bereits konfiguriert
+   - Er triggert automatisch bei Issues mit `jules-task` Label
+   - Er nutzt den JULES_API_KEY um Sessions zu erstellen
+
+**Vorteile:**
+- ✅ Volle Kontrolle über API-Calls
+- ✅ Workflow-basierte Automatisierung
+- ✅ Batch-Processing möglich
+- ✅ Bereits implementiert in diesem Repository
+
+#### Option 3: Manuelle Session-Erstellung (Für Testing/Debugging)
+
+```bash
+# Via Jules CLI:
+jules remote new --repo . --prompt "Fix issue #123"
+
+# Via cURL (REST API):
+curl 'https://jules.googleapis.com/v1alpha/sessions' \
+  -X POST \
+  -H "Content-Type: application/json" \
+  -H 'X-Goog-Api-Key: YOUR_API_KEY' \
+  -d '{
+    "prompt": "Implement feature from issue #123",
+    "sourceContext": {
+      "source": "sources/github/MrLongNight/VjMapper",
+      "githubRepoContext": { "startingBranch": "main" }
+    }
+  }'
 ```
+
+**Vorteile:**
+- ✅ Direkte Kontrolle
+- ✅ Gut für Testing
+- ✅ Kein Workflow-Setup nötig
+
+---
+
+### 🎯 Empfohlene Konfiguration
+
+**Für dieses Repository (VjMapper):**
+
+**Phase 1 - Quick Start (5 Minuten):**
+1. Installiere Jules GitHub App (Option 1)
+2. Issues werden automatisch erkannt
+3. Fertig! ✅
+
+**Phase 2 - Erweiterte Automatisierung (optional):**
+1. Zusätzlich API-Key als Secret hinzufügen
+2. Ermöglicht erweiterte Workflow-Features
+3. Batch-Processing von Issues
+
+**Aktueller Status:**
+- ✅ Workflow `CI-04_session-trigger.yml` ist implementiert
+- ✅ Auto-Merge Workflow ist konfiguriert
+- ⏳ JULES_API_KEY Secret fehlt (optional - nur für API-basierte Automatisierung)
+- ⏳ Jules GitHub App muss installiert werden (empfohlen)
 
 ### Schritt 4: Workflow Permissions
 
@@ -96,7 +161,7 @@ permissions:
 **Einmalig alle Issues erstellen:**
 ```bash
 # Alle Jules Development Issues auf einmal erstellen
-gh workflow run create-jules-issues.yml
+gh workflow run CI-03_create-issues.yml
 ```
 
 Dieser Workflow erstellt automatisch alle 8 Haupt-Development-Tasks basierend auf ROADMAP.md:
@@ -114,23 +179,87 @@ Dieser Workflow erstellt automatisch alle 8 Haupt-Development-Tasks basierend au
 - Label `jules-task` hinzufügen
 - Acceptance Criteria klar definieren
 
-### 2. Jules Verarbeitung
+### 2. Automatische Jules Session-Erstellung
 
-Jules überwacht Issues mit dem `jules-task` Label:
+**Neu implementiert!** Der Workflow `CI-04_session-trigger.yml` automatisiert die Session-Erstellung:
+
+#### Automatische Trigger:
+
+**Wenn ein Issue erstellt oder gelabelt wird:**
+```
+Issue mit jules-task Label erstellt/hinzugefügt
+    ↓
+Workflow: CI-04_session-trigger.yml läuft automatisch
+    ↓
+Tracking-Kommentar wird zum Issue hinzugefügt
+    ↓
+Jules API Session wird erstellt (wenn JULES_API_KEY vorhanden)
+    ↓
+Jules beginnt mit der Arbeit
+```
+
+**Manuell für existierende Issues:**
+```bash
+# Einzelnes Issue triggern
+gh workflow run CI-04_session-trigger.yml -f issue_number=123
+
+# ALLE offenen jules-task Issues triggern (Batch-Modus)
+gh workflow run CI-04_session-trigger.yml
+```
+
+#### Was der Workflow macht:
+
+1. **Automatische Erkennung:**
+   - Triggert bei neuem Issue mit `jules-task` Label
+   - Triggert wenn `jules-task` Label zu existierendem Issue hinzugefügt wird
+   - Kann manuell für beliebige Issues getriggert werden
+
+2. **Tracking-Kommentar:**
+   - Fügt Kommentar zum Issue hinzu mit Status
+   - Informiert über nächste Schritte
+   - Dokumentiert Session-ID (wenn API genutzt)
+
+3. **API Integration (optional):**
+   - Wenn `JULES_API_KEY` Secret konfiguriert ist:
+     - Erstellt automatisch Jules API Session
+     - Issue-Titel und Body werden als Prompt verwendet
+     - Session-Link wird im Issue-Kommentar hinterlegt
+   - Ohne API-Key:
+     - Workflow läuft trotzdem (Tracking-Kommentar)
+     - Jules GitHub App übernimmt (wenn installiert)
+
+4. **Batch-Processing:**
+   - Workflow kann alle offenen jules-task Issues auf einmal verarbeiten
+   - Nützlich bei Repository-Setup
+   - Rate-Limiting berücksichtigt
+
+#### Workflow-Dateien:
+
+```
+.github/workflows/
+├── CI-04_session-trigger.yml    # NEU: Triggert Jules Sessions
+├── CI-03_create-issues.yml      # Erstellt Issues aus ROADMAP
+├── CI-05_pr-automation.yml      # Auto-Merge für Jules PRs
+└── ...
+```
+
+### 3. Jules Verarbeitung
+
+Nach Session-Erstellung arbeitet Jules am Issue:
 
 1. **Issue-Analyse:** Jules liest die Issue-Beschreibung und Acceptance Criteria
 2. **Branch-Erstellung:** Erstellt Branch `jules/issue-<number>-<title>`
 3. **Implementierung:** Schreibt Code gemäß den Anforderungen
 4. **Testing:** Führt lokale Tests durch
 5. **PR-Erstellung:** Öffnet PR mit:
-   - Link zum originalen Issue
+   - Link zum originalen Issue (`Closes #<number>`)
    - Beschreibung der Änderungen
    - Test-Ergebnisse
-   - `jules-pr` Label
+   - `jules-pr` Label (automatisch)
 
-### 3. Automatisches Testing
+### 4. Automatisches Testing
 
-Nach PR-Erstellung laufen automatisch:
+Nach PR-Erstellung laufen automatisch (via `CI-01_build-and-test.yml`):
 
 - **Code Quality Checks:**
   - `cargo fmt --check` (Formatierung)
@@ -146,9 +275,9 @@ Nach PR-Erstellung laufen automatisch:
   - CodeQL Analysis
   - Dependency Audit (`cargo audit`)
 
-### 4. Auto-Merge Logik
+### 5. Auto-Merge Logik
 
-Der Auto-Merge erfolgt, wenn:
+Der Auto-Merge (via `CI-05_pr-automation.yml`) erfolgt, wenn:
 
 ```
 ✅ Alle CI-Checks bestanden
@@ -164,9 +293,9 @@ Der Auto-Merge erfolgt, wenn:
 3. Automatisches Schließen des related Issues
 4. Commit-Message: "Auto-merge Jules PR #<number>: <title>"
 
-### 5. Dokumentations-Update
+### 6. Dokumentations-Update
 
-Nach erfolgreichem Merge:
+Nach erfolgreichem Merge (via `CI-06_update-changelog.yml`):
 
 - **CHANGELOG.md:** Fügt automatisch Changelog-Entry hinzu
 - **ROADMAP.md:** Wird manuell aktualisiert (Tasks als completed markieren)
