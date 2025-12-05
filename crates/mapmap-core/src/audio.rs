@@ -627,7 +627,7 @@ mod tests {
         let analysis = analyzer.process_samples(&samples, 0.0);
 
         // Verify we got valid analysis results
-        assert!(analysis.fft_magnitudes.len() > 0);
+        assert!(!analysis.fft_magnitudes.is_empty());
         assert!(analysis.rms_volume > 0.0);
         assert!(analysis.rms_volume < 1.0);
     }

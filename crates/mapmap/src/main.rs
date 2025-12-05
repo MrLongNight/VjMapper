@@ -15,7 +15,6 @@ use mapmap_ui::{AppUI, ImGuiContext};
 use std::collections::HashMap;
 use std::time::Instant;
 use tracing::{error, info};
-use tracing_subscriber;
 use window_manager::WindowManager;
 use winit::{
     event::{Event, WindowEvent},
@@ -343,11 +342,7 @@ impl App {
 
         // Choose render target (intermediate texture or final view)
         let render_target_view = if needs_post_processing {
-            if let Some(intermediate_tex) = self.intermediate_textures.get(&output_id) {
-                Some(intermediate_tex.create_view())
-            } else {
-                None
-            }
+            self.intermediate_textures.get(&output_id).map(|intermediate_tex| intermediate_tex.create_view())
         } else {
             None
         };
@@ -426,6 +421,7 @@ impl App {
                 .collect();
 
             // Create render pass to intermediate or final target
+            #[allow(clippy::needless_update)]
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some(&format!("Mapping Render Pass Output {}", output_id)),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
@@ -467,9 +463,10 @@ impl App {
         }
 
         // Apply post-processing if needed
-        if needs_post_processing && render_target_view.is_some() {
-            let intermediate_view = render_target_view.as_ref().unwrap();
-            let config = output_config.as_ref().unwrap();
+        if needs_post_processing {
+            if let (Some(intermediate_view), Some(config)) =
+                (render_target_view.as_ref(), output_config.as_ref())
+            {
 
             // Step 1: Apply color calibration
             // Create another intermediate texture for color calibration result
@@ -498,6 +495,7 @@ impl App {
                     .color_calibration_renderer
                     .create_uniform_bind_group(&uniform_buffer);
 
+                #[allow(clippy::needless_update)]
                 let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                     label: Some(&format!("Color Calibration Pass Output {}", output_id)),
                     color_attachments: &[Some(wgpu::RenderPassColorAttachment {
@@ -533,6 +531,7 @@ impl App {
                 .edge_blend_renderer
                 .create_uniform_bind_group(&uniform_buffer);
 
+            #[allow(clippy::needless_update)]
             let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some(&format!("Edge Blend Pass Output {}", output_id)),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
@@ -552,6 +551,7 @@ impl App {
                 &texture_bind_group,
                 &uniform_bind_group,
             );
+            }
         }
 
         // Render ImGui only on main window
@@ -652,7 +652,7 @@ impl App {
                         .map(|p| p.id)
                         .unwrap_or(1);
                     let mut new_mapping =
-                        Mapping::quad(next_id, &format!("Mapping {}", next_id), paint_id);
+                        Mapping::quad(next_id, format!("Mapping {}", next_id), paint_id);
                     // Position it slightly offset from center
                     let offset = (next_id as f32 * 0.1) % 1.0;
                     for vertex in &mut new_mapping.mesh.vertices {
@@ -671,7 +671,7 @@ impl App {
                 UIAction::AddPaint => {
                     info!("Adding new paint");
                     let next_id = self.paint_manager.paints().len() as u64 + 1;
-                    let paint = Paint::test_pattern(next_id, &format!("Test Pattern {}", next_id));
+                    let paint = Paint::test_pattern(next_id, format!("Test Pattern {}", next_id));
                     let paint_id = self.paint_manager.add_paint(paint);
 
                     // Create a video player for this paint (shorter 5-second duration for easier loop testing)
@@ -697,7 +697,7 @@ impl App {
                     let mapping_id = self.mapping_manager.mappings().len() as u64 + 1;
                     let mut new_mapping = Mapping::quad(
                         mapping_id,
-                        &format!("Mapping for Paint {}", next_id),
+                        format!("Mapping for Paint {}", next_id),
                         paint_id,
                     );
                     // Position it with a slight offset based on count
@@ -1022,7 +1022,7 @@ impl App {
                 // Create a default quad mapping for the media
                 let mapping_id = self.mapping_manager.mappings().len() as u64 + 1;
                 let mut new_mapping =
-                    Mapping::quad(mapping_id, &format!("Mapping for {}", filename), paint_id);
+                    Mapping::quad(mapping_id, format!("Mapping for {}", filename), paint_id);
 
                 // Position it with a slight offset
                 let offset = (mapping_id as f32 * 0.15) % 1.0 - 0.3;
