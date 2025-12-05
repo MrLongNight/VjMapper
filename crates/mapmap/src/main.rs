@@ -20,19 +20,11 @@ use window_manager::WindowManager;
 use winit::{
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
-    window::{WindowBuilder, WindowId},
+    window::WindowId,
 };
 
 #[cfg(test)]
 mod window_manager_test;
-
-/// A snapshot of the application state required for rendering a single frame.
-/// This is passed to each window's render function to ensure consistency.
-struct SharedRenderState<'a> {
-    output_manager: &'a mapmap_core::OutputManager,
-    mapping_manager: &'a mapmap_core::MappingManager,
-    paint_textures: &'a HashMap<u64, mapmap_render::TextureHandle>,
-}
 
 struct App {
     window_manager: WindowManager,
@@ -279,21 +271,8 @@ impl App {
             // Determine if this is the main window or an output window
             let is_main_window = Some(*output_id) == self.window_manager.main_window_id();
 
-            // Create a shared render state for this frame
-            let shared_state = SharedRenderState {
-                output_manager: &self.output_manager,
-                mapping_manager: &self.mapping_manager,
-                paint_textures: &self.paint_textures,
-            };
-
             // Render content
-            self.render_to_view(
-                &mut encoder,
-                &view,
-                *output_id,
-                is_main_window,
-                &shared_state,
-            )?;
+            self.render_to_view(&mut encoder, &view, *output_id, is_main_window)?;
 
             encoders.push(encoder);
         }
@@ -316,11 +295,10 @@ impl App {
         view: &wgpu::TextureView,
         output_id: OutputId,
         is_main_window: bool,
-        shared_state: &SharedRenderState,
     ) -> Result<()> {
         // Get output configuration if this is an output window
         let output_config = if !is_main_window {
-            shared_state.output_manager.get_output(output_id).cloned()
+            self.output_manager.get_output(output_id).cloned()
         } else {
             None
         };
@@ -378,7 +356,7 @@ impl App {
 
         // Render mappings with mesh warping
         {
-            let visible_mappings = shared_state.mapping_manager.visible_mappings();
+            let visible_mappings = self.mapping_manager.visible_mappings();
 
             // Collect all rendering resources
             let render_data: Vec<_> = visible_mappings
@@ -402,51 +380,48 @@ impl App {
                         }
                     }
 
-                    shared_state
-                        .paint_textures
-                        .get(&mapping.paint_id)
-                        .map(|texture| {
-                            let (vertex_buffer, index_buffer) =
-                                self.mesh_renderer.create_mesh_buffers(&mapping.mesh);
+                    self.paint_textures.get(&mapping.paint_id).map(|texture| {
+                        let (vertex_buffer, index_buffer) =
+                            self.mesh_renderer.create_mesh_buffers(&mapping.mesh);
 
-                            // Apply canvas region transformation for output windows
-                            let transform = if let Some(ref config) = output_config {
-                                // Transform from canvas space to output window space
-                                let region = &config.canvas_region;
-                                let scale = Mat4::from_scale(glam::Vec3::new(
-                                    1.0 / region.width,
-                                    1.0 / region.height,
-                                    1.0,
-                                ));
-                                let translate = Mat4::from_translation(glam::Vec3::new(
-                                    -region.x / region.width,
-                                    -region.y / region.height,
-                                    0.0,
-                                ));
-                                translate * scale
-                            } else {
-                                Mat4::IDENTITY
-                            };
+                        // Apply canvas region transformation for output windows
+                        let transform = if let Some(ref config) = output_config {
+                            // Transform from canvas space to output window space
+                            let region = &config.canvas_region;
+                            let scale = Mat4::from_scale(glam::Vec3::new(
+                                1.0 / region.width,
+                                1.0 / region.height,
+                                1.0,
+                            ));
+                            let translate = Mat4::from_translation(glam::Vec3::new(
+                                -region.x / region.width,
+                                -region.y / region.height,
+                                0.0,
+                            ));
+                            translate * scale
+                        } else {
+                            Mat4::IDENTITY
+                        };
 
-                            let uniform_buffer = self
-                                .mesh_renderer
-                                .create_uniform_buffer(transform, mapping.opacity);
-                            let uniform_bind_group = self
-                                .mesh_renderer
-                                .create_uniform_bind_group(&uniform_buffer);
-                            let texture_view = texture.create_view();
-                            let texture_bind_group =
-                                self.mesh_renderer.create_texture_bind_group(&texture_view);
-                            let index_count = mapping.mesh.indices.len() as u32;
+                        let uniform_buffer = self
+                            .mesh_renderer
+                            .create_uniform_buffer(transform, mapping.opacity);
+                        let uniform_bind_group = self
+                            .mesh_renderer
+                            .create_uniform_bind_group(&uniform_buffer);
+                        let texture_view = texture.create_view();
+                        let texture_bind_group =
+                            self.mesh_renderer.create_texture_bind_group(&texture_view);
+                        let index_count = mapping.mesh.indices.len() as u32;
 
-                            (
-                                vertex_buffer,
-                                index_buffer,
-                                uniform_bind_group,
-                                texture_bind_group,
-                                index_count,
-                            )
-                        })
+                        (
+                            vertex_buffer,
+                            index_buffer,
+                            uniform_bind_group,
+                            texture_bind_group,
+                            index_count,
+                        )
+                    })
                 })
                 .collect();
 

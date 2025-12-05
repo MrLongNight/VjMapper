@@ -71,7 +71,7 @@ impl WindowManager {
             alpha_mode: wgpu::CompositeAlphaMode::Opaque,
             view_formats: vec![],
         };
-        surface.configure(backend.device(), &surface_config);
+        surface.configure(&backend.device, &surface_config);
 
         let context = WindowContext {
             window,
@@ -136,7 +136,7 @@ impl WindowManager {
             view_formats: vec![],
         };
 
-        surface.configure(backend.device(), &surface_config);
+        surface.configure(&backend.device, &surface_config);
 
         let window_context = WindowContext {
             window,
