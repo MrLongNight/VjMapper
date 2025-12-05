@@ -28,7 +28,7 @@ env:
   CARGO_TERM_COLOR: always
   FREETYPE_SYS_USE_PKG_CONFIG: 1
   RUST_BACKTRACE: 1
-  # MSRV wie Projektvorgabe
+  # Projekt-MS RUNTIME-Vorgabe (MSRV)
   RUST_TOOLCHAIN: 1.75.0
 
 jobs:
@@ -43,7 +43,7 @@ jobs:
     - uses: actions/checkout@v4
 
     # explicit toolchain to avoid "toolchain is a required input" errors
-    - name: Install Rust toolchain
+    - name: Install Rust toolchain (MSRV for quality checks)
       uses: actions-rs/toolchain@v1
       with:
         toolchain: ${{ env.RUST_TOOLCHAIN }}
@@ -61,6 +61,9 @@ jobs:
   build-and-test:
     name: Build & Test (${{ matrix.os }}${{ matrix.audio == 'true' && ' - with audio' || '' }})
     runs-on: ${{ matrix.os }}
+    # Use a newer toolchain for building (resolver for dependencies that require newer Cargo)
+    env:
+      RUST_TOOLCHAIN: nightly
     permissions:
       contents: read
     strategy:
@@ -83,7 +86,7 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - name: Install Rust toolchain
+    - name: Install Rust toolchain (build)
       uses: actions-rs/toolchain@v1
       with:
         toolchain: ${{ env.RUST_TOOLCHAIN }}
@@ -196,6 +199,9 @@ jobs:
   security:
     name: Security Audit
     runs-on: ubuntu-latest
+    # use newer toolchain for security scanning/build
+    env:
+      RUST_TOOLCHAIN: nightly
     permissions:
       security-events: write
       contents: read
