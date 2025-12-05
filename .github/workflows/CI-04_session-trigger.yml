@@ -21,7 +21,9 @@ jobs:
     runs-on: ubuntu-latest
 
     concurrency:
-      group: ci-04-jules-session-${{ github.event.issue.number || 'dispatch' }}
+      # Use repository-wide lock to ensure issues are processed sequentially (not in parallel)
+      # This prevents multiple Jules sessions from running at the same time
+      group: ci-04-jules-session-${{ github.repository }}
       cancel-in-progress: false
 
     if: |
@@ -129,9 +131,13 @@ jobs:
             });
             
             // Check if a Jules session was already triggered
+            // Look for multiple patterns to be more robust
             const hasSession = comments.some(comment => 
               comment.body.includes('Jules Session Triggered') || 
-              comment.body.includes('Jules session created')
+              comment.body.includes('Jules session created') ||
+              comment.body.includes('🤖 **Jules Session Triggered**') ||
+              (comment.body.includes('Jules') && comment.body.includes('session') && 
+               (comment.body.includes('created') || comment.body.includes('triggered')))
             );
             
             if (hasSession) {
@@ -346,6 +352,14 @@ jobs:
           script: |
             const issueNumber = parseInt('${{ steps.get-issue.outputs.issue_number }}', 10);
             core.info(`Skipping duplicate session creation for issue #${issueNumber}`);
+            
+            // Add a comment to inform users that a session already exists
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber,
+              body: `ℹ️ **Jules session already exists** — A Jules session was already triggered for this issue. Skipping duplicate creation to prevent conflicts.`
+            });
 
       - name: Notify missing JULES_API_KEY
         if: steps.get-issue.outputs.has_issue == 'true' && steps.check-existing.outputs.has_existing == 'false' && steps.check-key.outputs.has_key == 'false'
