@@ -21,7 +21,7 @@ jobs:
     runs-on: ubuntu-latest
 
     concurrency:
-      group: ci-04-jules-session-${{ github.repository }}
+      group: ci-04-jules-session-${{ github.event.issue.number || 'dispatch' }}
       cancel-in-progress: false
 
     if: |
@@ -113,9 +113,38 @@ jobs:
             core.setOutput('has_issue', 'false');
             core.setOutput('issue_number', '');
 
+      - name: Check if Jules session already exists
+        id: check-existing
+        if: steps.get-issue.outputs.has_issue == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueNumber = parseInt('${{ steps.get-issue.outputs.issue_number }}', 10);
+            
+            // Get all comments on the issue
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issueNumber
+            });
+            
+            // Check if a Jules session was already triggered
+            const hasSession = comments.some(comment => 
+              comment.body.includes('Jules Session Triggered') || 
+              comment.body.includes('Jules session created')
+            );
+            
+            if (hasSession) {
+              core.info(`⏭️ Jules session already exists for issue #${issueNumber} - skipping`);
+              core.setOutput('has_existing', 'true');
+            } else {
+              core.info(`✅ No existing Jules session found for issue #${issueNumber}`);
+              core.setOutput('has_existing', 'false');
+            }
+
       - name: Check JULES_API_KEY secret
         id: check-key
-        if: steps.get-issue.outputs.has_issue == 'true'
+        if: steps.get-issue.outputs.has_issue == 'true' && steps.check-existing.outputs.has_existing == 'false'
         run: |
           if [ -n "${{ secrets.JULES_API_KEY }}" ]; then
             echo "has_key=true" >> $GITHUB_OUTPUT
@@ -310,8 +339,16 @@ jobs:
               body: `⚠️ **Automated PR creation skipped** — Could not detect a branch from the Jules session. ${sessionUrl ? `Open the session: ${sessionUrl}\n\n` : ''}Please create a Pull Request for the branch Jules uses (or configure Jules to push to a named branch).`
             });
 
+      - name: Notify existing session
+        if: steps.get-issue.outputs.has_issue == 'true' && steps.check-existing.outputs.has_existing == 'true'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const issueNumber = parseInt('${{ steps.get-issue.outputs.issue_number }}', 10);
+            core.info(`Skipping duplicate session creation for issue #${issueNumber}`);
+
       - name: Notify missing JULES_API_KEY
-        if: steps.get-issue.outputs.has_issue == 'true' && steps.check-key.outputs.has_key == 'false'
+        if: steps.get-issue.outputs.has_issue == 'true' && steps.check-existing.outputs.has_existing == 'false' && steps.check-key.outputs.has_key == 'false'
         uses: actions/github-script@v7
         with:
           script: |
@@ -333,6 +370,7 @@ jobs:
           echo ""
           echo "has_issue: ${{ steps.get-issue.outputs.has_issue }}"
           echo "issue_number: ${{ steps.get-issue.outputs.issue_number }}"
+          echo "has_existing: ${{ steps.check-existing.outputs.has_existing }}"
           echo "has_key: ${{ steps.check-key.outputs.has_key }}"
           echo "session_name: ${{ steps.create-session.outputs.session_name }}"
           echo "session_branch: ${{ steps.create-session.outputs.session_branch }}"
