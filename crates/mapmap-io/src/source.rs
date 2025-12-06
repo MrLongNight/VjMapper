@@ -164,7 +164,6 @@ impl VideoSource for TestVideoSource {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
 
     #[test]
     fn test_video_source_trait() {

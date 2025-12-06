@@ -402,11 +402,10 @@ impl MediaBrowser {
                         action = Some(MediaBrowserAction::FileDoubleClicked(entry.path.clone()));
                     }
 
-                    if response.hovered()
-                        && self.hovered != Some(idx) {
-                            self.hovered = Some(idx);
-                            self.hover_start = Some(Instant::now());
-                        }
+                    if response.hovered() && self.hovered != Some(idx) {
+                        self.hovered = Some(idx);
+                        self.hover_start = Some(Instant::now());
+                    }
                 }
             });
 

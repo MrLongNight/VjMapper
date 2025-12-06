@@ -653,10 +653,9 @@ impl AppUI {
                         ui.same_line();
 
                         // Make the mapping name clickable to select it
-                        if ui.small_button(format!(
-                            "{} (Paint #{})",
-                            mapping.name, mapping.paint_id
-                        )) {
+                        if ui
+                            .small_button(format!("{} (Paint #{})", mapping.name, mapping.paint_id))
+                        {
                             self.actions.push(UIAction::SelectMapping(mapping.id));
                         }
 

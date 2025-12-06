@@ -39,10 +39,10 @@ impl FormatConverter {
         // If formats match, just clone the frame
         if frame.format.pixel_format == target_format.pixel_format
             && frame.format.width == target_format.width
-                && frame.format.height == target_format.height
-            {
-                return Ok(frame.clone());
-            }
+            && frame.format.height == target_format.height
+        {
+            return Ok(frame.clone());
+        }
 
         // Dispatch to specific conversion functions
         match (&frame.format.pixel_format, &target_format.pixel_format) {
