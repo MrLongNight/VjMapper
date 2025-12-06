@@ -6,8 +6,7 @@
 use egui::{Color32, Style, Visuals};
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-#[derive(Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
 pub enum Theme {
     /// Dark theme (default for professional video applications)
     #[default]
@@ -19,7 +18,6 @@ pub enum Theme {
     /// Custom theme
     Custom,
 }
-
 
 /// Theme configuration
 #[derive(Debug, Clone, Serialize, Deserialize)]
