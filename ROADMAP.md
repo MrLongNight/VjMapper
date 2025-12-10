@@ -319,9 +319,8 @@
   - ⬜ Dependency-Bundling (FFmpeg-Libs)
 
 - ✅ **Developer-Tools**
-  - ✅ `check-ffmpeg-env.sh` – FFmpeg-Check
-  - ✅ `install-ffmpeg-dev.sh` – FFmpeg-Install-Script
-  - ✅ `create-jules-issues.sh` – Issue-Generierung
+  - ✅ `scripts/check-ffmpeg-env.sh` – FFmpeg-Check
+  - ✅ `scripts/install-ffmpeg-dev.sh` – FFmpeg-Install-Script
   - ✅ `rust-toolchain.toml` – Rust-Version 1.75
 
 ---
@@ -412,7 +411,7 @@ crates/
 7. **Dokumentation:**
    - `README.md`: Audio als Pflicht-Dependency markieren
    - `docs/01-GETTING-STARTED/`: Audio-Setup-Anleitung für Windows/Linux
-   - Env-Check-Script: `check-audio-backend.sh` erstellen (analog zu `check-ffmpeg-env.sh`)
+   - Env-Check-Script: `check-audio-backend.sh` erstellen (analog zu `scripts/check-ffmpeg-env.sh`)
 
 **Akzeptanzkriterien:**
 - Build schlägt fehl, wenn Audio-Backend nicht verfügbar
@@ -716,7 +715,7 @@ crates/
    - FFmpeg via Homebrew installieren
 
 4. **Env-Check-Scripts:**
-   - `check-ffmpeg-env.sh`: Erweitern um Audio-Backend-Check
+   - `scripts/check-ffmpeg-env.sh`: Erweitern um Audio-Backend-Check
    - `check-audio-backend.sh`: Neu erstellen
 
 5. **CI-Badge-Update:**
@@ -1064,7 +1063,7 @@ cargo bench --workspace --features audio,ffmpeg
 - Benchmarks: Texture-Upload, Video-Decode
 
 **Env-Checks:**
-- `check-ffmpeg-env.sh` – FFmpeg-Verfügbarkeit prüfen
+- `scripts/check-ffmpeg-env.sh` – FFmpeg-Verfügbarkeit prüfen
 - `check-audio-backend.sh` – Audio-Backend prüfen (neu erstellen)
 
 ---

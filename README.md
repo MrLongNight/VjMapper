@@ -48,7 +48,7 @@ The development of VjMapper is planned in several phases, starting with the core
 -   **Professional Video I/O:** NDI, DeckLink, Spout/Syphon integration.
 -   **Advanced UI:** A polished, intuitive user interface for authoring and performance.
 
-For a detailed breakdown, see the [Roadmap](docs/roadmap.md).
+For a detailed breakdown, see the [ROADMAP](ROADMAP.md).
 
 ## 🛠️ Quick Start
 
