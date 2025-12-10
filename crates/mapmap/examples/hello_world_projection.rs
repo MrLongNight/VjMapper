@@ -8,7 +8,7 @@
 
 use glam::Vec2;
 use mapmap_core::{Mapping, Mesh, Paint};
-use mapmap_render::{RenderBackend, QuadRenderer, TextureDescriptor, WgpuBackend};
+use mapmap_render::{QuadRenderer, RenderBackend, TextureDescriptor, WgpuBackend};
 use winit::{
     event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
@@ -78,7 +78,7 @@ fn main() {
         1, // mapping_id
         "Hello World Mapping",
         paint.id, // paint_id
-        mesh,  // mesh
+        mesh,     // mesh
     );
     println!("✓ Mapping created: '{}'", mapping.name);
 

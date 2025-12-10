@@ -6,10 +6,7 @@ use anyhow::Result;
 use glam::{Mat4, Vec2};
 mod window_manager;
 use mapmap_core::{
-    audio::{
-        backend::AudioBackend,
-        AudioAnalyzer, AudioConfig,
-    },
+    audio::{backend::AudioBackend, AudioAnalyzer, AudioConfig},
     LayerManager, Mapping, MappingManager, OutputId, Paint, PaintManager,
 };
 use mapmap_media::{FFmpegDecoder, TestPatternDecoder, VideoPlayer};
@@ -213,7 +210,8 @@ impl App {
         // Update audio analysis
         let samples = self.audio_backend.get_samples();
         if !samples.is_empty() {
-            self.audio_analyzer.process_samples(&samples, dt.as_secs_f64());
+            self.audio_analyzer
+                .process_samples(&samples, dt.as_secs_f64());
         }
 
         // Update FPS counter
@@ -973,8 +971,7 @@ impl App {
                     {
                         info!("Selecting audio device: {}", _device_name);
                         self.audio_backend.stop();
-                        let mut new_backend =
-                            CpalBackend::new(Some(_device_name.clone())).unwrap();
+                        let mut new_backend = CpalBackend::new(Some(_device_name.clone())).unwrap();
                         new_backend.start().unwrap();
                         self.audio_backend = Box::new(new_backend);
                     }

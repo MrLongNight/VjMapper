@@ -116,8 +116,12 @@ pub mod cpal_backend {
 
         pub fn list_devices() -> Result<Option<Vec<String>>, AudioError> {
             let host = cpal::default_host();
-            let devices = host.input_devices().map_err(|e| AudioError::NoDevicesFound(e.to_string()))?;
-            let device_names = devices.map(|d| d.name().unwrap_or_else(|_| "Unnamed Device".to_string())).collect();
+            let devices = host
+                .input_devices()
+                .map_err(|e| AudioError::NoDevicesFound(e.to_string()))?;
+            let device_names = devices
+                .map(|d| d.name().unwrap_or_else(|_| "Unnamed Device".to_string()))
+                .collect();
             Ok(Some(device_names))
         }
     }
@@ -157,12 +161,18 @@ pub mod mock_backend {
         sample_rate: f32,
     }
 
-    impl MockBackend {
-        pub fn new() -> Self {
+    impl Default for MockBackend {
+        fn default() -> Self {
             Self {
                 phase: 0.0,
                 sample_rate: 44100.0,
             }
+        }
+    }
+
+    impl MockBackend {
+        pub fn new() -> Self {
+            Self::default()
         }
     }
 

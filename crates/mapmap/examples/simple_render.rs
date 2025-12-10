@@ -2,7 +2,7 @@
 //!
 //! Demonstrates basic usage of mapmap-render crate
 
-use mapmap_render::{RenderBackend, QuadRenderer, TextureDescriptor, WgpuBackend};
+use mapmap_render::{QuadRenderer, RenderBackend, TextureDescriptor, WgpuBackend};
 use winit::{
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
