@@ -1399,7 +1399,11 @@ impl AppUI {
     }
 
     /// Render audio analysis panel
-    pub fn render_audio_panel(&mut self, ui: &Ui, audio_analyzer: &mapmap_core::audio::AudioAnalyzer) {
+    pub fn render_audio_panel(
+        &mut self,
+        ui: &Ui,
+        audio_analyzer: &mapmap_core::audio::AudioAnalyzer,
+    ) {
         if !self.show_audio {
             return;
         }
@@ -1416,12 +1420,9 @@ impl AppUI {
                     .position(|d| d == &self.selected_audio_device)
                     .unwrap_or(0);
 
-                if ui.combo(
-                    "Device",
-                    &mut selected_idx,
-                    &self.audio_devices,
-                    |item| std::borrow::Cow::Borrowed(item),
-                ) {
+                if ui.combo("Device", &mut selected_idx, &self.audio_devices, |item| {
+                    std::borrow::Cow::Borrowed(item)
+                }) {
                     self.selected_audio_device = self.audio_devices[selected_idx].clone();
                     self.actions.push(UIAction::SelectAudioDevice(
                         self.selected_audio_device.clone(),
@@ -1449,11 +1450,14 @@ impl AppUI {
                     let bar_height = (magnitude * height).min(height);
                     let x = pos[0] + i as f32 * bar_width;
                     let y = pos[1] + height;
-                    draw_list.add_rect(
-                        [x, y - bar_height],
-                        [x + bar_width, y],
-                        [0.0, 1.0, 0.0, 1.0],
-                    ).filled(true).build();
+                    draw_list
+                        .add_rect(
+                            [x, y - bar_height],
+                            [x + bar_width, y],
+                            [0.0, 1.0, 0.0, 1.0],
+                        )
+                        .filled(true)
+                        .build();
                 }
                 ui.dummy([width, height]);
             });
@@ -1466,17 +1470,19 @@ fn draw_progress_bar(ui: &Ui, fraction: f32, overlay_text: &str) {
     let height = ui.text_line_height_with_spacing();
     let draw_list = ui.get_window_draw_list();
 
-    draw_list.add_rect(
-        pos,
-        [pos[0] + width, pos[1] + height],
-        [0.2, 0.2, 0.2, 1.0],
-    ).filled(true).build();
+    draw_list
+        .add_rect(pos, [pos[0] + width, pos[1] + height], [0.2, 0.2, 0.2, 1.0])
+        .filled(true)
+        .build();
 
-    draw_list.add_rect(
-        pos,
-        [pos[0] + width * fraction, pos[1] + height],
-        [0.0, 0.8, 0.0, 1.0],
-    ).filled(true).build();
+    draw_list
+        .add_rect(
+            pos,
+            [pos[0] + width * fraction, pos[1] + height],
+            [0.0, 0.8, 0.0, 1.0],
+        )
+        .filled(true)
+        .build();
 
     let text_pos = [pos[0] + 4.0, pos[1] + 2.0];
     draw_list.add_text(text_pos, [1.0, 1.0, 1.0, 1.0], overlay_text);
