@@ -468,9 +468,7 @@ impl NodeEditor {
         let (response, painter) = ui.allocate_painter(ui.available_size(), Sense::click_and_drag());
 
         // Handle canvas interactions
-        if response.dragged()
-            && self.dragging_node.is_none()
-            && self.creating_connection.is_none()
+        if response.dragged() && self.dragging_node.is_none() && self.creating_connection.is_none()
         {
             self.pan_offset += response.drag_delta();
         }

@@ -189,7 +189,6 @@ impl VideoSink for TestVideoSink {
 #[cfg(test)]
 mod tests {
     use super::*;
-    
 
     #[test]
     fn test_video_sink_trait() {

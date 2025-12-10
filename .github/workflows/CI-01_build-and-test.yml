@@ -15,14 +15,6 @@ on:
         options:
           - 'true'
           - 'false'
-      skip_platforms:
-        description: 'Only build on Linux (skip macOS/Windows)'
-        required: false
-        default: 'false'
-        type: choice
-        options:
-          - 'true'
-          - 'false'
 
 env:
   CARGO_TERM_COLOR: always
@@ -57,31 +49,15 @@ jobs:
     - name: Run Clippy
       run: cargo clippy --all-targets --all-features -- -D warnings
 
-  # Build and test on multiple platforms
+  # Build and test on Ubuntu with audio support
   build-and-test:
-    name: Build & Test (${{ matrix.os }}${{ matrix.audio == 'true' && ' - with audio' || '' }})
-    runs-on: ${{ matrix.os }}
+    name: Build & Test (Ubuntu with Audio)
+    runs-on: ubuntu-latest
     # Use a newer toolchain for building (resolver for dependencies that require newer Cargo)
     env:
       RUST_TOOLCHAIN: nightly
     permissions:
       contents: read
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          # Linux with native audio support
-          - os: ubuntu-latest
-            audio: "true"
-          # Linux without audio (portable)
-          - os: ubuntu-latest
-            audio: "false"
-          # macOS without audio
-          - os: macos-latest
-            audio: "false"
-          # Windows without audio
-          - os: windows-latest
-            audio: "false"
         
     steps:
     - uses: actions/checkout@v4
@@ -112,8 +88,7 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-cargo-target-
 
-    - name: Install system dependencies (Linux)
-      if: runner.os == 'Linux'
+    - name: Install system dependencies (Ubuntu)
       run: |
         sudo apt-get update -y
         sudo apt-get install -y \
@@ -138,60 +113,37 @@ jobs:
         pkg-config --exists freetype2 && echo "✓ FreeType found" || echo "✗ FreeType not found"
 
     - name: Install Linux audio dev packages
-      if: matrix.audio == 'true' && runner.os == 'Linux'
       run: |
         sudo apt-get update -y
         sudo apt-get install -y libasound2-dev
 
-    - name: Install system dependencies (macOS)
-      if: runner.os == 'macos'
-      run: |
-        brew update
-        brew install ffmpeg pkg-config
-
-    - name: Install system dependencies (Windows)
-      if: runner.os == 'windows'
-      run: |
-        echo "Windows build - ensure required native deps (FFmpeg, vcpkg) are available in PATH if needed"
-
-    - name: Set build features
-      id: features
-      run: |
-        if [ "${{ matrix.audio }}" = "true" ]; then
-          echo "flags=--features audio" >> $GITHUB_OUTPUT
-        else
-          echo "flags=" >> $GITHUB_OUTPUT
-        fi
-      shell: bash
-
     - name: Build (Debug)
       env:
         RUST_BACKTRACE: full
-      run: cargo build --verbose ${{ steps.features.outputs.flags }}
+      run: cargo build --verbose --all-features
 
     - name: Build (Release)
       env:
         RUST_BACKTRACE: full
-      run: cargo build --release --verbose ${{ steps.features.outputs.flags }}
+      run: cargo build --release --verbose --all-features
 
     - name: Run tests
       if: ${{ github.event.inputs.skip_tests != 'true' }}
       env:
         RUST_BACKTRACE: full
-      run: cargo test --workspace --verbose ${{ steps.features.outputs.flags }}
+      run: cargo test --workspace --verbose --all-features
 
     - name: Run doc tests
       if: ${{ github.event.inputs.skip_tests != 'true' }}
-      run: cargo test --doc --verbose ${{ steps.features.outputs.flags }}
+      run: cargo test --doc --verbose --all-features
 
     - name: Generate documentation
       run: cargo doc --no-deps --all-features
 
     - name: Upload artifacts (Release binary)
-      if: runner.os == 'Linux'
       uses: actions/upload-artifact@v4
       with:
-        name: vjmapper-linux-release
+        name: vjmapper-ubuntu-audio-release
         path: target/release/mapmap
         if-no-files-found: ignore
 

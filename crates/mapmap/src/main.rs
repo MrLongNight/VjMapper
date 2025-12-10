@@ -377,7 +377,9 @@ impl App {
 
         // Choose render target (intermediate texture or final view)
         let render_target_view = if needs_post_processing {
-            self.intermediate_textures.get(&output_id).map(|intermediate_tex| intermediate_tex.create_view())
+            self.intermediate_textures
+                .get(&output_id)
+                .map(|intermediate_tex| intermediate_tex.create_view())
         } else {
             None
         };
@@ -502,39 +504,74 @@ impl App {
             if let (Some(intermediate_view), Some(config)) =
                 (render_target_view.as_ref(), output_config.as_ref())
             {
+                // Step 1: Apply color calibration
+                // Create another intermediate texture for color calibration result
+                let color_corrected_view = {
+                    let window_context = self.window_manager.get(output_id).unwrap();
+                    let tex_desc = TextureDescriptor {
+                        width: window_context.surface_config.width,
+                        height: window_context.surface_config.height,
+                        format: wgpu::TextureFormat::Bgra8Unorm,
+                        usage: wgpu::TextureUsages::RENDER_ATTACHMENT
+                            | wgpu::TextureUsages::TEXTURE_BINDING,
+                        mip_levels: 1,
+                    };
 
-            // Step 1: Apply color calibration
-            // Create another intermediate texture for color calibration result
-            let color_corrected_view = {
-                let window_context = self.window_manager.get(output_id).unwrap();
-                let tex_desc = TextureDescriptor {
-                    width: window_context.surface_config.width,
-                    height: window_context.surface_config.height,
-                    format: wgpu::TextureFormat::Bgra8Unorm,
-                    usage: wgpu::TextureUsages::RENDER_ATTACHMENT
-                        | wgpu::TextureUsages::TEXTURE_BINDING,
-                    mip_levels: 1,
+                    let temp_texture = self.backend.create_texture(tex_desc)?;
+                    let temp_view = temp_texture.create_view();
+
+                    // Apply color calibration
+                    let texture_bind_group = self
+                        .color_calibration_renderer
+                        .create_texture_bind_group(intermediate_view);
+                    let uniform_buffer = self
+                        .color_calibration_renderer
+                        .create_uniform_buffer(&config.color_calibration);
+                    let uniform_bind_group = self
+                        .color_calibration_renderer
+                        .create_uniform_bind_group(&uniform_buffer);
+
+                    #[allow(clippy::needless_update)]
+                    let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                        label: Some(&format!("Color Calibration Pass Output {}", output_id)),
+                        color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                            view: &temp_view,
+                            resolve_target: None,
+                            ops: wgpu::Operations {
+                                load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+                                store: true,
+                            },
+                        })],
+                        depth_stencil_attachment: None,
+                        ..Default::default()
+                    });
+
+                    self.color_calibration_renderer.render(
+                        &mut render_pass,
+                        &texture_bind_group,
+                        &uniform_bind_group,
+                    );
+
+                    drop(render_pass);
+                    temp_view
                 };
 
-                let temp_texture = self.backend.create_texture(tex_desc)?;
-                let temp_view = temp_texture.create_view();
-
-                // Apply color calibration
+                // Step 2: Apply edge blending to final output
                 let texture_bind_group = self
-                    .color_calibration_renderer
-                    .create_texture_bind_group(intermediate_view);
+                    .edge_blend_renderer
+                    .create_texture_bind_group(&color_corrected_view);
                 let uniform_buffer = self
-                    .color_calibration_renderer
-                    .create_uniform_buffer(&config.color_calibration);
+                    .edge_blend_renderer
+                    .create_uniform_buffer(&config.edge_blend);
                 let uniform_bind_group = self
-                    .color_calibration_renderer
+                    .edge_blend_renderer
                     .create_uniform_bind_group(&uniform_buffer);
 
                 #[allow(clippy::needless_update)]
                 let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                    label: Some(&format!("Color Calibration Pass Output {}", output_id)),
+                    label: Some(&format!("Edge Blend Pass Output {}", output_id)),
                     color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                        view: &temp_view,
+                        view,
                         resolve_target: None,
                         ops: wgpu::Operations {
                             load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
@@ -545,47 +582,11 @@ impl App {
                     ..Default::default()
                 });
 
-                self.color_calibration_renderer.render(
+                self.edge_blend_renderer.render(
                     &mut render_pass,
                     &texture_bind_group,
                     &uniform_bind_group,
                 );
-
-                drop(render_pass);
-                temp_view
-            };
-
-            // Step 2: Apply edge blending to final output
-            let texture_bind_group = self
-                .edge_blend_renderer
-                .create_texture_bind_group(&color_corrected_view);
-            let uniform_buffer = self
-                .edge_blend_renderer
-                .create_uniform_buffer(&config.edge_blend);
-            let uniform_bind_group = self
-                .edge_blend_renderer
-                .create_uniform_bind_group(&uniform_buffer);
-
-            #[allow(clippy::needless_update)]
-            let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                label: Some(&format!("Edge Blend Pass Output {}", output_id)),
-                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                    view,
-                    resolve_target: None,
-                    ops: wgpu::Operations {
-                        load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
-                        store: true,
-                    },
-                })],
-                depth_stencil_attachment: None,
-                ..Default::default()
-            });
-
-            self.edge_blend_renderer.render(
-                &mut render_pass,
-                &texture_bind_group,
-                &uniform_bind_group,
-            );
             }
         }
 
