@@ -2757,6 +2757,7 @@ dependencies = [
  "imgui",
  "imgui-wgpu",
  "imgui-winit-support",
+ "mapmap-control",
  "mapmap-core",
  "mapmap-media",
  "mapmap-render",
@@ -2764,6 +2765,7 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror 1.0.69",
+ "tracing",
  "wgpu 0.17.2",
  "winit 0.27.5",
 ]
