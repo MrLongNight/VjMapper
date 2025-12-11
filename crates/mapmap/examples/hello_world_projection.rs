@@ -173,6 +173,7 @@ fn main() {
                             },
                         })],
                         depth_stencil_attachment: None,
+                        ..Default::default()
                     });
 
                     // Render the textured quad (our projection mapping!)

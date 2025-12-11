@@ -111,6 +111,7 @@ fn main() {
                             },
                         })],
                         depth_stencil_attachment: None,
+                        ..Default::default()
                     });
 
                     quad_renderer.draw(&mut render_pass, &bind_group);

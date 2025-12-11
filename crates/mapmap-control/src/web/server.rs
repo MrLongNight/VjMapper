@@ -1,7 +1,10 @@
 //! Axum HTTP server
 
 #[cfg(feature = "http-api")]
-use axum::http::{header, Method};
+use axum::{
+    http::{header, Method},
+    Router,
+};
 
 #[cfg(feature = "http-api")]
 use tower_http::cors::{Any, CorsLayer};
