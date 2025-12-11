@@ -17,7 +17,6 @@ pub mod dashboard;
 pub mod media_browser;
 pub mod mesh_editor;
 pub mod node_editor;
-pub mod osc_panel;
 pub mod theme;
 pub mod timeline_v2;
 pub mod undo_redo;
@@ -27,7 +26,7 @@ pub use timeline::{TimelineAction, TimelineEditor};
 
 // Phase 6 exports
 pub use asset_manager::{AssetManager, AssetManagerAction, EffectPreset, TransformPreset};
-pub use dashboard::{Dashboard, DashboardAction, DashboardWidget, WidgetType};
+pub use dashboard::Dashboard;
 pub use media_browser::{MediaBrowser, MediaBrowserAction, MediaEntry, MediaType};
 pub use mesh_editor::{MeshEditor, MeshEditorAction};
 pub use node_editor::{Node, NodeEditor, NodeEditorAction, NodeType};
@@ -43,17 +42,7 @@ use std::time::Instant;
 /// UI actions that can be triggered by the user interface
 #[derive(Debug, Clone)]
 pub enum UIAction {
-    // Playback actions
-    Play,
-    Pause,
-    Stop,
-    SetSpeed(f32),
-    ToggleLoop(bool),
-    // Phase 1: Advanced playback
-    SetPlaybackDirection(mapmap_media::PlaybackDirection),
-    TogglePlaybackDirection,
-    SetPlaybackMode(mapmap_media::PlaybackMode),
-
+    // Playback actions now handled by Dashboard
     // File actions
     LoadVideo(String),
     SaveProject(String),
@@ -205,16 +194,8 @@ impl ImGuiContext {
     }
 }
 
-use mapmap_control::ControlTarget;
-
 /// UI state for the application
 pub struct AppUI {
-    pub show_osc_panel: bool,
-    pub show_osc_learn_dialog: bool,
-    pub osc_learn_address: Option<String>,
-    pub selected_control_target: ControlTarget,
-    pub osc_port_input: String,
-    pub osc_client_input: String,
     pub show_controls: bool,
     pub show_stats: bool,
     pub show_layers: bool,
@@ -227,11 +208,6 @@ pub struct AppUI {
     pub show_color_calibration: bool, // Phase 2
     pub show_oscillator: bool,        // Oscillator distortion effect
     pub show_audio: bool,
-    pub playback_speed: f32,
-    pub looping: bool,
-    // Phase 1: Advanced playback state
-    pub playback_direction: mapmap_media::PlaybackDirection,
-    pub playback_mode: mapmap_media::PlaybackMode,
     // Phase 1: Transform editing state
     pub selected_layer_id: Option<u64>,
     // Phase 2: Output configuration state
@@ -244,12 +220,6 @@ pub struct AppUI {
 impl Default for AppUI {
     fn default() -> Self {
         Self {
-            show_osc_panel: true,
-            show_osc_learn_dialog: false,
-            osc_learn_address: None,
-            selected_control_target: ControlTarget::Custom("".to_string()),
-            osc_port_input: "8000".to_string(),
-            osc_client_input: "127.0.0.1:9000".to_string(),
             show_controls: true,
             show_stats: true,
             show_layers: true,
@@ -262,10 +232,6 @@ impl Default for AppUI {
             show_color_calibration: false, // Show only when output selected
             show_oscillator: true,
             show_audio: true,
-            playback_speed: 1.0,
-            looping: true,
-            playback_direction: mapmap_media::PlaybackDirection::Forward,
-            playback_mode: mapmap_media::PlaybackMode::Loop,
             selected_layer_id: None,
             selected_output_id: None,
             audio_devices: vec!["None".to_string()],
@@ -279,114 +245,6 @@ impl AppUI {
     /// Take all pending actions and clear the list
     pub fn take_actions(&mut self) -> Vec<UIAction> {
         std::mem::take(&mut self.actions)
-    }
-
-    /// Render the control panel
-    pub fn render_controls(&mut self, ui: &Ui) {
-        if !self.show_controls {
-            return;
-        }
-
-        ui.window("Playback Controls")
-            .size([320.0, 360.0], Condition::FirstUseEver)
-            .build(|| {
-                ui.text("Video Playback");
-                ui.separator();
-
-                // Transport controls
-                if ui.button("Play") {
-                    self.actions.push(UIAction::Play);
-                }
-                ui.same_line();
-                if ui.button("Pause") {
-                    self.actions.push(UIAction::Pause);
-                }
-                ui.same_line();
-                if ui.button("Stop") {
-                    self.actions.push(UIAction::Stop);
-                }
-
-                ui.separator();
-
-                // Speed control
-                let old_speed = self.playback_speed;
-                ui.slider("Speed", 0.1, 2.0, &mut self.playback_speed);
-                if (self.playback_speed - old_speed).abs() > 0.001 {
-                    self.actions.push(UIAction::SetSpeed(self.playback_speed));
-                }
-
-                // Legacy loop control
-                let old_looping = self.looping;
-                ui.checkbox("Loop (legacy)", &mut self.looping);
-                if self.looping != old_looping {
-                    self.actions.push(UIAction::ToggleLoop(self.looping));
-                }
-
-                ui.separator();
-                ui.text("Phase 1: Advanced Playback");
-                ui.separator();
-
-                // Playback Direction (Phase 1)
-                ui.text("Direction:");
-                let direction_names = ["Forward", "Backward"];
-                let mut direction_idx = match self.playback_direction {
-                    mapmap_media::PlaybackDirection::Forward => 0,
-                    mapmap_media::PlaybackDirection::Backward => 1,
-                };
-
-                if ui.combo(
-                    "##direction",
-                    &mut direction_idx,
-                    &direction_names,
-                    |item| std::borrow::Cow::Borrowed(item),
-                ) {
-                    let new_direction = match direction_idx {
-                        0 => mapmap_media::PlaybackDirection::Forward,
-                        1 => mapmap_media::PlaybackDirection::Backward,
-                        _ => mapmap_media::PlaybackDirection::Forward,
-                    };
-                    self.playback_direction = new_direction;
-                    self.actions
-                        .push(UIAction::SetPlaybackDirection(new_direction));
-                }
-
-                ui.same_line();
-                if ui.button("Toggle ⇄") {
-                    self.actions.push(UIAction::TogglePlaybackDirection);
-                    self.playback_direction = match self.playback_direction {
-                        mapmap_media::PlaybackDirection::Forward => {
-                            mapmap_media::PlaybackDirection::Backward
-                        }
-                        mapmap_media::PlaybackDirection::Backward => {
-                            mapmap_media::PlaybackDirection::Forward
-                        }
-                    };
-                }
-
-                // Playback Mode (Phase 1)
-                ui.text("Mode:");
-                let mode_names = ["Loop", "Ping Pong", "Play Once & Eject", "Play Once & Hold"];
-                let mut mode_idx = match self.playback_mode {
-                    mapmap_media::PlaybackMode::Loop => 0,
-                    mapmap_media::PlaybackMode::PingPong => 1,
-                    mapmap_media::PlaybackMode::PlayOnceAndEject => 2,
-                    mapmap_media::PlaybackMode::PlayOnceAndHold => 3,
-                };
-
-                if ui.combo("##mode", &mut mode_idx, &mode_names, |item| {
-                    std::borrow::Cow::Borrowed(item)
-                }) {
-                    let new_mode = match mode_idx {
-                        0 => mapmap_media::PlaybackMode::Loop,
-                        1 => mapmap_media::PlaybackMode::PingPong,
-                        2 => mapmap_media::PlaybackMode::PlayOnceAndEject,
-                        3 => mapmap_media::PlaybackMode::PlayOnceAndHold,
-                        _ => mapmap_media::PlaybackMode::Loop,
-                    };
-                    self.playback_mode = new_mode;
-                    self.actions.push(UIAction::SetPlaybackMode(new_mode));
-                }
-            });
     }
 
     /// Render performance stats
@@ -427,7 +285,6 @@ impl AppUI {
             });
 
             ui.menu("View", || {
-                ui.checkbox("Show OSC Panel", &mut self.show_osc_panel);
                 ui.checkbox("Show Controls", &mut self.show_controls);
                 ui.checkbox("Show Layers", &mut self.show_layers);
                 ui.checkbox("Show Paints", &mut self.show_paints);

@@ -14,7 +14,7 @@ use crate::midi::{MidiInputHandler, MidiLearn};
 
 use crate::cue::CueList;
 use crate::dmx::{ArtNetSender, SacnSender};
-use crate::osc::{OscClient, OscLearn, OscMapping, OscServer};
+use crate::osc::{OscClient, OscServer};
 
 /// Unified control system manager
 pub struct ControlManager {
@@ -25,9 +25,7 @@ pub struct ControlManager {
     pub midi_learn: Option<MidiLearn>,
 
     pub osc_server: Option<OscServer>,
-    pub osc_clients: Vec<OscClient>,
-    pub osc_learn: OscLearn,
-    pub osc_mapping: OscMapping,
+    pub osc_client: Option<OscClient>,
 
     pub artnet_sender: Option<ArtNetSender>,
     pub sacn_sender: Option<SacnSender>,
@@ -50,9 +48,7 @@ impl ControlManager {
             midi_learn: None,
 
             osc_server: None,
-            osc_clients: Vec::new(),
-            osc_learn: OscLearn::new(),
-            osc_mapping: OscMapping::new(),
+            osc_client: None,
 
             artnet_sender: None,
             sacn_sender: None,
@@ -90,17 +86,12 @@ impl ControlManager {
         Ok(())
     }
 
-    /// Add an OSC client for feedback.
-    pub fn add_osc_client(&mut self, addr: &str) -> Result<()> {
-        info!("Adding OSC client to {}", addr);
+    /// Initialize OSC client
+    pub fn init_osc_client(&mut self, addr: &str) -> Result<()> {
+        info!("Initializing OSC client to {}", addr);
         let client = OscClient::new(addr)?;
-        self.osc_clients.push(client);
+        self.osc_client = Some(client);
         Ok(())
-    }
-
-    /// Remove an OSC client.
-    pub fn remove_osc_client(&mut self, addr: &str) {
-        self.osc_clients.retain(|c| c.destination_str() != addr);
     }
 
     /// Initialize Art-Net sender
@@ -170,35 +161,17 @@ impl ControlManager {
 
     /// Process OSC messages
     fn process_osc_messages(&mut self) {
-        let mut controls_to_apply = Vec::new();
-
+        // Collect events first to avoid borrow checker issues
+        let mut events = Vec::new();
         if let Some(osc_server) = &mut self.osc_server {
-            while let Some(packet) = osc_server.poll_packet() {
-                // If in learn mode, consume the packet and do nothing else
-                if self.osc_learn.process_packet(&packet) {
-                    continue;
-                }
-
-                // If not in learn mode, try to map and apply the control
-                if let rosc::OscPacket::Message(msg) = packet {
-                    if let Some(target) = self.osc_mapping.get_target(&msg.addr) {
-                        let value_result = match target {
-                            ControlTarget::LayerPosition(_) => {
-                                crate::osc::types::osc_to_vec2(&msg.args)
-                            }
-                            _ => crate::osc::types::osc_to_control_value(&msg.args),
-                        };
-
-                        if let Ok(value) = value_result {
-                            controls_to_apply.push((target.clone(), value));
-                        }
-                    }
-                }
+            while let Some(event) = osc_server.poll_event() {
+                events.push(event);
             }
         }
 
-        for (target, value) in controls_to_apply {
-            self.apply_control(target, value);
+        // Process collected events
+        for event in events {
+            self.apply_control(event.target, event.value);
         }
     }
 
@@ -213,14 +186,10 @@ impl ControlManager {
             }
         }
 
-        // Send OSC feedback to all clients
-        for client in &mut self.osc_clients {
-            if let Err(e) = client.send_update(&target, &value) {
-                warn!(
-                    "Failed to send OSC feedback to {}: {}",
-                    client.destination_str(),
-                    e
-                );
+        // Send OSC feedback if client is configured
+        if let Some(osc_client) = &mut self.osc_client {
+            if let Err(e) = osc_client.send_update(&target, &value) {
+                warn!("Failed to send OSC feedback: {}", e);
             }
         }
     }
@@ -274,22 +243,6 @@ impl ControlManager {
         }
         Ok(())
     }
-
-    /// Get a list of all possible control targets.
-    // This is a placeholder and should be populated from the main application state.
-    pub fn get_all_control_targets(&self) -> Vec<ControlTarget> {
-        vec![
-            ControlTarget::LayerOpacity(1),
-            ControlTarget::LayerVisibility(1),
-            ControlTarget::MasterOpacity,
-            ControlTarget::MasterBlackout,
-        ]
-    }
-
-    /// Check for and retrieve the last learned OSC address.
-    pub fn get_last_learned_address(&mut self) -> Option<String> {
-        self.osc_learn.last_address()
-    }
 }
 
 impl Default for ControlManager {
@@ -306,7 +259,7 @@ mod tests {
     fn test_create_manager() {
         let manager = ControlManager::new();
         assert!(manager.osc_server.is_none());
-        assert!(manager.osc_clients.is_empty());
+        assert!(manager.osc_client.is_none());
     }
 
     #[test]

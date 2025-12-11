@@ -246,12 +246,23 @@ impl Compositor {
 }
 
 /// Convert BlendMode to u32 for shader
-///
-/// ⚡ Bolt: Replaced `match` with a direct `as` cast.
-/// This is slightly more efficient as it avoids a lookup table or series of comparisons.
-/// The `BlendMode` enum is marked with `#[repr(u32)]` to guarantee a stable conversion.
 fn blend_mode_to_u32(mode: BlendMode) -> u32 {
-    mode as u32
+    match mode {
+        BlendMode::Normal => 0,
+        BlendMode::Add => 1,
+        BlendMode::Subtract => 2,
+        BlendMode::Multiply => 3,
+        BlendMode::Screen => 4,
+        BlendMode::Overlay => 5,
+        BlendMode::SoftLight => 6,
+        BlendMode::HardLight => 7,
+        BlendMode::Lighten => 8,
+        BlendMode::Darken => 9,
+        BlendMode::ColorDodge => 10,
+        BlendMode::ColorBurn => 11,
+        BlendMode::Difference => 12,
+        BlendMode::Exclusion => 13,
+    }
 }
 
 #[cfg(test)]
