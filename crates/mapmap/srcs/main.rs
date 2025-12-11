@@ -4,7 +4,7 @@
 
 use anyhow::Result;
 use crossbeam_channel::{Receiver, Sender};
-use glam::Mat4;
+use glam::{Mat4, Vec2};
 mod window_manager;
 use mapmap_core::{
     audio::{backend::AudioBackend, AudioAnalyzer, AudioConfig},
@@ -14,7 +14,8 @@ use mapmap_media::{
     FFmpegDecoder, PlaybackCommand, PlaybackState, TestPatternDecoder, VideoPlayer,
 };
 use mapmap_render::{
-    Compositor, MeshRenderer, QuadRenderer, RenderBackend, TextureDescriptor, WgpuBackend,
+    ColorCalibrationRenderer, Compositor, EdgeBlendRenderer, MeshRenderer, QuadRenderer,
+    RenderBackend, TextureDescriptor, WgpuBackend,
 };
 use mapmap_ui::{AppUI, Dashboard, ImGuiContext};
 use std::collections::HashMap;
@@ -38,6 +39,8 @@ struct App {
     mesh_renderer: MeshRenderer,
     #[allow(dead_code)]
     compositor: Compositor,
+    edge_blend_renderer: EdgeBlendRenderer,
+    color_calibration_renderer: ColorCalibrationRenderer,
     imgui_context: ImGuiContext,
     ui_state: AppUI,
     dashboard: Dashboard,
@@ -76,6 +79,9 @@ impl App {
         let quad_renderer = QuadRenderer::new(backend.device(), surface_format)?;
         let mesh_renderer = MeshRenderer::new(backend.device.clone(), surface_format)?;
         let compositor = Compositor::new(backend.device.clone(), surface_format)?;
+        let edge_blend_renderer = EdgeBlendRenderer::new(backend.device.clone(), surface_format)?;
+        let color_calibration_renderer =
+            ColorCalibrationRenderer::new(backend.device.clone(), surface_format)?;
 
         // Create ImGui context for main window
         let main_window_ref = &window_manager.get(main_output_id).unwrap().window;
@@ -144,6 +150,8 @@ impl App {
             quad_renderer,
             mesh_renderer,
             compositor,
+            edge_blend_renderer,
+            color_calibration_renderer,
             imgui_context,
             ui_state: AppUI::default(),
             dashboard,
@@ -277,17 +285,9 @@ impl App {
             None
         };
 
-        let needs_post_processing = output_config.as_ref().map_or(false, |c| {
-            let eb = &c.edge_blend;
-            let cc = &c.color_calibration;
-            eb.left.enabled
-                || eb.right.enabled
-                || eb.top.enabled
-                || eb.bottom.enabled
-                || cc.brightness != 0.0
-                || cc.contrast != 1.0
-                || cc.saturation != 1.0
-        });
+        let needs_post_processing = output_config
+            .as_ref()
+            .map_or(false, |c| c.edge_blend.is_enabled() || c.color_calibration.is_enabled());
 
         if needs_post_processing && !self.intermediate_textures.contains_key(&output_id) {
             let window_context = self.window_manager.get(output_id).unwrap();

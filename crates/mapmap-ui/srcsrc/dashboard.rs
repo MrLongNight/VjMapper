@@ -3,7 +3,7 @@
 //! Quick-access parameter controls for media playback.
 
 use crossbeam_channel::Sender;
-use imgui::{Condition, Ui};
+use imgui::{im_str, Condition, Ui};
 use mapmap_media::{LoopMode, PlaybackCommand, PlaybackState};
 use std::time::Duration;
 
@@ -43,19 +43,19 @@ impl Dashboard {
 
     /// Render the dashboard UI
     pub fn ui(&mut self, ui: &Ui) {
-        ui.window("Dashboard")
+        ui.window(im_str!("Dashboard"))
             .size([400.0, 200.0], Condition::FirstUseEver)
             .build(|| {
                 // Playback controls
-                if ui.button_with_size("Play", [50.0, 20.0]) {
+                if ui.button(im_str!("Play"), [50.0, 20.0]) {
                     self.command_sender.send(PlaybackCommand::Play).ok();
                 }
                 ui.same_line();
-                if ui.button_with_size("Pause", [50.0, 20.0]) {
+                if ui.button(im_str!("Pause"), [50.0, 20.0]) {
                     self.command_sender.send(PlaybackCommand::Pause).ok();
                 }
                 ui.same_line();
-                if ui.button_with_size("Stop", [50.0, 20.0]) {
+                if ui.button(im_str!("Stop"), [50.0, 20.0]) {
                     self.command_sender.send(PlaybackCommand::Stop).ok();
                 }
 
@@ -63,7 +63,7 @@ impl Dashboard {
                 let total_secs = self.duration.as_secs_f32();
                 let mut current_pos = self.current_time.as_secs_f32();
                 if ui.slider(
-                    "Timeline",
+                    im_str!("Timeline"),
                     0.0,
                     total_secs,
                     &mut current_pos,
@@ -74,7 +74,7 @@ impl Dashboard {
                 }
 
                 // Speed control
-                if ui.slider("Speed", 0.1, 4.0, &mut self.speed) {
+                if ui.slider(im_str!("Speed"), 0.1, 4.0, &mut self.speed) {
                     self.command_sender
                         .send(PlaybackCommand::SetSpeed(self.speed))
                         .ok();
@@ -83,7 +83,7 @@ impl Dashboard {
                 // Loop mode
                 let mut loop_mode_changed = false;
                 if ui.radio_button(
-                    "Loop",
+                    im_str!("Loop"),
                     &mut self.loop_mode,
                     LoopMode::Loop,
                 ) {
@@ -91,7 +91,7 @@ impl Dashboard {
                 }
                 ui.same_line();
                 if ui.radio_button(
-                    "Play Once",
+                    im_str!("Play Once"),
                     &mut self.loop_mode,
                     LoopMode::PlayOnce,
                 ) {
@@ -106,8 +106,8 @@ impl Dashboard {
 
                 // Status display
                 ui.separator();
-                ui.text(format!("State: {:?}", self.playback_state));
-                ui.text(format!(
+                ui.text(im_str!("State: {:?}", self.playback_state));
+                ui.text(im_str!(
                     "Time: {:.2}/{:.2}",
                     self.current_time.as_secs_f32(),
                     total_secs

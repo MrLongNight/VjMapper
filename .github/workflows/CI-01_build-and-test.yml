@@ -41,6 +41,28 @@ jobs:
         toolchain: ${{ env.RUST_TOOLCHAIN }}
         components: rustfmt,clippy
 
+    - name: Install system dependencies (Ubuntu)
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install -y \
+          build-essential \
+          pkg-config \
+          libfontconfig1-dev \
+          libfreetype6-dev \
+          libxcb1-dev \
+          libxcb-render0-dev \
+          libxcb-shape0-dev \
+          libxcb-xfixes0-dev \
+          libx11-dev \
+          libavcodec-dev \
+          libavformat-dev \
+          libavutil-dev \
+          libswscale-dev \
+          libavdevice-dev \
+          libavfilter-dev \
+          libasound2-dev \
+          ffmpeg
+
     - name: Check formatting
       run: cargo fmt --all -- --check
 
@@ -53,7 +75,7 @@ jobs:
     runs-on: ubuntu-latest
     # Use a newer toolchain for building (resolver for dependencies that require newer Cargo)
     env:
-      RUST_TOOLCHAIN: stable
+      RUST_TOOLCHAIN: nightly
     permissions:
       contents: read
         
@@ -103,13 +125,15 @@ jobs:
           libswscale-dev \
           libavdevice-dev \
           libavfilter-dev \
-          ffmpeg \
-          libasound2-dev
+          ffmpeg
         # Verify installations
         pkg-config --exists fontconfig && echo "✓ Fontconfig found" || echo "✗ Fontconfig not found"
         pkg-config --exists freetype2 && echo "✓ FreeType found" || echo "✗ FreeType not found"
-        pkg-config --exists alsa && echo "✓ ALSA found" || echo "✗ ALSA not found"
-        pkg-config --exists libavutil && echo "✓ libavutil found" || (echo "✗ libavutil not found"; exit 1)
+
+    - name: Install Linux audio dev packages
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install -y libasound2-dev
 
     - name: Build (Debug)
       env:

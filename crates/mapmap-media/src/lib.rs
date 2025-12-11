@@ -21,7 +21,7 @@ pub use decoder::{
     DecodedFrame, FFmpegDecoder, HwAccelType, PixelFormat, TestPatternDecoder, VideoDecoder,
 };
 pub use image_decoder::{GifDecoder, ImageSequenceDecoder, StillImageDecoder};
-pub use player::{PlaybackDirection, PlaybackMode, PlaybackState, VideoPlayer};
+pub use player::{LoopMode, PlaybackCommand, PlaybackState, PlayerError, VideoPlayer};
 // pub use pipeline::{FramePipeline, PipelineConfig, PipelineStats, Priority, FrameScheduler};
 
 /// Media errors
