@@ -3,7 +3,7 @@
 //! Quick-access parameter controls with customizable layouts.
 //! Allows users to assign frequently-used parameters to dashboard dials and sliders.
 
-use imgui::{self, Ui};
+use egui::{Color32, Pos2, Sense, Stroke, Ui, Vec2};
 use mapmap_media::player::{LoopMode, PlaybackCommand, PlaybackState};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
@@ -26,8 +26,6 @@ pub struct Dashboard {
     speed: f32,
     /// Loop mode
     loop_mode: LoopMode,
-    /// Last action triggered by the UI
-    pending_action: Option<DashboardAction>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -73,7 +71,6 @@ impl Dashboard {
             duration: Duration::ZERO,
             speed: 1.0,
             loop_mode: LoopMode::Off,
-            pending_action: None,
         }
     }
 
@@ -90,15 +87,30 @@ impl Dashboard {
         self.duration = duration;
     }
 
-    pub fn ui(&mut self, ui: &Ui) {
-        if let Some(tab_bar) = ui.tab_bar("DashboardTabs") {
-            if let Some(tab) = ui.tab_item("Playback") {
-                self.render_playback_tab(ui);
-                tab.end();
-            }
-            if let Some(tab) = ui.tab_item("Widgets") {
-                self.render_widgets_tab(ui);
-                tab.end();
+    /// Update the playback state
+    pub fn set_playback_state(&mut self, state: PlaybackState) {
+        self.playback_state = state;
+    }
+
+    /// Update the playback time
+    pub fn set_playback_time(&mut self, current_time: Duration, duration: Duration) {
+        self.current_time = current_time;
+        self.duration = duration;
+    }
+
+    /// Render the dashboard UI
+    pub fn ui(&mut self, ui: &mut Ui) -> Option<DashboardAction> {
+        let mut action = None;
+
+        // Toolbar
+        ui.horizontal(|ui| {
+            ui.selectable_value(&mut self.layout, LayoutMode::Grid, "Grid");
+            ui.selectable_value(&mut self.layout, LayoutMode::Freeform, "Freeform");
+
+            if self.layout == LayoutMode::Grid {
+                ui.separator();
+                ui.label("Columns:");
+                ui.add(egui::DragValue::new(&mut self.grid_columns).range(1..=8));
             }
             tab_bar.end();
         }
@@ -170,6 +182,62 @@ impl Dashboard {
 
         ui.separator();
 
+        // Playback controls
+        ui.horizontal(|ui| {
+            if ui.button("▶").clicked() {
+                action = Some(DashboardAction::SendCommand(PlaybackCommand::Play));
+            }
+            if ui.button("⏸").clicked() {
+                action = Some(DashboardAction::SendCommand(PlaybackCommand::Pause));
+            }
+            if ui.button("⏹").clicked() {
+                action = Some(DashboardAction::SendCommand(PlaybackCommand::Stop));
+            }
+
+            ui.label(format!("State: {:?}", self.playback_state));
+        });
+
+        // Timeline scrubber
+        let mut seek_to = self.current_time.as_secs_f32();
+        if ui
+            .add(egui::Slider::new(
+                &mut seek_to,
+                0.0..=self.duration.as_secs_f32(),
+            ))
+            .changed()
+        {
+            action = Some(DashboardAction::SendCommand(PlaybackCommand::Seek(
+                Duration::from_secs_f32(seek_to),
+            )));
+        }
+
+        // Speed and loop controls
+        ui.horizontal(|ui| {
+            ui.label("Speed:");
+            if ui.add(egui::Slider::new(&mut self.speed, 0.1..=4.0)).changed() {
+                action = Some(DashboardAction::SendCommand(PlaybackCommand::SetSpeed(
+                    self.speed,
+                )));
+            }
+
+            ui.separator();
+
+            let mut looping = self.loop_mode == LoopMode::On;
+            if ui.checkbox(&mut looping, "Loop").changed() {
+                self.loop_mode = if looping {
+                    LoopMode::On
+                } else {
+                    LoopMode::Off
+                };
+                action = Some(DashboardAction::SendCommand(PlaybackCommand::SetLoopMode(
+                    self.loop_mode,
+                )));
+            }
+        });
+
+        ui.separator();
+
+        // Render widgets based on layout mode
         match self.layout {
             LayoutMode::Grid => self.render_grid_layout(ui),
             LayoutMode::Freeform => self.render_freeform_layout(ui),

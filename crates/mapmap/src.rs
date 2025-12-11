@@ -14,7 +14,7 @@ use mapmap_render::{
     ColorCalibrationRenderer, Compositor, EdgeBlendRenderer, MeshRenderer, QuadRenderer,
     RenderBackend, TextureDescriptor, WgpuBackend,
 };
-use mapmap_ui::{AppUI, Dashboard, ImGuiContext};
+use mapmap_ui::{AppUI, ImGuiContext};
 use std::collections::HashMap;
 use std::time::Instant;
 use tracing::{error, info};
@@ -40,7 +40,6 @@ struct App {
     color_calibration_renderer: ColorCalibrationRenderer,
     imgui_context: ImGuiContext,
     ui_state: AppUI,
-    dashboard: Dashboard,
     layer_manager: LayerManager,
     paint_manager: PaintManager,
     mapping_manager: MappingManager,
@@ -52,7 +51,6 @@ struct App {
     intermediate_textures: HashMap<OutputId, mapmap_render::TextureHandle>, // Per-output intermediate textures
     audio_analyzer: AudioAnalyzer,
     audio_backend: Box<dyn AudioBackend + Send>,
-    control_manager: mapmap_control::ControlManager,
     last_frame: Instant,
     frame_count: u32,
     fps: f32,
@@ -138,12 +136,9 @@ impl App {
             std::time::Duration::from_secs(5),
             30.0,
         ));
-        let player1 = VideoPlayer::new(decoder1);
-        player1.command_sender().send(PlaybackCommand::Play).unwrap();
-        player1
-            .command_sender()
-            .send(PlaybackCommand::SetLoopMode(LoopMode::On))
-            .unwrap();
+        let mut player1 = VideoPlayer::new(decoder1);
+        let _ = player1.set_loop_mode(LoopMode::On);
+        let _ = player1.play();
         video_players.insert(paint_id_1, player1);
 
         let decoder2 = FFmpegDecoder::TestPattern(TestPatternDecoder::new(
@@ -152,12 +147,9 @@ impl App {
             std::time::Duration::from_secs(5),
             30.0,
         ));
-        let player2 = VideoPlayer::new(decoder2);
-        player2.command_sender().send(PlaybackCommand::Play).unwrap();
-        player2
-            .command_sender()
-            .send(PlaybackCommand::SetLoopMode(LoopMode::On))
-            .unwrap();
+        let mut player2 = VideoPlayer::new(decoder2);
+        let _ = player2.set_loop_mode(LoopMode::On);
+        let _ = player2.play();
         video_players.insert(paint_id_2, player2);
 
         info!(
@@ -168,7 +160,6 @@ impl App {
 
         let audio_config = AudioConfig::default();
         let audio_analyzer = AudioAnalyzer::new(audio_config);
-        let _audio_backend: Box<dyn AudioBackend + Send>;
         // Conditional compilation for audio backend
         let mut audio_backend: Box<dyn AudioBackend + Send> = {
             #[cfg(test)]
@@ -178,24 +169,12 @@ impl App {
             }
             #[cfg(not(test))]
             {
+                use mapmap_core::audio::backend::cpal_backend::CpalBackend;
                 // Use CPAL backend for actual application
-                Box::new(
-                    mapmap_core::audio::backend::cpal_backend::CpalBackend::new(None)?,
-                )
+                Box::new(CpalBackend::new(None)?)
             }
         };
         audio_backend.start()?;
-
-        let mut control_manager = mapmap_control::ControlManager::new();
-        if let Err(e) = control_manager.init_osc_server(8000) {
-            error!("Failed to start OSC server: {}", e);
-        }
-        if let Err(e) = control_manager
-            .osc_mapping
-            .load_from_file("osc_mappings.json")
-        {
-            error!("Could not load OSC mappings: {}", e);
-        }
 
         Ok(Self {
             window_manager,
@@ -207,7 +186,6 @@ impl App {
             color_calibration_renderer,
             imgui_context,
             ui_state: AppUI::default(),
-            dashboard: Dashboard::new(),
             layer_manager,
             paint_manager,
             mapping_manager,
@@ -218,7 +196,6 @@ impl App {
             intermediate_textures: HashMap::new(),
             audio_analyzer,
             audio_backend,
-            control_manager,
             last_frame: Instant::now(),
             frame_count: 0,
             fps: 0.0,
@@ -228,14 +205,6 @@ impl App {
     fn update(&mut self) {
         let now = Instant::now();
         let dt = now - self.last_frame;
-
-        // Update control systems
-        self.control_manager.update();
-
-        // Check for learned OSC address
-        if let Some(address) = self.control_manager.get_last_learned_address() {
-            self.ui_state.osc_learn_address = Some(address);
-        }
 
         // Update audio analysis
         let samples = self.audio_backend.get_samples();
@@ -283,14 +252,6 @@ impl App {
                     }
                 }
             }
-        }
-
-        // Update dashboard with the state of the first video player
-        if let Some(player) = self.video_players.values().next() {
-            self.dashboard
-                .set_playback_state(player.state().clone());
-            self.dashboard
-                .set_playback_time(player.current_time(), player.duration());
         }
 
         self.last_frame = now;
@@ -630,12 +591,10 @@ impl App {
         if is_main_window {
             let main_window = &self.window_manager.get(output_id).unwrap().window;
             let ui_state = &mut self.ui_state;
-            let dashboard = &mut self.dashboard;
             let layer_manager = &mut self.layer_manager;
             let paint_manager = &mut self.paint_manager;
             let mapping_manager = &mut self.mapping_manager;
             let output_manager = &mut self.output_manager;
-            let _control_manager = &mut self.control_manager;
             let fps = self.fps;
             let frame_time = self.last_frame.elapsed().as_secs_f32() * 1000.0;
 
@@ -646,11 +605,8 @@ impl App {
                 encoder,
                 view,
                 |ui| {
-                    let control_manager = &mut self.control_manager;
                     ui_state.render_menu_bar(ui);
-                    mapmap_ui::osc_panel::render_osc_panel(ui, ui_state, control_manager);
                     ui_state.render_controls(ui);
-                    dashboard.ui(ui);
                     ui_state.render_layer_panel(ui, layer_manager);
                     ui_state.render_paint_panel(ui, paint_manager);
                     ui_state.render_mapping_panel(ui, mapping_manager);
@@ -668,19 +624,8 @@ impl App {
     }
 
     fn handle_ui_actions(&mut self) -> bool {
-        use mapmap_ui::{DashboardAction, UIAction};
+        use mapmap_ui::UIAction;
 
-        // Handle actions from the dashboard
-        if let Some(dashboard_action) = self.dashboard.take_action() {
-            if let DashboardAction::SendCommand(command) = dashboard_action {
-                for player in self.video_players.values() {
-                    let _ = player.command_sender().send(command.clone());
-                }
-            }
-            // TODO: Handle other dashboard actions like AddWidget, etc.
-        }
-
-        // Handle actions from the main UI
         let actions = self.ui_state.take_actions();
 
         for action in actions {
@@ -688,27 +633,25 @@ impl App {
                 UIAction::Play => {
                     info!("Play action triggered");
                     for player in self.video_players.values_mut() {
-                        let _ = player.command_sender().send(PlaybackCommand::Play);
+                        let _ = player.play();
                     }
                 }
                 UIAction::Pause => {
                     info!("Pause action triggered");
                     for player in self.video_players.values_mut() {
-                        let _ = player.command_sender().send(PlaybackCommand::Pause);
+                        let _ = player.pause();
                     }
                 }
                 UIAction::Stop => {
                     info!("Stop action triggered");
                     for player in self.video_players.values_mut() {
-                        let _ = player.command_sender().send(PlaybackCommand::Stop);
+                        let _ = player.stop();
                     }
                 }
                 UIAction::SetSpeed(speed) => {
                     info!("Setting playback speed to {}", speed);
                     for player in self.video_players.values_mut() {
-                        let _ = player
-                            .command_sender()
-                            .send(PlaybackCommand::SetSpeed(speed));
+                        let _ = player.set_speed(speed);
                     }
                 }
                 UIAction::ToggleLoop(looping) => {
@@ -718,9 +661,11 @@ impl App {
                         self.video_players.len()
                     );
                     for (paint_id, player) in self.video_players.iter_mut() {
-                        let _ = player.command_sender().send(PlaybackCommand::SetLoopMode(
-                            if looping { LoopMode::On } else { LoopMode::Off },
-                        ));
+                        let _ = player.set_loop_mode(if looping {
+                            LoopMode::On
+                        } else {
+                            LoopMode::Off
+                        });
                         info!(
                             "  - Paint {} now has looping={}",
                             paint_id,
@@ -775,20 +720,14 @@ impl App {
                             30.0,
                         ),
                     );
-                    let player = mapmap_media::VideoPlayer::new(decoder);
-                    let _ = player
-                        .command_sender()
-                        .send(PlaybackCommand::SetLoopMode(
-                            if self.ui_state.looping {
-                                LoopMode::On
-                            } else {
-                                LoopMode::Off
-                            },
-                        ));
-                    let _ = player
-                        .command_sender()
-                        .send(PlaybackCommand::SetSpeed(self.ui_state.playback_speed));
-                    let _ = player.command_sender().send(PlaybackCommand::Play);
+                    let mut player = mapmap_media::VideoPlayer::new(decoder);
+                    let _ = player.set_loop_mode(if self.ui_state.looping {
+                        LoopMode::On
+                    } else {
+                        LoopMode::Off
+                    });
+                    let _ = player.set_speed(self.ui_state.playback_speed);
+                    let _ = player.play();
                     self.video_players.insert(paint_id, player);
                     info!(
                         "Created video player for paint {} with looping={}, speed={}",
@@ -892,9 +831,7 @@ impl App {
                 UIAction::SetPlaybackMode(mode) => {
                     info!("Setting playback mode to {:?}", mode);
                     for player in self.video_players.values_mut() {
-                        let _ = player
-                            .command_sender()
-                            .send(PlaybackCommand::SetPlaybackMode(mode));
+                        let _ = player.set_playback_mode(mode);
                     }
                 }
 
@@ -1039,9 +976,10 @@ impl App {
                 UIAction::SelectAudioDevice(_device_name) => {
                     #[cfg(not(test))]
                     {
+                        use mapmap_core::audio::backend::cpal_backend::CpalBackend;
                         info!("Selecting audio device: {}", _device_name);
                         self.audio_backend.stop();
-                        let mut new_backend = mapmap_core::audio::backend::cpal_backend::CpalBackend::new(Some(_device_name.clone())).unwrap();
+                        let mut new_backend = CpalBackend::new(Some(_device_name.clone())).unwrap();
                         new_backend.start().unwrap();
                         self.audio_backend = Box::new(new_backend);
                     }
@@ -1055,7 +993,7 @@ impl App {
     fn load_video_file(&mut self, path: &str) {
         use glam::Vec2;
         use mapmap_core::{Mapping, Paint, PaintType};
-        use mapmap_media::{player::PlaybackCommand, FFmpegDecoder, VideoDecoder, VideoPlayer};
+        use mapmap_media::{player::LoopMode, FFmpegDecoder, VideoDecoder, VideoPlayer};
 
         info!("Loading media file: {}", path);
 
@@ -1118,24 +1056,20 @@ impl App {
                 );
 
                 // Create video player (works for all decoder types)
-                let player = VideoPlayer::new(decoder);
+                let mut player = VideoPlayer::new(decoder);
 
                 // Still images don't need looping or speed control
                 if !is_still_image {
-                    let _ = player.command_sender().send(PlaybackCommand::SetLoopMode(
-                        if self.ui_state.looping {
-                            LoopMode::On
-                        } else {
-                            LoopMode::Off
-                        },
-                    ));
-                    let _ = player
-                        .command_sender()
-                        .send(PlaybackCommand::SetSpeed(self.ui_state.playback_speed));
-                    let _ = player.command_sender().send(PlaybackCommand::Play);
+                    let _ = player.set_loop_mode(if self.ui_state.looping {
+                        LoopMode::On
+                    } else {
+                        LoopMode::Off
+                    });
+                    let _ = player.set_speed(self.ui_state.playback_speed);
+                    let _ = player.play();
                 } else {
                     // For still images, just load the single frame
-                    let _ = player.command_sender().send(PlaybackCommand::Play);
+                    let _ = player.play();
                 }
 
                 self.video_players.insert(paint_id, player);
