@@ -4,7 +4,9 @@
 //! Allows users to assign frequently-used parameters to dashboard dials and sliders.
 
 use egui::{Color32, Pos2, Sense, Stroke, Ui, Vec2};
+use mapmap_media::player::{LoopMode, PlaybackCommand, PlaybackState};
 use serde::{Deserialize, Serialize};
+use std::time::Duration;
 
 /// Dashboard control panel
 pub struct Dashboard {
@@ -14,6 +16,16 @@ pub struct Dashboard {
     layout: LayoutMode,
     /// Grid columns (for grid layout)
     grid_columns: usize,
+    /// Playback state
+    playback_state: PlaybackState,
+    /// Current playback time
+    current_time: Duration,
+    /// Total duration of the media
+    duration: Duration,
+    /// Playback speed
+    speed: f32,
+    /// Loop mode
+    loop_mode: LoopMode,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -68,6 +80,11 @@ impl Dashboard {
             widgets: Vec::new(),
             layout: LayoutMode::Grid,
             grid_columns: 4,
+            playback_state: PlaybackState::Idle,
+            current_time: Duration::ZERO,
+            duration: Duration::ZERO,
+            speed: 1.0,
+            loop_mode: LoopMode::Off,
         }
     }
 
@@ -84,6 +101,17 @@ impl Dashboard {
     /// Get widget by ID
     pub fn get_widget_mut(&mut self, widget_id: u64) -> Option<&mut DashboardWidget> {
         self.widgets.iter_mut().find(|w| w.id == widget_id)
+    }
+
+    /// Update the playback state
+    pub fn set_playback_state(&mut self, state: PlaybackState) {
+        self.playback_state = state;
+    }
+
+    /// Update the playback time
+    pub fn set_playback_time(&mut self, current_time: Duration, duration: Duration) {
+        self.current_time = current_time;
+        self.duration = duration;
     }
 
     /// Render the dashboard UI
@@ -105,6 +133,61 @@ impl Dashboard {
 
             if ui.button("➕ Add Widget").clicked() {
                 action = Some(DashboardAction::AddWidget);
+            }
+        });
+
+        ui.separator();
+
+        // Playback controls
+        ui.horizontal(|ui| {
+            if ui.button("▶").clicked() {
+                action = Some(DashboardAction::SendCommand(PlaybackCommand::Play));
+            }
+            if ui.button("⏸").clicked() {
+                action = Some(DashboardAction::SendCommand(PlaybackCommand::Pause));
+            }
+            if ui.button("⏹").clicked() {
+                action = Some(DashboardAction::SendCommand(PlaybackCommand::Stop));
+            }
+
+            ui.label(format!("State: {:?}", self.playback_state));
+        });
+
+        // Timeline scrubber
+        let mut seek_to = self.current_time.as_secs_f32();
+        if ui
+            .add(egui::Slider::new(
+                &mut seek_to,
+                0.0..=self.duration.as_secs_f32(),
+            ))
+            .changed()
+        {
+            action = Some(DashboardAction::SendCommand(PlaybackCommand::Seek(
+                Duration::from_secs_f32(seek_to),
+            )));
+        }
+
+        // Speed and loop controls
+        ui.horizontal(|ui| {
+            ui.label("Speed:");
+            if ui.add(egui::Slider::new(&mut self.speed, 0.1..=4.0)).changed() {
+                action = Some(DashboardAction::SendCommand(PlaybackCommand::SetSpeed(
+                    self.speed,
+                )));
+            }
+
+            ui.separator();
+
+            let mut looping = self.loop_mode == LoopMode::On;
+            if ui.checkbox(&mut looping, "Loop").changed() {
+                self.loop_mode = if looping {
+                    LoopMode::On
+                } else {
+                    LoopMode::Off
+                };
+                action = Some(DashboardAction::SendCommand(PlaybackCommand::SetLoopMode(
+                    self.loop_mode,
+                )));
             }
         });
 
@@ -356,4 +439,5 @@ pub enum DashboardAction {
     BoolChanged(u64, bool),
     XYChanged(u64, f32, f32),
     ButtonPressed(u64),
+    SendCommand(PlaybackCommand),
 }
