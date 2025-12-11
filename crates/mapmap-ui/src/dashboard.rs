@@ -144,13 +144,13 @@ impl Dashboard {
 
         // Playback controls
         ui.horizontal(|ui| {
-            if ui.button("▶").on_hover_text("Play").clicked() {
+            if ui.button("▶").clicked() {
                 action = Some(DashboardAction::SendCommand(PlaybackCommand::Play));
             }
-            if ui.button("⏸").on_hover_text("Pause").clicked() {
+            if ui.button("⏸").clicked() {
                 action = Some(DashboardAction::SendCommand(PlaybackCommand::Pause));
             }
-            if ui.button("⏹").on_hover_text("Stop").clicked() {
+            if ui.button("⏹").clicked() {
                 action = Some(DashboardAction::SendCommand(PlaybackCommand::Stop));
             }
 
@@ -174,10 +174,7 @@ impl Dashboard {
         // Speed and loop controls
         ui.horizontal(|ui| {
             ui.label("Speed:");
-            if ui
-                .add(egui::Slider::new(&mut self.speed, 0.1..=4.0))
-                .changed()
-            {
+            if ui.add(egui::Slider::new(&mut self.speed, 0.1..=4.0)).changed() {
                 action = Some(DashboardAction::SendCommand(PlaybackCommand::SetSpeed(
                     self.speed,
                 )));
@@ -187,7 +184,11 @@ impl Dashboard {
 
             let mut looping = self.loop_mode == LoopMode::On;
             if ui.checkbox(&mut looping, "Loop").changed() {
-                self.loop_mode = if looping { LoopMode::On } else { LoopMode::Off };
+                self.loop_mode = if looping {
+                    LoopMode::On
+                } else {
+                    LoopMode::Off
+                };
                 action = Some(DashboardAction::SendCommand(PlaybackCommand::SetLoopMode(
                     self.loop_mode,
                 )));

@@ -60,14 +60,18 @@ jobs:
           libswscale-dev \
           libavdevice-dev \
           libavfilter-dev \
-          libasound2-dev \
           ffmpeg
+
+    - name: Install Linux audio dev packages
+      run: |
+        sudo apt-get update -y
+        sudo apt-get install -y libasound2-dev
 
     - name: Check formatting
       run: cargo fmt --all -- --check
 
     - name: Run Clippy
-      run: cargo clippy --all-targets --no-default-features -- -D warnings
+      run: cargo clippy --workspace --all-features -- -D warnings
 
   # Build and test on Ubuntu with audio support
   build-and-test:
