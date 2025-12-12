@@ -16,11 +16,11 @@ use winit::{
 
 /// Context for a single window, containing the `winit` window, `wgpu` surface,
 /// and other related configuration.
-pub struct WindowContext {
+pub struct WindowContext<'a> {
     /// The `winit` window.
     pub window: Window,
     /// The `wgpu` surface associated with the window.
-    pub surface: wgpu::Surface,
+    pub surface: wgpu::Surface<'a>,
     /// The configuration for the `wgpu` surface.
     pub surface_config: wgpu::SurfaceConfiguration,
     /// The `OutputId` associated with this window. For the main window, this is `0`.
@@ -29,13 +29,13 @@ pub struct WindowContext {
 }
 
 /// Manages all application windows, including the main control window and all output windows.
-pub struct WindowManager {
-    windows: HashMap<OutputId, WindowContext>,
+pub struct WindowManager<'a> {
+    windows: HashMap<OutputId, WindowContext<'a>>,
     window_id_map: HashMap<WindowId, OutputId>,
     main_window_id: Option<OutputId>,
 }
 
-impl WindowManager {
+impl<'a> WindowManager<'a> {
     /// Creates a new, empty `WindowManager`.
     pub fn new() -> Self {
         Self {

@@ -66,8 +66,9 @@ impl WgpuBackend {
             .request_device(
                 &wgpu::DeviceDescriptor {
                     label: Some("MapMap Device"),
-                    features: wgpu::Features::TIMESTAMP_QUERY | wgpu::Features::PUSH_CONSTANTS,
-                    limits: wgpu::Limits {
+                            required_features: wgpu::Features::TIMESTAMP_QUERY
+                                | wgpu::Features::PUSH_CONSTANTS,
+                            required_limits: wgpu::Limits {
                         max_push_constant_size: 128,
                         ..Default::default()
                     },

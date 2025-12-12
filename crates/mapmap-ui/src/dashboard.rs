@@ -131,7 +131,11 @@ impl Dashboard {
 
             ui.separator();
 
-            if ui.button("➕ Add Widget").clicked() {
+            if ui
+                .button("➕ Add Widget")
+                .on_hover_text("Add a new widget to the dashboard")
+                .clicked()
+            {
                 action = Some(DashboardAction::AddWidget);
             }
         });
@@ -421,7 +425,11 @@ impl Dashboard {
             }
 
             // Remove button
-            if ui.small_button("✖").clicked() {
+            if ui
+                .small_button("✖")
+                .on_hover_text("Remove widget")
+                .clicked()
+            {
                 action = Some(DashboardAction::RemoveWidget(widget.id));
             }
         });
