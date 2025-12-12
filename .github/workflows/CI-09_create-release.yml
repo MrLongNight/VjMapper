@@ -1,4 +1,4 @@
-name: CI-09: Create Release (Windows ZIP)
+name: CI-09:Create-Releases(Windows&Linux)
 
 on:
   workflow_dispatch:
