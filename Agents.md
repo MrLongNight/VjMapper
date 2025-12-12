@@ -1,80 +1,138 @@
-# AGENTS.md - Anweisungen für KI-Agenten
+# AGENTS.md – Anweisungen für KI-Agenten
 
-Hallo Jules! Dieses Dokument enthält technische Anweisungen für die Arbeit am VjMapper-Projekt.
+Hallo Jules!  
+Dieses Dokument enthält **technische und organisatorische Vorgaben** für alle KI-basierten Agenten und menschlichen Contributor:innen im VjMapper-Projekt.
+
+---
 
 ## Projektübersicht
 
-VjMapper ist ein Rewrite einer C++/Qt-Anwendung in Rust. Ziel ist eine hochperformante, speichersichere Projection-Mapping-Software. Der gesamte Quellcode befindet sich im `crates/`-Verzeichnis, organisiert als Cargo Workspace.
+- **VjMapper** ist ein vollständiger Rewrite einer bestehenden C++/Qt-Anwendung in Rust.  
+- Ziel ist eine hochperformante, speichersichere Projection-Mapping-Software.
+- Der gesamte Rust-Quellcode befindet sich im `crates/`-Verzeichnis, organisiert als Cargo-Workspace.
 
-## Wichtigste Anweisung
+---
 
-**Kommuniziere mit dem Benutzer ausschließlich auf Deutsch.** Alle Pläne, Fragen und Antworten müssen auf Deutsch sein.
+## Wichtigste Hauptanweisungen
+
+- **Kommuniziere mit dem Benutzer ausschließlich auf Deutsch.**  
+  Jede Planung, Frage und Antwort erfolgt auf Deutsch!
+
+---
 
 ## Setup & Build-Befehle
 
--   **Abhängigkeiten installieren:** (Siehe `README.md` für plattformspezifische Bibliotheken)
--   **Projekt bauen (Entwicklung):**
-    ```bash
-    cargo build
-    ```
--   **Projekt bauen (Optimiert für Release):**
-    ```bash
-    cargo build --release
-    ```
--   **Anwendung starten:**
-    ```bash
-    cargo run --release
-    ```
+- **Abhängigkeiten installieren:** (Siehe `README.md` für plattformspezifische Bibliotheken)
+- **Projekt bauen (Entwicklung):**
+  ```bash
+  cargo build
+  ```
+- **Projekt bauen (optimiert für Release):**
+  ```bash
+  cargo build --release
+  ```
+- **Anwendung starten:**
+  ```bash
+  cargo run --release
+  ```
+
+---
 
 ## Code-Stil & Konventionen
 
--   **Formatierung:** Der Code muss mit `cargo fmt` formatiert werden.
--   **Linting:** Führen Sie `cargo clippy` aus, um häufige Fehler zu vermeiden.
--   **API-Design:** Halten Sie sich an die [Rust API Guidelines](https://rust-lang.github.io/api-guidelines/).
--   **Dokumentation:** Alle öffentlichen Funktionen und Module müssen mit `///` dokumentiert werden.
+- **Formatierung:** Code **muss** vor jedem Commit per `cargo fmt` formatiert werden!
+- **Linting:** Vor jedem Commit ist `cargo clippy` ohne Fehler/Warnungen auszuführen.
+- **API-Design:** Richtet euch nach den [Rust API Guidelines](https://rust-lang.github.io/api-guidelines/).
+- **Dokumentation:** Öffentliche Funktionen und Module immer mit `///` kommentieren.
+
+---
 
 ## Test-Anweisungen
 
--   **Alle Tests ausführen:**
-    ```bash
-    cargo test
-    ```
--   **Anforderung:** Fügen Sie für jede neue Funktion oder Fehlerbehebung entsprechende Unit-Tests hinzu. Bestehende Tests dürfen nicht fehlschlagen.
+- **Alle Tests lokal oder im CI ausführen:**
+  ```bash
+  cargo test
+  ```
+- **Anforderung:** Jede neue Funktion und Bugfix bekommt Unit-Tests. Alle bestehenden Tests müssen zu jeder Zeit grün sein!
 
-## Audio-Features und Native Abhängigkeiten
+---
 
-Das Projekt unterstützt optionale Audio-Features für Audio-Reaktivität:
+## Audio-Features und native Abhängigkeiten
 
--   **Ohne Audio (Standard):** Das Projekt baut standardmäßig ohne native Audio-Abhängigkeiten:
-    ```bash
-    cargo build
-    cargo test
-    ```
+- **Ohne Audio (Standard):**  
+  ```bash
+  cargo build
+  cargo test
+  ```
+- **Mit Audio-Unterstützung:**  
+  Nur unter Linux, mit ALSA:
+  ```bash
+  sudo apt-get update
+  sudo apt-get install -y libasound2-dev pkg-config build-essential
+  cargo build --features audio
+  cargo test --features audio
+  ```
+- macOS und Windows: Audio ist derzeit nicht unterstützt.
 
--   **Mit Audio-Unterstützung:** Für Audio-Funktionalität müssen native Bibliotheken installiert werden:
-    
-    **Linux:**
-    ```bash
-    sudo apt-get update
-    sudo apt-get install -y libasound2-dev pkg-config build-essential
-    cargo build --features audio
-    cargo test --features audio
-    ```
-    
-    **macOS/Windows:** Audio-Features werden derzeit nur unter Linux mit ALSA unterstützt.
+- **CI/CD:**  
+    - Linux: mit und ohne Audio (`--all-features` & `--no-default-features`)
+    - macOS/Windows: ohne Audio
 
--   **CI/CD:** Die CI-Pipeline testet beide Varianten:
-    - Linux mit Audio (`--all-features`)
-    - Linux ohne Audio (`--no-default-features`)
-    - macOS und Windows (ohne Audio)
+---
 
 ## Pull Request (PR) Prozess
 
-1.  **Vorbereitung:** Stellen Sie vor dem Einreichen sicher, dass die folgenden Befehle ohne Fehler durchlaufen:
-    ```bash
-    cargo fmt
-    cargo clippy
-    cargo test
-    ```
-2.  **Titel-Format:** Verwenden Sie klare und prägnante Titel, die die Änderungen zusammenfassen.
-3.  **Kommunikation:** Erwähnen Sie `@MrLongNight` im PR, falls strategische Fragen offen sind. Feedback von Reviewern wird über PR-Kommentare gegeben.
+### Schritt-für-Schritt Ablauf
+
+1. **Vorbereitung:**
+   - Sicherstellen: Folgende Befehle liefern KEINE Fehler oder Warnungen:
+     ```bash
+     cargo fmt
+     cargo clippy
+     cargo test
+     ```
+2. **Titel-Format:**  
+   Suffix: PR-$$_ ($$ Steht für die laufende PR-Nummer) Klarer, prägnanter Titel, der die Änderung(en) beschreibt.
+
+3. **Kommunikation:**  
+   - Für strategische Fragen: `@MrLongNight` im PR erwähnen.
+   - Technisches Feedback/Review durch @GitHub Copilot via PR-Kommentar.
+   - Fragen, Diskussion und Feedback erfolgen ausschließlich über PR-Kommentare (nicht privat!).
+
+4. **Changelog-Pflicht:**  
+   - Jede Änderung (egal ob Bugfix, Feature, Automatisierung) **muss** im `CHANGELOG.md` dokumentiert werden!
+
+5. **Issue-Verknüpfung:**  
+   - Jeder PR referenziert ein existierendes Issue, ein Roadmap-Item oder eine relevante Task-Nummer.
+
+---
+
+## Nutzung von Pull Request Templates
+
+### Hintergrund
+
+- **Das PR-Template befindet sich in:**  
+  `.github/PULL_REQUEST_TEMPLATE.md`
+- **Das PR-Template wird im GitHub Web-Interface Menschen automatisch angezeigt.**
+- **WICHTIG:** KI-Agenten (z.B. Jules), die PRs automatisiert via API anlegen, befüllen das Template **NICHT automatisch**, sondern nur nach expliziter Anweisung.
+
+### Vorgaben für Jules & weitere Agents
+
+**Jeder PR, der per KI über API erstellt wird, MUSS folgende Schritte befolgen:**
+
+1. **Lese den vollständigen Inhalt von `.github/PULL_REQUEST_TEMPLATE.md`.**
+2. **Verwende diesen als Text-Basis (Body/Inhalt) der PR-Beschreibung.**
+3. **Ersetze alle Platzhalter (z.B. Issue-Nummern, Checkliste) entsprechend der konkreten Änderung, des Codes und der zugehörigen Aufgaben.**
+4. Falls einzelne Felder nicht relevant sind, diese dennoch im Body aufführen und entsprechend kennzeichnen (z.B. „nicht zutreffend“).
+5. **Changelog und Issue-Referenz im PR immer ergänzen!**
+6. Dokumentiere im PR-Body, dass die Beschreibung auf Basis des Templates erstellt wurde.
+
+**Beispiel-Anweisung (für Jules bei jeder PR-Erstellung):**
+> „Nutze den Inhalt von `.github/PULL_REQUEST_TEMPLATE.md` als Struktur für die PR-Beschreibung. Ersetze jeden Abschnitt mit den Informationen der Änderung, geforderten Checkliste und referenzierten Issues. Es ist Pflicht, alle relevanten Felder auszufüllen und die Vorlage vollständig zu übernehmen!“
+
+**Hintergrund:**  
+Dies sichert Nachvollziehbarkeit, vollständige Dokumentation und erfüllt alle Audit-, Transparenz- und Review-Anforderungen des Projekts.
+
+---
+
+*Letztes Update: 2025-12-12 – Vorgaben für KI/automatisierte PR-Erstellung ergänzt und Nutzung von PR-Templates spezifiziert.*
