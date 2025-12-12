@@ -164,7 +164,6 @@ impl ColorCalibrationRenderer {
                 module: &shader_module,
                 entry_point: "vs_main",
                 buffers: &[Vertex::desc()],
-                compilation_options: wgpu::PipelineCompilationOptions::default(),
             },
             fragment: Some(wgpu::FragmentState {
                 module: &shader_module,
@@ -174,7 +173,6 @@ impl ColorCalibrationRenderer {
                     blend: Some(wgpu::BlendState::REPLACE),
                     write_mask: wgpu::ColorWrites::ALL,
                 })],
-                compilation_options: wgpu::PipelineCompilationOptions::default(),
             }),
             primitive: wgpu::PrimitiveState {
                 topology: wgpu::PrimitiveTopology::TriangleList,
