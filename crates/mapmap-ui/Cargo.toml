@@ -27,7 +27,7 @@ egui_dock = { workspace = true }
 egui_extras = { workspace = true }
 
 wgpu = { workspace = true }
-winit = { workspace = true }
+winit = { version = "0.27.5", features = ["x11", "wayland"] }
 glam = { workspace = true }
 serde = { workspace = true }
 serde_json = { workspace = true }
