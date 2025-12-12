@@ -59,6 +59,8 @@ criterion = { workspace = true }
 bindgen = { workspace = true }
 cbindgen = { workspace = true }
 cc = { workspace = true }
+
+[build-dependencies]
 winres = { workspace = true }
 
 [[bin]]

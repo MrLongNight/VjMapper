@@ -184,13 +184,10 @@ impl Dashboard {
 
             let mut looping = self.loop_mode == LoopMode::On;
             if ui.checkbox(&mut looping, "Loop").changed() {
-                self.loop_mode = if looping {
-                    LoopMode::On
-                } else {
-                    LoopMode::Off
-                };
+                let new_mode = if looping { LoopMode::On } else { LoopMode::Off };
+                self.loop_mode = new_mode;
                 action = Some(DashboardAction::SendCommand(PlaybackCommand::SetLoopMode(
-                    self.loop_mode,
+                    new_mode,
                 )));
             }
         });
