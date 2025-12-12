@@ -305,6 +305,7 @@ impl OscillatorRenderer {
                 module: &sim_shader,
                 entry_point: "vs_main",
                 buffers: &[Vertex::desc()],
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
             },
             fragment: Some(wgpu::FragmentState {
                 module: &sim_shader,
@@ -314,6 +315,7 @@ impl OscillatorRenderer {
                     blend: None,
                     write_mask: wgpu::ColorWrites::ALL,
                 })],
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
             }),
             primitive: wgpu::PrimitiveState {
                 topology: wgpu::PrimitiveTopology::TriangleList,
@@ -347,6 +349,7 @@ impl OscillatorRenderer {
                 module: &dist_shader,
                 entry_point: "vs_main",
                 buffers: &[Vertex::desc()],
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
             },
             fragment: Some(wgpu::FragmentState {
                 module: &dist_shader,
@@ -356,6 +359,7 @@ impl OscillatorRenderer {
                     blend: Some(wgpu::BlendState::ALPHA_BLENDING),
                     write_mask: wgpu::ColorWrites::ALL,
                 })],
+                compilation_options: wgpu::PipelineCompilationOptions::default(),
             }),
             primitive: wgpu::PrimitiveState {
                 topology: wgpu::PrimitiveTopology::TriangleList,
