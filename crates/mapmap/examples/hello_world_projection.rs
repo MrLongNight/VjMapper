@@ -9,9 +9,11 @@
 use glam::Vec2;
 use mapmap_core::{Mapping, Mesh, Paint};
 use mapmap_render::{QuadRenderer, RenderBackend, TextureDescriptor, WgpuBackend};
+use std::sync::Arc;
 use winit::{
-    event::{ElementState, Event, KeyboardInput, VirtualKeyCode, WindowEvent},
+    event::{ElementState, Event, KeyEvent, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
+    keyboard::{Key, NamedKey},
     window::WindowBuilder,
 };
 
@@ -20,12 +22,14 @@ fn main() {
     println!("===============================================\n");
 
     // Step 1: Create the window
-    let event_loop = EventLoop::new();
-    let window = WindowBuilder::new()
-        .with_title("MapMap - Hello World Projection")
-        .with_inner_size(winit::dpi::PhysicalSize::new(1280, 720))
-        .build(&event_loop)
-        .unwrap();
+    let event_loop = EventLoop::new().unwrap();
+    let window = Arc::new(
+        WindowBuilder::new()
+            .with_title("MapMap - Hello World Projection")
+            .with_inner_size(winit::dpi::PhysicalSize::new(1280, 720))
+            .build(&event_loop)
+            .unwrap(),
+    );
 
     println!("✓ Window created (1280x720)");
 
@@ -35,12 +39,7 @@ fn main() {
     println!("  Adapter: {:?}", backend.adapter_info());
 
     // Step 3: Create surface for rendering
-    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
-        backends: wgpu::Backends::all(),
-        ..Default::default()
-    });
-
-    let surface = unsafe { instance.create_surface(&window) }.unwrap();
+    let surface = backend.create_surface(window.clone()).unwrap();
 
     let surface_config = wgpu::SurfaceConfiguration {
         usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
@@ -50,6 +49,7 @@ fn main() {
         present_mode: wgpu::PresentMode::Fifo,
         alpha_mode: wgpu::CompositeAlphaMode::Opaque,
         view_formats: vec![],
+        desired_maximum_frame_latency: 2,
     };
 
     surface.configure(backend.device(), &surface_config);
@@ -107,88 +107,97 @@ fn main() {
     println!("  Any key - See the magic!\n");
 
     // Step 9: Render loop
-    event_loop.run(move |event, _, control_flow| {
-        *control_flow = ControlFlow::Poll;
+    event_loop.set_control_flow(ControlFlow::Poll);
 
-        match event {
-            Event::WindowEvent {
-                event: WindowEvent::CloseRequested,
-                ..
-            } => {
-                println!("Goodbye! 👋");
-                *control_flow = ControlFlow::Exit;
-            }
-            Event::WindowEvent {
-                event:
-                    WindowEvent::KeyboardInput {
-                        input:
-                            KeyboardInput {
-                                virtual_keycode: Some(VirtualKeyCode::Escape),
-                                state: ElementState::Pressed,
-                                ..
-                            },
-                        ..
-                    },
-                ..
-            } => {
-                println!("Goodbye! 👋");
-                *control_flow = ControlFlow::Exit;
-            }
-            Event::RedrawRequested(_) => {
-                // Get the current frame
-                let frame = match surface.get_current_texture() {
-                    Ok(frame) => frame,
-                    Err(_) => return,
-                };
-
-                let view = frame
-                    .texture
-                    .create_view(&wgpu::TextureViewDescriptor::default());
-
-                // Create command encoder
-                let mut encoder =
-                    backend
-                        .device()
-                        .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                            label: Some("Render Encoder"),
-                        });
-
-                let texture_view = texture.create_view();
-                let bind_group = quad_renderer.create_bind_group(backend.device(), &texture_view);
-                {
-                    // Begin render pass
-                    let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                        label: Some("Main Render Pass"),
-                        color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                            view: &view,
-                            resolve_target: None,
-                            ops: wgpu::Operations {
-                                load: wgpu::LoadOp::Clear(wgpu::Color {
-                                    r: 0.1,
-                                    g: 0.1,
-                                    b: 0.1,
-                                    a: 1.0,
-                                }),
-                                store: true,
-                            },
-                        })],
-                        depth_stencil_attachment: None,
-                    });
-
-                    // Render the textured quad (our projection mapping!)
-                    quad_renderer.draw(&mut render_pass, &bind_group);
+    event_loop
+        .run(move |event, elwt| {
+            match event {
+                Event::WindowEvent {
+                    event: WindowEvent::CloseRequested,
+                    ..
+                } => {
+                    println!("Goodbye! 👋");
+                    elwt.exit();
                 }
+                Event::WindowEvent {
+                    event:
+                        WindowEvent::KeyboardInput {
+                            event:
+                                KeyEvent {
+                                    logical_key: Key::Named(NamedKey::Escape),
+                                    state: ElementState::Pressed,
+                                    ..
+                                },
+                            ..
+                        },
+                    ..
+                } => {
+                    println!("Goodbye! 👋");
+                    elwt.exit();
+                }
+                Event::WindowEvent {
+                    event: WindowEvent::RedrawRequested,
+                    ..
+                } => {
+                    // Get the current frame
+                    let frame = match surface.get_current_texture() {
+                        Ok(frame) => frame,
+                        Err(_) => return,
+                    };
 
-                // Submit commands and present
-                backend.queue().submit(Some(encoder.finish()));
-                frame.present();
+                    let view = frame
+                        .texture
+                        .create_view(&wgpu::TextureViewDescriptor::default());
+
+                    // Create command encoder
+                    let mut encoder =
+                        backend
+                            .device()
+                            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                                label: Some("Render Encoder"),
+                            });
+
+                    let texture_view = texture.create_view();
+                    let bind_group =
+                        quad_renderer.create_bind_group(backend.device(), &texture_view);
+                    {
+                        // Begin render pass
+                        let mut render_pass =
+                            encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                                label: Some("Main Render Pass"),
+                                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                                    view: &view,
+                                    resolve_target: None,
+                                    ops: wgpu::Operations {
+                                        load: wgpu::LoadOp::Clear(wgpu::Color {
+                                            r: 0.1,
+                                            g: 0.1,
+                                            b: 0.1,
+                                            a: 1.0,
+                                        }),
+                                        store: wgpu::StoreOp::Store,
+                                    },
+                                })],
+                                depth_stencil_attachment: None,
+                                occlusion_query_set: None,
+                                timestamp_writes: None,
+                            });
+
+                        // Render the textured quad (our projection mapping!)
+                        quad_renderer.draw(&mut render_pass, &bind_group);
+                    }
+
+                    // Submit commands and present
+                    backend.queue().submit(Some(encoder.finish()));
+                    frame.present();
+                }
+                Event::AboutToWait => {
+                    window.request_redraw();
+                }
+                _ => {}
             }
-            Event::MainEventsCleared => {
-                window.request_redraw();
-            }
-            _ => {}
-        }
-    });
+        })
+        .unwrap();
 }
 
 /// Creates a "Hello World" texture with a gradient pattern
