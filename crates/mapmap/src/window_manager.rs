@@ -8,6 +8,7 @@ use anyhow::Result;
 use mapmap_core::{OutputId, OutputManager};
 use mapmap_render::WgpuBackend;
 use std::collections::HashMap;
+use std::sync::Arc;
 use tracing::info;
 use winit::{
     event_loop::EventLoopWindowTarget,
@@ -16,11 +17,11 @@ use winit::{
 
 /// Context for a single window, containing the `winit` window, `wgpu` surface,
 /// and other related configuration.
-pub struct WindowContext<'a> {
+pub struct WindowContext {
     /// The `winit` window.
-    pub window: Window,
+    pub window: Arc<Window>,
     /// The `wgpu` surface associated with the window.
-    pub surface: wgpu::Surface<'a>,
+    pub surface: wgpu::Surface<'static>,
     /// The configuration for the `wgpu` surface.
     pub surface_config: wgpu::SurfaceConfiguration,
     /// The `OutputId` associated with this window. For the main window, this is `0`.
@@ -29,13 +30,13 @@ pub struct WindowContext<'a> {
 }
 
 /// Manages all application windows, including the main control window and all output windows.
-pub struct WindowManager<'a> {
-    windows: HashMap<OutputId, WindowContext<'a>>,
+pub struct WindowManager {
+    windows: HashMap<OutputId, WindowContext>,
     window_id_map: HashMap<WindowId, OutputId>,
     main_window_id: Option<OutputId>,
 }
 
-impl<'a> WindowManager<'a> {
+impl WindowManager {
     /// Creates a new, empty `WindowManager`.
     pub fn new() -> Self {
         Self {
@@ -54,15 +55,17 @@ impl<'a> WindowManager<'a> {
         event_loop: &EventLoopWindowTarget<T>,
         backend: &WgpuBackend,
     ) -> Result<OutputId> {
-        let window = WindowBuilder::new()
-            .with_title("MapMap - Main Control")
-            .with_inner_size(winit::dpi::PhysicalSize::new(1920, 1080))
-            .build(event_loop)?;
+        let window = Arc::new(
+            WindowBuilder::new()
+                .with_title("MapMap - Main Control")
+                .with_inner_size(winit::dpi::PhysicalSize::new(1920, 1080))
+                .build(event_loop)?,
+        );
 
         let window_id = window.id();
         let output_id: OutputId = 0; // Reserved ID for the main window
 
-        let surface = unsafe { backend.create_surface(&window) }?;
+        let surface = backend.create_surface(window.clone())?;
         let surface_config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             format: wgpu::TextureFormat::Bgra8Unorm,
@@ -110,23 +113,25 @@ impl<'a> WindowManager<'a> {
             output_config.name, output_id
         );
 
-        let window = WindowBuilder::new()
-            .with_title(format!("MapMap Output - {}", output_config.name))
-            .with_inner_size(winit::dpi::PhysicalSize::new(
-                output_config.resolution.0,
-                output_config.resolution.1,
-            ))
-            .with_fullscreen(if output_config.fullscreen {
-                Some(Fullscreen::Borderless(None))
-            } else {
-                None
-            })
-            .build(event_loop)?;
+        let window = Arc::new(
+            WindowBuilder::new()
+                .with_title(format!("MapMap Output - {}", output_config.name))
+                .with_inner_size(winit::dpi::PhysicalSize::new(
+                    output_config.resolution.0,
+                    output_config.resolution.1,
+                ))
+                .with_fullscreen(if output_config.fullscreen {
+                    Some(Fullscreen::Borderless(None))
+                } else {
+                    None
+                })
+                .build(event_loop)?,
+        );
 
         let window_id_winit = window.id();
 
         // Create surface for this output window
-        let surface = unsafe { backend.create_surface(&window) }?;
+        let surface = backend.create_surface(window.clone())?;
 
         let surface_config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,

@@ -97,10 +97,10 @@ impl WgpuBackend {
     ///
     /// # Safety
     /// The window must outlive the surface
-    pub unsafe fn create_surface<'a>(
+    pub fn create_surface(
         &self,
-        window: &'a winit::window::Window,
-    ) -> Result<wgpu::Surface<'a>> {
+        window: Arc<winit::window::Window>,
+    ) -> Result<wgpu::Surface<'static>> {
         self.instance
             .create_surface(window)
             .map_err(move |e| RenderError::DeviceError(format!("Failed to create surface: {}", e)))
