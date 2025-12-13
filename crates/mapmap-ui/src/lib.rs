@@ -182,10 +182,12 @@ impl ImGuiContext {
                 resolve_target: None,
                 ops: wgpu::Operations {
                     load: wgpu::LoadOp::Load,
-                    store: true,
+                    store: wgpu::StoreOp::Store,
                 },
             })],
             depth_stencil_attachment: None,
+            occlusion_query_set: None,
+            timestamp_writes: None,
         });
 
         // Render
@@ -1480,6 +1482,7 @@ impl AppUI {
     }
 }
 
+#[inline]
 fn draw_progress_bar(ui: &Ui, fraction: f32, overlay_text: &str) {
     let pos = ui.cursor_screen_pos();
     let width = ui.content_region_avail()[0];

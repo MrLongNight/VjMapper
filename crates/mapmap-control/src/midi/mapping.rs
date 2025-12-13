@@ -73,10 +73,7 @@ impl MidiMapping {
         &self,
         message: &MidiMessage,
     ) -> Option<(ControlTarget, ControlValue)> {
-        let (_, mapping) = self
-            .mappings
-            .iter()
-            .find(|(m, _)| m.matches(message))?;
+        let (_, mapping) = self.mappings.iter().find(|(m, _)| m.matches(message))?;
 
         // Get the normalized value (0.0-1.0) from the MIDI message
         let normalized = match message {

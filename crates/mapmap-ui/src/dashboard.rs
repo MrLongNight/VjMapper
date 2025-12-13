@@ -126,7 +126,7 @@ impl Dashboard {
             if self.layout == LayoutMode::Grid {
                 ui.separator();
                 ui.label("Columns:");
-                ui.add(egui::DragValue::new(&mut self.grid_columns).range(1..=8));
+                ui.add(egui::DragValue::new(&mut self.grid_columns).clamp_range(1..=8));
             }
 
             ui.separator();
@@ -174,7 +174,10 @@ impl Dashboard {
         // Speed and loop controls
         ui.horizontal(|ui| {
             ui.label("Speed:");
-            if ui.add(egui::Slider::new(&mut self.speed, 0.1..=4.0)).changed() {
+            if ui
+                .add(egui::Slider::new(&mut self.speed, 0.1..=4.0))
+                .changed()
+            {
                 let new_speed = self.speed;
                 action = Some(DashboardAction::SendCommand(PlaybackCommand::SetSpeed(
                     new_speed,

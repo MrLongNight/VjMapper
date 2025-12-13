@@ -6,6 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- 2025-12-12: Behoben: Version-Konflikte bei winit (von 0.27.5 auf 0.29) und Kompatibilitätsissues mit wgpu 0.19 in mapmap-ui.
 - 2025-12-12: Update Roadmap: Phase 6 UI Migration & Phase 7 Packaging Status (#47)
 - 2025-12-12: fix: resolve CI config, winres dependency and dashboard loop logic (#46)
 - 2025-12-12: fix: stabilize build, CI and control tests (#45)

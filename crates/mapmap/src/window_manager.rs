@@ -71,6 +71,7 @@ impl<'a> WindowManager<'a> {
             present_mode: wgpu::PresentMode::Fifo,
             alpha_mode: wgpu::CompositeAlphaMode::Opaque,
             view_formats: vec![],
+            desired_maximum_frame_latency: 2,
         };
         surface.configure(&backend.device, &surface_config);
 
@@ -135,6 +136,7 @@ impl<'a> WindowManager<'a> {
             present_mode: wgpu::PresentMode::Fifo, // VSync for synchronized output
             alpha_mode: wgpu::CompositeAlphaMode::Opaque,
             view_formats: vec![],
+            desired_maximum_frame_latency: 2,
         };
 
         surface.configure(&backend.device, &surface_config);

@@ -16,12 +16,12 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tracing::info;
 use wgpu::TextureView;
+use window_manager::{WindowContext, WindowManager};
 use winit::{
     event::{Event, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
     window::WindowId,
 };
-use window_manager::{WindowContext, WindowManager};
 
 const INITIAL_WIDTH: u32 = 1920;
 const INITIAL_HEIGHT: u32 = 1080;
@@ -136,7 +136,12 @@ impl App<'_> {
             }
             Event::AboutToWait => {
                 // Redraw all windows
-                for output_id in self.window_manager.window_ids().copied().collect::<Vec<_>>() {
+                for output_id in self
+                    .window_manager
+                    .window_ids()
+                    .copied()
+                    .collect::<Vec<_>>()
+                {
                     if let Some(window_context) = self.window_manager.get(output_id) {
                         window_context.window.request_redraw();
                     }
