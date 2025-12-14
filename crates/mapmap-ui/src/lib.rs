@@ -28,6 +28,7 @@ pub use timeline::{TimelineAction, TimelineEditor};
 // Phase 6 exports
 pub use asset_manager::{AssetManager, AssetManagerAction, EffectPreset, TransformPreset};
 pub use dashboard::{Dashboard, DashboardAction, DashboardWidget, WidgetType};
+pub use imgui::OwnedDrawData;
 pub use media_browser::{MediaBrowser, MediaBrowserAction, MediaEntry, MediaType};
 pub use mesh_editor::{MeshEditor, MeshEditorAction};
 pub use node_editor::{Node, NodeEditor, NodeEditorAction, NodeType};
@@ -109,6 +110,7 @@ pub struct ImGuiContext {
     pub platform: WinitPlatform,
     pub renderer: Renderer,
     last_frame: Instant,
+    draw_data: Option<&'static imgui::DrawData>,
 }
 
 impl ImGuiContext {
@@ -141,19 +143,13 @@ impl ImGuiContext {
             platform,
             renderer,
             last_frame: Instant::now(),
+            draw_data: None,
         }
     }
 
-    /// Render ImGui with a closure for building UI
-    pub fn render<F>(
-        &mut self,
-        window: &winit::window::Window,
-        device: &wgpu::Device,
-        queue: &wgpu::Queue,
-        encoder: &mut wgpu::CommandEncoder,
-        view: &wgpu::TextureView,
-        build_ui: F,
-    ) where
+    /// Prepares the ImGui frame.
+    pub fn prepare_frame<F>(&mut self, window: &winit::window::Window, build_ui: F)
+    where
         F: FnOnce(&mut Ui),
     {
         // Update delta time
@@ -173,27 +169,37 @@ impl ImGuiContext {
         // End frame and prepare for rendering
         self.platform.prepare_render(ui, window);
         let draw_data = self.imgui.render();
+        self.draw_data = Some(unsafe { std::mem::transmute(draw_data) });
+    }
 
-        // Create render pass for ImGui
-        let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-            label: Some("ImGui Render Pass"),
-            color_attachments: &[Some(wgpu::RenderPassColorAttachment {
-                view,
-                resolve_target: None,
-                ops: wgpu::Operations {
-                    load: wgpu::LoadOp::Load,
-                    store: wgpu::StoreOp::Store,
-                },
-            })],
-            depth_stencil_attachment: None,
-            occlusion_query_set: None,
-            timestamp_writes: None,
-        });
+    /// Renders the ImGui frame.
+    pub fn render_frame(
+        &mut self,
+        device: &wgpu::Device,
+        queue: &wgpu::Queue,
+        encoder: &mut wgpu::CommandEncoder,
+        view: &wgpu::TextureView,
+    ) {
+        if let Some(draw_data) = self.draw_data.take() {
+            let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
+                label: Some("ImGui Render Pass"),
+                color_attachments: &[Some(wgpu::RenderPassColorAttachment {
+                    view,
+                    resolve_target: None,
+                    ops: wgpu::Operations {
+                        load: wgpu::LoadOp::Load,
+                        store: wgpu::StoreOp::Store,
+                    },
+                })],
+                depth_stencil_attachment: None,
+                occlusion_query_set: None,
+                timestamp_writes: None,
+            });
 
-        // Render
-        self.renderer
-            .render(draw_data, queue, device, &mut render_pass)
-            .expect("Failed to render ImGui");
+            self.renderer
+                .render(draw_data, queue, device, &mut render_pass)
+                .expect("Failed to render ImGui");
+        }
     }
 
     /// Handle window events

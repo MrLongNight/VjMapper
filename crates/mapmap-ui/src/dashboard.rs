@@ -513,22 +513,37 @@ impl Dashboard {
                 let painter = ui.painter();
                 let rect = ui.available_rect_before_wrap();
                 let plot_rect = egui::Rect::from_min_size(rect.min, egui::vec2(rect.width(), 80.0));
-                painter.rect_filled(plot_rect, 0.0, Color32::from_rgb(20, 20, 20));
+                painter.rect_filled(plot_rect, 3.0, Color32::from_rgb(20, 20, 20));
 
                 let fft_magnitudes = &analysis.fft_magnitudes;
-                let bar_width = plot_rect.width() / (fft_magnitudes.len() / 4) as f32;
+                // Display up to the Nyquist frequency (half the buffer)
+                let num_bars = fft_magnitudes.len() / 2;
+                if num_bars == 0 {
+                    return;
+                }
+                let bar_width = plot_rect.width() / num_bars as f32;
 
-                for (i, &magnitude) in fft_magnitudes.iter().step_by(4).enumerate() {
-                    let bar_height = (magnitude * plot_rect.height()).min(plot_rect.height());
+                for (i, &magnitude) in fft_magnitudes.iter().take(num_bars).enumerate() {
+                    let bar_height = (magnitude.powi(2) * plot_rect.height())
+                        .min(plot_rect.height())
+                        .max(1.0);
                     let x = plot_rect.min.x + i as f32 * bar_width;
                     let y = plot_rect.max.y;
+
+                    // Gradient color for bars
+                    let color = egui::Color32::from_rgb(
+                        (magnitude * 200.0) as u8,
+                        255 - (magnitude * 200.0) as u8,
+                        50,
+                    );
+
                     painter.rect_filled(
                         egui::Rect::from_min_size(
                             egui::pos2(x, y - bar_height),
-                            egui::vec2(bar_width, bar_height),
+                            egui::vec2(bar_width - 1.0, bar_height), // Add spacing
                         ),
-                        0.0,
-                        Color32::from_rgb(0, 255, 0),
+                        1.0,
+                        color,
                     );
                 }
                 ui.advance_cursor_after_rect(plot_rect);

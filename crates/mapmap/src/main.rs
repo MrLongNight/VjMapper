@@ -42,8 +42,6 @@ struct App {
     audio_backend: Option<CpalBackend>,
     /// The audio analyzer.
     audio_analyzer: AudioAnalyzer,
-    /// The available audio devices.
-    audio_devices: Vec<String>,
     /// The egui context.
     egui_context: egui::Context,
     /// The egui state.
@@ -124,7 +122,6 @@ impl App {
             output_manager: OutputManager::new((INITIAL_WIDTH, INITIAL_HEIGHT)),
             audio_backend,
             audio_analyzer,
-            audio_devices,
             egui_context,
             egui_state,
             egui_renderer,
@@ -240,72 +237,88 @@ impl App {
     fn render(&mut self, output_id: OutputId) -> Result<()> {
         let window_context = self.window_manager.get(output_id).unwrap();
 
+        // Get surface texture and view for final output
         let surface_texture = window_context.surface.get_current_texture()?;
-
         let view = surface_texture
             .texture
             .create_view(&wgpu::TextureViewDescriptor::default());
 
-        let mut encoder =
-            self.backend
-                .device
-                .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                    label: Some("Render Encoder"),
-                });
+        // Encoder vorbereiten
+        let mut encoder = self.backend.device.create_command_encoder(
+            &wgpu::CommandEncoderDescriptor {
+                label: Some("Render Encoder"),
+            },
+        );
 
         if output_id == 0 {
-            // Render the main window (UI)
-            self.imgui_context.render(
+            // --------- ImGui: UI zeichnen (mutable Borrow ist hier auf das Minimum begrenzt) ----------
+            self.imgui_context.prepare_frame(
                 &window_context.window,
+                |ui| {
+                    self.ui_state.render_menu_bar(ui);
+                    self.ui_state.render_controls(ui);
+                    self.ui_state.render_stats(ui, 60.0, 16.6);
+                },
+            );
+
+            // --------- egui: UI separat zeichnen ---------
+            let mut dashboard_action = None;
+            let (tris, screen_descriptor) = {
+                let raw_input = self.egui_state.take_egui_input(&window_context.window);
+                let full_output = self.egui_context.run(raw_input, |ctx| {
+                    egui::Window::new("Dashboard").show(ctx, |ui| {
+                        dashboard_action = self.ui_state.dashboard.ui(ui);
+                    });
+                });
+
+                self.egui_state
+                    .handle_platform_output(&window_context.window, full_output.platform_output);
+
+                let tris = self
+                    .egui_context
+                    .tessellate(full_output.shapes.clone(), full_output.pixels_per_point);
+
+                for (id, image_delta) in &full_output.textures_delta.set {
+                    self.egui_renderer.update_texture(
+                        &self.backend.device,
+                        &self.backend.queue,
+                        *id,
+                        image_delta,
+                    );
+                }
+                for id in &full_output.textures_delta.free {
+                    self.egui_renderer.free_texture(id);
+                }
+
+                let screen_descriptor = egui_wgpu::ScreenDescriptor {
+                    size_in_pixels: [
+                        window_context.surface_config.width,
+                        window_context.surface_config.height,
+                    ],
+                    pixels_per_point: window_context.window.scale_factor() as f32,
+                };
+
+                self.egui_renderer.update_buffers(
+                    &self.backend.device,
+                    &self.backend.queue,
+                    &mut encoder,
+                    &tris,
+                    &screen_descriptor,
+                );
+
+                (tris, screen_descriptor)
+            };
+
+            self.imgui_context.render_frame(
                 &self.backend.device,
                 &self.backend.queue,
                 &mut encoder,
                 &view,
-                |ui| {
-                    self.ui_state.render_menu_bar(ui);
-                    self.ui_state.render_controls(ui);
-                    self.ui_state.render_stats(ui, 60.0, 16.6); // Fake stats for now
-                                                                // TODO: Render other panels
-                },
-            );
-
-            // Render egui
-            let raw_input = self.egui_state.take_egui_input(&window_context.window);
-            let mut dashboard_action = None;
-            let full_output = self.egui_context.run(raw_input, |ctx| {
-                egui::Window::new("Dashboard").show(ctx, |ui| {
-                    dashboard_action = self.ui_state.dashboard.ui(ui);
-                });
-            });
-
-            self.egui_state
-                .handle_platform_output(&window_context.window, full_output.platform_output);
-
-            let tris = self
-                .egui_context
-                .tessellate(full_output.shapes, full_output.pixels_per_point);
-            for (id, image_delta) in &full_output.textures_delta.set {
-                self.egui_renderer
-                    .update_texture(&self.backend.device, &self.backend.queue, *id, image_delta);
-            }
-            let screen_descriptor = egui_wgpu::ScreenDescriptor {
-                size_in_pixels: [
-                    window_context.surface_config.width,
-                    window_context.surface_config.height,
-                ],
-                pixels_per_point: window_context.window.scale_factor() as f32,
-            };
-            self.egui_renderer.update_buffers(
-                &self.backend.device,
-                &self.backend.queue,
-                &mut encoder,
-                &tris,
-                &screen_descriptor,
             );
 
             {
                 let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
-                    label: Some("egui Render Pass"),
+                    label: Some("Egui Render Pass"),
                     color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                         view: &view,
                         resolve_target: None,
@@ -323,10 +336,7 @@ impl App {
                     .render(&mut render_pass, &tris, &screen_descriptor);
             }
 
-            for id in &full_output.textures_delta.free {
-                self.egui_renderer.free_texture(id);
-            }
-
+            // Post-render logic for egui actions
             if let Some(mapmap_ui::DashboardAction::AudioDeviceChanged(device)) = dashboard_action {
                 if let Some(backend) = &mut self.audio_backend {
                     backend.stop();
@@ -347,7 +357,7 @@ impl App {
                 }
             }
         } else {
-            // Render output window (Clear to black)
+            // Output-Fenster Management: Clear To Black oder dein Mapping-Rendering!
             let _render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Output Render Pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
