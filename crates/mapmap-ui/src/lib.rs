@@ -48,11 +48,7 @@ pub enum UIAction {
     Pause,
     Stop,
     SetSpeed(f32),
-    ToggleLoop(bool),
-    // Phase 1: Advanced playback
-    SetPlaybackDirection(mapmap_media::PlaybackDirection),
-    TogglePlaybackDirection,
-    SetPlaybackMode(mapmap_media::PlaybackMode),
+    SetLoopMode(mapmap_media::LoopMode),
 
     // File actions
     LoadVideo(String),
@@ -230,10 +226,7 @@ pub struct AppUI {
     pub show_oscillator: bool,        // Oscillator distortion effect
     pub show_audio: bool,
     pub playback_speed: f32,
-    pub looping: bool,
-    // Phase 1: Advanced playback state
-    pub playback_direction: mapmap_media::PlaybackDirection,
-    pub playback_mode: mapmap_media::PlaybackMode,
+    pub loop_mode: mapmap_media::LoopMode,
     // Phase 1: Transform editing state
     pub selected_layer_id: Option<u64>,
     // Phase 2: Output configuration state
@@ -265,9 +258,7 @@ impl Default for AppUI {
             show_oscillator: true,
             show_audio: true,
             playback_speed: 1.0,
-            looping: true,
-            playback_direction: mapmap_media::PlaybackDirection::Forward,
-            playback_mode: mapmap_media::PlaybackMode::Loop,
+            loop_mode: mapmap_media::LoopMode::Loop,
             selected_layer_id: None,
             selected_output_id: None,
             audio_devices: vec!["None".to_string()],
@@ -317,76 +308,24 @@ impl AppUI {
                     self.actions.push(UIAction::SetSpeed(self.playback_speed));
                 }
 
-                // Legacy loop control
-                let old_looping = self.looping;
-                ui.checkbox("Loop (legacy)", &mut self.looping);
-                if self.looping != old_looping {
-                    self.actions.push(UIAction::ToggleLoop(self.looping));
-                }
-
-                ui.separator();
-                ui.text("Phase 1: Advanced Playback");
-                ui.separator();
-
-                // Playback Direction (Phase 1)
-                ui.text("Direction:");
-                let direction_names = ["Forward", "Backward"];
-                let mut direction_idx = match self.playback_direction {
-                    mapmap_media::PlaybackDirection::Forward => 0,
-                    mapmap_media::PlaybackDirection::Backward => 1,
-                };
-
-                if ui.combo(
-                    "##direction",
-                    &mut direction_idx,
-                    &direction_names,
-                    |item| std::borrow::Cow::Borrowed(item),
-                ) {
-                    let new_direction = match direction_idx {
-                        0 => mapmap_media::PlaybackDirection::Forward,
-                        1 => mapmap_media::PlaybackDirection::Backward,
-                        _ => mapmap_media::PlaybackDirection::Forward,
-                    };
-                    self.playback_direction = new_direction;
-                    self.actions
-                        .push(UIAction::SetPlaybackDirection(new_direction));
-                }
-
-                ui.same_line();
-                if ui.button("Toggle ⇄") {
-                    self.actions.push(UIAction::TogglePlaybackDirection);
-                    self.playback_direction = match self.playback_direction {
-                        mapmap_media::PlaybackDirection::Forward => {
-                            mapmap_media::PlaybackDirection::Backward
-                        }
-                        mapmap_media::PlaybackDirection::Backward => {
-                            mapmap_media::PlaybackDirection::Forward
-                        }
-                    };
-                }
-
-                // Playback Mode (Phase 1)
+                // Loop control
                 ui.text("Mode:");
-                let mode_names = ["Loop", "Ping Pong", "Play Once & Eject", "Play Once & Hold"];
-                let mut mode_idx = match self.playback_mode {
-                    mapmap_media::PlaybackMode::Loop => 0,
-                    mapmap_media::PlaybackMode::PingPong => 1,
-                    mapmap_media::PlaybackMode::PlayOnceAndEject => 2,
-                    mapmap_media::PlaybackMode::PlayOnceAndHold => 3,
+                let mode_names = ["Loop", "Play Once"];
+                let mut mode_idx = match self.loop_mode {
+                    mapmap_media::LoopMode::Loop => 0,
+                    mapmap_media::LoopMode::PlayOnce => 1,
                 };
 
                 if ui.combo("##mode", &mut mode_idx, &mode_names, |item| {
                     std::borrow::Cow::Borrowed(item)
                 }) {
                     let new_mode = match mode_idx {
-                        0 => mapmap_media::PlaybackMode::Loop,
-                        1 => mapmap_media::PlaybackMode::PingPong,
-                        2 => mapmap_media::PlaybackMode::PlayOnceAndEject,
-                        3 => mapmap_media::PlaybackMode::PlayOnceAndHold,
-                        _ => mapmap_media::PlaybackMode::Loop,
+                        0 => mapmap_media::LoopMode::Loop,
+                        1 => mapmap_media::LoopMode::PlayOnce,
+                        _ => mapmap_media::LoopMode::Loop,
                     };
-                    self.playback_mode = new_mode;
-                    self.actions.push(UIAction::SetPlaybackMode(new_mode));
+                    self.loop_mode = new_mode;
+                    self.actions.push(UIAction::SetLoopMode(new_mode));
                 }
             });
     }

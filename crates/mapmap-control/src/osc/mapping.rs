@@ -1,65 +1,75 @@
 //! OSC Address Mapping
 //!
-//! This module provides a persistent mapping between OSC addresses and `ControlTarget`s.
+//! Provides persistent mapping between OSC addresses and ControlTargets.
+//! Uses a simple HashMap-based approach with JSON serialization.
 
 use crate::target::ControlTarget;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
 use std::path::Path;
+use tracing::{error, info};
 
-/// A map from OSC addresses to `ControlTarget`s.
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
+/// Mapping from OSC addresses to ControlTargets
+#[derive(Debug, Clone, Serialize, Deserialize, Default, PartialEq)]
 pub struct OscMapping {
+    /// The mapping storage
     pub map: HashMap<String, ControlTarget>,
 }
 
 impl OscMapping {
-    /// Create a new, empty `OscMapping`.
+    /// Create a new empty mapping
     pub fn new() -> Self {
         Self::default()
     }
 
-    /// Add a new mapping.
-    pub fn add_mapping(&mut self, address: String, target: ControlTarget) {
+    /// Add or update a mapping
+    pub fn set_mapping(&mut self, address: String, target: ControlTarget) {
         self.map.insert(address, target);
     }
 
-    /// Remove a mapping.
+    /// Remove a mapping
     pub fn remove_mapping(&mut self, address: &str) {
         self.map.remove(address);
     }
 
-    /// Get the `ControlTarget` for a given OSC address.
-    pub fn get_target(&self, address: &str) -> Option<&ControlTarget> {
+    /// Get target for address
+    pub fn get(&self, address: &str) -> Option<&ControlTarget> {
         self.map.get(address)
     }
 
-    /// Load mappings from a JSON file.
-    pub fn load_from_file<P: AsRef<Path>>(&mut self, path: P) -> Result<(), std::io::Error> {
-        match fs::read_to_string(path) {
-            Ok(data) => {
-                let loaded_map: OscMapping = serde_json::from_str(&data)
-                    .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
-                self.map = loaded_map.map;
+    /// Clear all mappings
+    pub fn clear(&mut self) {
+        self.map.clear();
+    }
+
+    /// Load from JSON file (robust error handling)
+    pub fn load<P: AsRef<Path>>(&mut self, path: P) -> std::io::Result<()> {
+        let path = path.as_ref();
+        if !path.exists() {
+            info!("OSC mapping file not found at {:?}, using defaults", path);
+            return Ok(());
+        }
+
+        let content = fs::read_to_string(path)?;
+        match serde_json::from_str::<OscMapping>(&content) {
+            Ok(loaded) => {
+                self.map = loaded.map;
+                info!("Loaded {} OSC mappings from {:?}", self.map.len(), path);
                 Ok(())
             }
             Err(e) => {
-                if e.kind() == std::io::ErrorKind::NotFound {
-                    tracing::warn!("osc_mappings.json not found - loading default mappings.");
-                    self.map = HashMap::new(); // reset to default
-                    Ok(())
-                } else {
-                    Err(e)
-                }
+                error!("Failed to parse OSC mapping file {:?}: {}", path, e);
+                Err(std::io::Error::new(std::io::ErrorKind::InvalidData, e))
             }
         }
     }
 
-    /// Save mappings to a JSON file.
-    pub fn save_to_file<P: AsRef<Path>>(&self, path: P) -> Result<(), std::io::Error> {
-        let data = serde_json::to_string_pretty(self)?;
-        fs::write(path, data)?;
+    /// Save to JSON file
+    pub fn save<P: AsRef<Path>>(&self, path: P) -> std::io::Result<()> {
+        let content = serde_json::to_string_pretty(self)
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::InvalidData, e))?;
+        fs::write(path, content)?;
         Ok(())
     }
 }
@@ -69,31 +79,27 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_osc_mapping_add_remove() {
+    fn test_mapping_operations() {
         let mut mapping = OscMapping::new();
-        let address = "/mapmap/master/opacity".to_string();
+        let addr = "/test/1".to_string();
         let target = ControlTarget::MasterOpacity;
 
-        mapping.add_mapping(address.clone(), target.clone());
-        assert_eq!(mapping.get_target(&address), Some(&target));
+        mapping.set_mapping(addr.clone(), target.clone());
+        assert_eq!(mapping.get(&addr), Some(&target));
 
-        mapping.remove_mapping(&address);
-        assert_eq!(mapping.get_target(&address), None);
+        mapping.remove_mapping(&addr);
+        assert_eq!(mapping.get(&addr), None);
     }
 
     #[test]
-    fn test_osc_mapping_save_load() {
+    fn test_serialization() {
         let mut mapping = OscMapping::new();
-        let address = "/mapmap/master/opacity".to_string();
-        let target = ControlTarget::MasterOpacity;
-        mapping.add_mapping(address, target);
+        mapping.set_mapping("/a".into(), ControlTarget::LayerOpacity(0));
+        mapping.set_mapping("/b".into(), ControlTarget::PlaybackSpeed(None));
 
-        let path = std::env::temp_dir().join("osc_mappings.json");
-        mapping.save_to_file(&path).unwrap();
+        let json = serde_json::to_string(&mapping).unwrap();
+        let loaded: OscMapping = serde_json::from_str(&json).unwrap();
 
-        let mut new_mapping = OscMapping::new();
-        new_mapping.load_from_file(&path).unwrap();
-
-        assert_eq!(mapping.map, new_mapping.map);
+        assert_eq!(mapping, loaded);
     }
 }

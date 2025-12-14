@@ -66,7 +66,7 @@ pub use midi::MidiMessage;
 pub use dmx::{ArtNetSender, ChannelAssignment, DmxChannel, Fixture, FixtureProfile, SacnSender};
 
 #[cfg(feature = "osc")]
-pub use osc::{OscClient, OscLearn, OscMapping, OscServer};
+pub use osc::{OscClient, OscMapping, OscServer};
 
 #[cfg(feature = "http-api")]
 pub use web::{WebServer, WebServerConfig};

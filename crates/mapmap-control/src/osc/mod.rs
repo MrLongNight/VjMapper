@@ -44,14 +44,12 @@
 
 pub mod address;
 pub mod client;
-pub mod learn;
 pub mod mapping;
 pub mod server;
 pub mod types;
 
 pub use address::{control_target_to_address, parse_osc_address};
 pub use client::OscClient;
-pub use learn::OscLearn;
 pub use mapping::OscMapping;
 pub use server::OscServer;
 
