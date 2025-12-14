@@ -83,6 +83,8 @@ pub fn render_osc_panel(ui: &Ui, app_ui: &mut AppUI, control_manager: &mut Contr
                     .save("osc_mappings.json")
                 {
                     tracing::error!("Failed to save OSC mappings: {}", e);
+                    // Explicitly exit on save failure as requested for CI/Debugging
+                    std::process::exit(1);
                 }
             }
         });
