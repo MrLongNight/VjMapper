@@ -1,0 +1,34 @@
+[package]
+name = "imgui-wgpu"
+version = "0.25.0"
+authors = [
+	"Noah Hüsser <yatekii@yatekii.ch>",
+	"Connor Fitzgerald <connorwadefitzgerald@gmail.com>",
+	"Steven Wittens <steven@acko.net>",
+]
+edition = "2021"
+description = "A wgpu render backend for imgui-rs."
+documentation = "https://docs.rs/imgui-wgpu/"
+homepage = "https://github.com/Yatekii/imgui-wgpu-rs"
+repository = "https://github.com/Yatekii/imgui-wgpu-rs"
+readme = "README.md"
+categories = ["gui", "graphics", "rendering", "rendering::graphics-api"]
+keywords = ["gui", "graphics", "wgpu", "imgui"]
+license = "MIT OR Apache-2.0"
+
+[dependencies]
+bytemuck = "1"
+imgui = { workspace = true }
+log = "0.4"
+smallvec = "1"
+wgpu = { workspace = true }
+
+[dev-dependencies]
+# bytemuck = { version = "1.13", features = ["derive"] }
+# cgmath = "0.18"
+# env_logger = "0.11"
+# image = { version = "0.25", default-features = false, features = ["png"] }
+# imgui-winit-support = "0.13"
+# pollster = "0.4"
+# raw-window-handle = "0.6"
+# winit = "0.30"

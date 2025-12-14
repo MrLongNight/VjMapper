@@ -169,7 +169,7 @@ impl VideoEncoder {
             data: Vec::new(), // Would contain actual encoded data
             pts: self.frame_count as i64,
             dts: self.frame_count as i64,
-            is_keyframe: self.frame_count % 60 == 0, // Keyframe every 2 seconds at 30fps
+            is_keyframe: self.frame_count == 1 || self.frame_count % 60 == 0, // Keyframe on first frame and every 60 frames
         })
     }
 
@@ -288,10 +288,10 @@ mod tests {
         // First frame should be keyframe
         let frame = VideoFrame::empty(format.clone());
         let packet = encoder.encode(&frame).unwrap();
-        assert!(!packet.is_keyframe); // Actually frame 1, so not keyframe
+        assert!(packet.is_keyframe); // Corrected: First frame IS keyframe
 
-        // Encode 59 more frames
-        for _ in 0..59 {
+        // Encode 58 more frames (total 59)
+        for _ in 0..58 {
             let frame = VideoFrame::empty(format.clone());
             encoder.encode(&frame).unwrap();
         }

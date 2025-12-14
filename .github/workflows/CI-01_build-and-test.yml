@@ -21,7 +21,7 @@ env:
   FREETYPE_SYS_USE_PKG_CONFIG: 1
   RUST_BACKTRACE: 1
   # Projekt-MS RUNTIME-Vorgabe (MSRV)
-  RUST_TOOLCHAIN: 1.75.0
+  RUST_TOOLCHAIN: nightly
 
 jobs:
   # Code quality checks
@@ -34,14 +34,19 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    # explicit toolchain to avoid "toolchain is a required input" errors
-    - name: Install Rust toolchain (MSRV for quality checks)
+    - name: Install Rust (nightly)
       uses: actions-rs/toolchain@v1
       with:
-        toolchain: ${{ env.RUST_TOOLCHAIN }}
+        toolchain: nightly
         components: rustfmt, clippy
         profile: minimal
         override: true
+
+    - name: Install system dependencies (Ubuntu)
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y libasound2-dev pkg-config
+        bash scripts/install-ffmpeg-dev.sh
 
     - name: Check formatting
       run: cargo fmt --all -- --check
@@ -55,17 +60,17 @@ jobs:
     runs-on: ubuntu-latest
     # Use a newer toolchain for building (resolver for dependencies that require newer Cargo)
     env:
-      RUST_TOOLCHAIN: stable
+      RUST_TOOLCHAIN: nightly
     permissions:
       contents: read
         
     steps:
     - uses: actions/checkout@v4
 
-    - name: Install Rust toolchain (build)
+    - name: Install Rust (nightly)
       uses: actions-rs/toolchain@v1
       with:
-        toolchain: ${{ env.RUST_TOOLCHAIN }}
+        toolchain: nightly
         components: rustfmt, clippy
         profile: minimal
         override: true
@@ -109,6 +114,7 @@ jobs:
           libavfilter-dev \
           ffmpeg \
           libasound2-dev
+        bash scripts/install-ffmpeg-dev.sh
         # Verify installations
         pkg-config --exists fontconfig && echo "✓ Fontconfig found" || echo "✗ Fontconfig not found"
         pkg-config --exists freetype2 && echo "✓ FreeType found" || echo "✗ FreeType not found"

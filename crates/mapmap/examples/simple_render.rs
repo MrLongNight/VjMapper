@@ -1,34 +1,31 @@
-//! Simple rendering example
+//! Simple Render Example
 //!
-//! Demonstrates basic usage of mapmap-render crate
+//! This example demonstrates the basics of rendering with mapmap_render.
 
 use mapmap_render::{QuadRenderer, RenderBackend, TextureDescriptor, WgpuBackend};
+use std::sync::Arc;
 use winit::{
-    event::{Event, WindowEvent},
+    event::{ElementState, Event, KeyEvent, WindowEvent},
     event_loop::{ControlFlow, EventLoop},
+    keyboard::{Key, NamedKey},
     window::WindowBuilder,
 };
 
 fn main() {
-    println!("MapMap Simple Render Example");
-    let event_loop = EventLoop::new();
-    let window = WindowBuilder::new()
-        .with_title("MapMap - Simple Render")
-        .with_inner_size(winit::dpi::PhysicalSize::new(800, 600))
-        .build(&event_loop)
-        .unwrap();
+    println!("MapMap - Simple Render Example");
+    println!("==============================\n");
 
-    // Create wgpu backend
+    let event_loop = EventLoop::new().unwrap();
+    let window = Arc::new(
+        WindowBuilder::new()
+            .with_title("MapMap - Simple Render")
+            .with_inner_size(winit::dpi::PhysicalSize::new(800, 600))
+            .build(&event_loop)
+            .unwrap(),
+    );
+
     let mut backend = pollster::block_on(WgpuBackend::new()).unwrap();
-    println!("Backend initialized: {:?}", backend.adapter_info());
-
-    // Create surface
-    let instance = wgpu::Instance::new(wgpu::InstanceDescriptor {
-        backends: wgpu::Backends::all(),
-        ..Default::default()
-    });
-
-    let surface = unsafe { instance.create_surface(&window) }.unwrap();
+    let surface = backend.create_surface(window.clone()).unwrap();
 
     let surface_config = wgpu::SurfaceConfiguration {
         usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
@@ -38,14 +35,14 @@ fn main() {
         present_mode: wgpu::PresentMode::Fifo,
         alpha_mode: wgpu::CompositeAlphaMode::Opaque,
         view_formats: vec![],
+        desired_maximum_frame_latency: 2,
     };
 
     surface.configure(backend.device(), &surface_config);
 
-    // Create quad renderer
     let quad_renderer = QuadRenderer::new(backend.device(), surface_config.format).unwrap();
 
-    // Create a test texture (red square)
+    // Create a dummy texture
     let tex_desc = TextureDescriptor {
         width: 256,
         height: 256,
@@ -55,26 +52,41 @@ fn main() {
     };
 
     let texture = backend.create_texture(tex_desc).unwrap();
+    let data = vec![255; 256 * 256 * 4];
+    backend.upload_texture(texture.clone(), &data).unwrap();
 
-    // Fill with red color
-    let red_data: Vec<u8> = (0..256 * 256).flat_map(|_| [255u8, 0, 0, 255]).collect();
+    event_loop.set_control_flow(ControlFlow::Poll);
 
-    backend.upload_texture(texture.clone(), &red_data).unwrap();
-
-    println!("Setup complete. Rendering...");
-
-    event_loop.run(move |event, _, control_flow| {
-        *control_flow = ControlFlow::Poll;
-
-        match event {
+    event_loop
+        .run(move |event, elwt| match event {
             Event::WindowEvent {
                 event: WindowEvent::CloseRequested,
                 ..
             } => {
-                println!("Close requested");
-                *control_flow = ControlFlow::Exit;
+                elwt.exit();
             }
-            Event::RedrawRequested(_) => {
+            Event::WindowEvent {
+                event:
+                    WindowEvent::KeyboardInput {
+                        event:
+                            KeyEvent {
+                                logical_key: Key::Named(NamedKey::Escape),
+                                state: ElementState::Pressed,
+                                ..
+                            },
+                        ..
+                    },
+                ..
+            } => {
+                elwt.exit();
+            }
+            Event::AboutToWait => {
+                window.request_redraw();
+            }
+            Event::WindowEvent {
+                event: WindowEvent::RedrawRequested,
+                ..
+            } => {
                 let frame = match surface.get_current_texture() {
                     Ok(frame) => frame,
                     Err(_) => return,
@@ -106,11 +118,12 @@ fn main() {
                                     b: 0.0,
                                     a: 1.0,
                                 }),
-                                // Angepasst an neuere wgpu-API: `store` ist ein bool
-                                store: true,
+                                store: wgpu::StoreOp::Store,
                             },
                         })],
                         depth_stencil_attachment: None,
+                        occlusion_query_set: None,
+                        timestamp_writes: None,
                     });
 
                     quad_renderer.draw(&mut render_pass, &bind_group);
@@ -119,10 +132,7 @@ fn main() {
                 backend.queue().submit(Some(encoder.finish()));
                 frame.present();
             }
-            Event::MainEventsCleared => {
-                window.request_redraw();
-            }
             _ => {}
-        }
-    });
+        })
+        .unwrap();
 }

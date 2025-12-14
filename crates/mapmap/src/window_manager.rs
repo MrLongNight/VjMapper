@@ -8,6 +8,7 @@ use anyhow::Result;
 use mapmap_core::{OutputId, OutputManager};
 use mapmap_render::WgpuBackend;
 use std::collections::HashMap;
+use std::sync::Arc;
 use tracing::info;
 use winit::{
     event_loop::EventLoopWindowTarget,
@@ -16,26 +17,26 @@ use winit::{
 
 /// Context for a single window, containing the `winit` window, `wgpu` surface,
 /// and other related configuration.
-pub struct WindowContext<'a> {
+pub struct WindowContext {
     /// The `winit` window.
-    pub window: Window,
+    pub window: Arc<Window>,
     /// The `wgpu` surface associated with the window.
-    pub surface: wgpu::Surface<'a>,
+    pub surface: wgpu::Surface<'static>,
     /// The configuration for the `wgpu` surface.
     pub surface_config: wgpu::SurfaceConfiguration,
     /// The `OutputId` associated with this window. For the main window, this is `0`.
-    #[allow(dead_code)]
+    #[allow(dead_code)] // TODO: Prüfen, ob dieses Feld dauerhaft benötigt wird!
     pub output_id: OutputId,
 }
 
 /// Manages all application windows, including the main control window and all output windows.
-pub struct WindowManager<'a> {
-    windows: HashMap<OutputId, WindowContext<'a>>,
+pub struct WindowManager {
+    windows: HashMap<OutputId, WindowContext>,
     window_id_map: HashMap<WindowId, OutputId>,
     main_window_id: Option<OutputId>,
 }
 
-impl<'a> WindowManager<'a> {
+impl WindowManager {
     /// Creates a new, empty `WindowManager`.
     pub fn new() -> Self {
         Self {
@@ -54,15 +55,17 @@ impl<'a> WindowManager<'a> {
         event_loop: &EventLoopWindowTarget<T>,
         backend: &WgpuBackend,
     ) -> Result<OutputId> {
-        let window = WindowBuilder::new()
-            .with_title("MapMap - Main Control")
-            .with_inner_size(winit::dpi::PhysicalSize::new(1920, 1080))
-            .build(event_loop)?;
+        let window = Arc::new(
+            WindowBuilder::new()
+                .with_title("MapMap - Main Control")
+                .with_inner_size(winit::dpi::PhysicalSize::new(1920, 1080))
+                .build(event_loop)?,
+        );
 
         let window_id = window.id();
         let output_id: OutputId = 0; // Reserved ID for the main window
 
-        let surface = unsafe { backend.create_surface(&window) }?;
+        let surface = backend.create_surface(window.clone())?;
         let surface_config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
             format: wgpu::TextureFormat::Bgra8Unorm,
@@ -71,6 +74,7 @@ impl<'a> WindowManager<'a> {
             present_mode: wgpu::PresentMode::Fifo,
             alpha_mode: wgpu::CompositeAlphaMode::Opaque,
             view_formats: vec![],
+            desired_maximum_frame_latency: 2,
         };
         surface.configure(&backend.device, &surface_config);
 
@@ -91,6 +95,7 @@ impl<'a> WindowManager<'a> {
     /// Creates a new output window based on an `OutputConfig`.
     ///
     /// If a window for the given `OutputId` already exists, this function does nothing.
+    #[allow(dead_code)] // TODO: Prüfen, ob diese Funktion dauerhaft benötigt wird!
     pub fn create_output_window<T>(
         &mut self,
         event_loop: &EventLoopWindowTarget<T>,
@@ -109,23 +114,25 @@ impl<'a> WindowManager<'a> {
             output_config.name, output_id
         );
 
-        let window = WindowBuilder::new()
-            .with_title(format!("MapMap Output - {}", output_config.name))
-            .with_inner_size(winit::dpi::PhysicalSize::new(
-                output_config.resolution.0,
-                output_config.resolution.1,
-            ))
-            .with_fullscreen(if output_config.fullscreen {
-                Some(Fullscreen::Borderless(None))
-            } else {
-                None
-            })
-            .build(event_loop)?;
+        let window = Arc::new(
+            WindowBuilder::new()
+                .with_title(format!("MapMap Output - {}", output_config.name))
+                .with_inner_size(winit::dpi::PhysicalSize::new(
+                    output_config.resolution.0,
+                    output_config.resolution.1,
+                ))
+                .with_fullscreen(if output_config.fullscreen {
+                    Some(Fullscreen::Borderless(None))
+                } else {
+                    None
+                })
+                .build(event_loop)?,
+        );
 
         let window_id_winit = window.id();
 
         // Create surface for this output window
-        let surface = unsafe { backend.create_surface(&window) }?;
+        let surface = backend.create_surface(window.clone())?;
 
         let surface_config = wgpu::SurfaceConfiguration {
             usage: wgpu::TextureUsages::RENDER_ATTACHMENT,
@@ -135,6 +142,7 @@ impl<'a> WindowManager<'a> {
             present_mode: wgpu::PresentMode::Fifo, // VSync for synchronized output
             alpha_mode: wgpu::CompositeAlphaMode::Opaque,
             view_formats: vec![],
+            desired_maximum_frame_latency: 2,
         };
 
         surface.configure(&backend.device, &surface_config);
@@ -161,6 +169,7 @@ impl<'a> WindowManager<'a> {
     ///
     /// This function will create windows for new outputs and remove windows for outputs
     /// that no longer exist.
+    #[allow(dead_code)] // TODO: Prüfen, ob diese Funktion dauerhaft benötigt wird!
     pub fn sync_windows<T>(
         &mut self,
         event_loop: &EventLoopWindowTarget<T>,
@@ -193,6 +202,7 @@ impl<'a> WindowManager<'a> {
     }
 
     /// Removes a window by its `OutputId`.
+    #[allow(dead_code)] // TODO: Prüfen, ob diese Funktion dauerhaft benötigt wird!
     pub fn remove_window(&mut self, output_id: OutputId) -> Option<WindowContext> {
         if let Some(context) = self.windows.remove(&output_id) {
             self.window_id_map.remove(&context.window.id());
@@ -213,6 +223,7 @@ impl<'a> WindowManager<'a> {
     }
 
     /// Returns the main window's `OutputId`.
+    #[allow(dead_code)] // TODO: Prüfen, ob diese Funktion dauerhaft benötigt wird!
     pub fn main_window_id(&self) -> Option<OutputId> {
         self.main_window_id
     }
@@ -223,6 +234,7 @@ impl<'a> WindowManager<'a> {
     }
 
     /// Returns an iterator over all `WindowContext`s.
+    #[allow(dead_code)] // TODO: Prüfen, ob diese Funktion dauerhaft benötigt wird!
     pub fn iter(&self) -> impl Iterator<Item = &WindowContext> {
         self.windows.values()
     }
