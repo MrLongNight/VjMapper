@@ -1,6 +1,6 @@
 //! MIDI controller profiles
 
-use super::{MappingCurve, MidiMapping, MidiMessage};
+use super::{MappingCurve, MidiMapping, MidiMappingKey};
 use crate::target::ControlTarget;
 use serde::{Deserialize, Serialize};
 
@@ -36,27 +36,17 @@ impl ControllerProfile {
         let mut mapping = MidiMapping::new();
 
         for profile_mapping in &self.mappings {
-            let message = match profile_mapping.message_template {
+            let key = match profile_mapping.message_template {
                 MidiMessageTemplate::ControlChange {
                     channel,
                     controller,
-                } => MidiMessage::ControlChange {
-                    channel,
-                    controller,
-                    value: 0,
-                },
-                MidiMessageTemplate::Note { channel, note } => MidiMessage::NoteOn {
-                    channel,
-                    note,
-                    velocity: 0,
-                },
-                MidiMessageTemplate::PitchBend { channel } => {
-                    MidiMessage::PitchBend { channel, value: 0 }
-                }
+                } => MidiMappingKey::Control(channel, controller),
+                MidiMessageTemplate::Note { channel, note } => MidiMappingKey::Note(channel, note),
+                MidiMessageTemplate::PitchBend { channel } => MidiMappingKey::PitchBend(channel),
             };
 
             mapping.add_mapping(
-                message,
+                key,
                 profile_mapping.target.clone(),
                 profile_mapping.min_value,
                 profile_mapping.max_value,
@@ -218,7 +208,7 @@ mod tests {
         assert!(!profile.mappings.is_empty());
 
         let mapping = profile.to_midi_mapping();
-        assert!(!mapping.mappings.is_empty());
+        assert!(!mapping.map.is_empty());
     }
 
     #[test]
@@ -228,7 +218,7 @@ mod tests {
         assert!(profile.mappings.len() > 10); // Should have many mappings
 
         let mapping = profile.to_midi_mapping();
-        assert!(mapping.mappings.len() > 10);
+        assert!(mapping.map.len() > 10);
     }
 
     #[test]

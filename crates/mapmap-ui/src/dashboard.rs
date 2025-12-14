@@ -4,8 +4,7 @@
 //! Allows users to assign frequently-used parameters to dashboard dials and sliders.
 
 use egui::{Color32, Pos2, Sense, Stroke, Ui, Vec2};
-use mapmap_core::audio::AudioAnalysis;
-use mapmap_media::player::{LoopMode, PlaybackCommand, PlaybackState};
+use mapmap_media::{LoopMode, PlaybackCommand, PlaybackState};
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
@@ -91,10 +90,7 @@ impl Dashboard {
             current_time: Duration::ZERO,
             duration: Duration::ZERO,
             speed: 1.0,
-            loop_mode: LoopMode::Off,
-            audio_analysis: None,
-            audio_devices: vec![],
-            selected_audio_device: None,
+            loop_mode: LoopMode::Loop,
         }
     }
 
@@ -209,9 +205,13 @@ impl Dashboard {
 
             ui.separator();
 
-            let mut looping = self.loop_mode == LoopMode::On;
+            let mut looping = self.loop_mode == LoopMode::Loop;
             if ui.checkbox(&mut looping, "Loop").changed() {
-                let new_mode = if looping { LoopMode::On } else { LoopMode::Off };
+                let new_mode = if looping {
+                    LoopMode::Loop
+                } else {
+                    LoopMode::PlayOnce
+                };
                 self.loop_mode = new_mode;
                 action = Some(DashboardAction::SendCommand(PlaybackCommand::SetLoopMode(
                     new_mode,

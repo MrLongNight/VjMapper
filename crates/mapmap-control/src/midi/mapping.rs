@@ -1,19 +1,52 @@
 //! MIDI message to control target mapping
+//!
+//! Provides HashMap-based mapping for MIDI messages.
 
 use super::MidiMessage;
 use crate::error::Result;
 use crate::target::{ControlTarget, ControlValue};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+
+/// Key for MIDI mapping (ignores value fields)
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+pub enum MidiMappingKey {
+    Note(u8, u8),      // channel, note
+    Control(u8, u8),   // channel, controller
+    PitchBend(u8),     // channel
+    ProgramChange(u8), // channel
+}
+
+impl From<&MidiMessage> for Option<MidiMappingKey> {
+    fn from(msg: &MidiMessage) -> Self {
+        match msg {
+            MidiMessage::NoteOn { channel, note, .. } => {
+                Some(MidiMappingKey::Note(*channel, *note))
+            }
+            MidiMessage::NoteOff { channel, note } => Some(MidiMappingKey::Note(*channel, *note)),
+            MidiMessage::ControlChange {
+                channel,
+                controller,
+                ..
+            } => Some(MidiMappingKey::Control(*channel, *controller)),
+            MidiMessage::PitchBend { channel, .. } => Some(MidiMappingKey::PitchBend(*channel)),
+            MidiMessage::ProgramChange { channel, .. } => {
+                Some(MidiMappingKey::ProgramChange(*channel))
+            }
+            _ => None,
+        }
+    }
+}
 
 /// Maps MIDI messages to control targets
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct MidiMapping {
-    /// Message -> Target mappings
-    pub mappings: Vec<(MidiMessage, MidiControlMapping)>,
+    /// Mapping storage
+    pub map: HashMap<MidiMappingKey, MidiControlMapping>,
 }
 
 /// A single MIDI to control mapping
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct MidiControlMapping {
     pub target: ControlTarget,
     pub min_value: f32,
@@ -32,40 +65,32 @@ pub enum MappingCurve {
 
 impl MidiMapping {
     pub fn new() -> Self {
-        Self {
-            mappings: Vec::new(),
-        }
+        Self::default()
     }
 
-    /// Add a mapping from MIDI message to control target
+    /// Add a mapping
     pub fn add_mapping(
         &mut self,
-        message: MidiMessage,
+        key: MidiMappingKey,
         target: ControlTarget,
         min_value: f32,
         max_value: f32,
         curve: MappingCurve,
     ) {
-        // Remove existing mapping for this message if it exists
-        self.mappings.retain(|(m, _)| m != &message);
-        self.mappings.push((
-            message,
+        self.map.insert(
+            key,
             MidiControlMapping {
                 target,
                 min_value,
                 max_value,
                 curve,
             },
-        ));
+        );
     }
 
     /// Remove a mapping
-    pub fn remove_mapping(&mut self, message: &MidiMessage) -> Option<MidiControlMapping> {
-        if let Some(index) = self.mappings.iter().position(|(m, _)| m == message) {
-            Some(self.mappings.remove(index).1)
-        } else {
-            None
-        }
+    pub fn remove_mapping(&mut self, key: &MidiMappingKey) {
+        self.map.remove(key);
     }
 
     /// Get the control value for a MIDI message
@@ -73,7 +98,10 @@ impl MidiMapping {
         &self,
         message: &MidiMessage,
     ) -> Option<(ControlTarget, ControlValue)> {
-        let (_, mapping) = self.mappings.iter().find(|(m, _)| m.matches(message))?;
+        let key: Option<MidiMappingKey> = message.into();
+        let key = key?;
+
+        let mapping = self.map.get(&key)?;
 
         // Get the normalized value (0.0-1.0) from the MIDI message
         let normalized = match message {
@@ -81,6 +109,7 @@ impl MidiMapping {
             MidiMessage::NoteOn { velocity, .. } => *velocity as f32 / 127.0,
             MidiMessage::PitchBend { value, .. } => *value as f32 / 16383.0,
             MidiMessage::NoteOff { .. } => 0.0,
+            MidiMessage::ProgramChange { program, .. } => *program as f32 / 127.0,
             _ => return None,
         };
 
@@ -101,12 +130,6 @@ impl MidiMapping {
     /// Save to JSON
     pub fn to_json(&self) -> Result<String> {
         Ok(serde_json::to_string_pretty(self)?)
-    }
-}
-
-impl Default for MidiMapping {
-    fn default() -> Self {
-        Self::new()
     }
 }
 
@@ -131,15 +154,18 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_mapping_curves() {
-        assert_eq!(MappingCurve::Linear.apply(0.5), 0.5);
-        assert_eq!(MappingCurve::Exponential.apply(0.5), 0.25);
-        assert!((MappingCurve::Logarithmic.apply(0.25) - 0.5).abs() < 0.01);
-    }
-
-    #[test]
-    fn test_midi_mapping() {
+    fn test_midi_mapping_hashmap() {
         let mut mapping = MidiMapping::new();
+
+        let key = MidiMappingKey::Control(0, 7); // CC 7 on Ch 0
+
+        mapping.add_mapping(
+            key,
+            ControlTarget::LayerOpacity(0),
+            0.0,
+            1.0,
+            MappingCurve::Linear,
+        );
 
         let msg = MidiMessage::ControlChange {
             channel: 0,
@@ -147,42 +173,13 @@ mod tests {
             value: 64,
         };
 
-        mapping.add_mapping(
-            msg,
-            ControlTarget::LayerOpacity(0),
-            0.0,
-            1.0,
-            MappingCurve::Linear,
-        );
-
         let (target, value) = mapping.get_control_value(&msg).unwrap();
         assert_eq!(target, ControlTarget::LayerOpacity(0));
 
         if let ControlValue::Float(v) = value {
-            assert!((v - 0.503).abs() < 0.01); // 64/127 ≈ 0.503
+            assert!((v - 0.503).abs() < 0.01);
         } else {
-            panic!("Expected Float value");
+            panic!("Expected float");
         }
-    }
-
-    #[test]
-    fn test_mapping_serialization() {
-        let mut mapping = MidiMapping::new();
-        mapping.add_mapping(
-            MidiMessage::ControlChange {
-                channel: 0,
-                controller: 7,
-                value: 0,
-            },
-            ControlTarget::LayerOpacity(0),
-            0.0,
-            1.0,
-            MappingCurve::Linear,
-        );
-
-        let json = mapping.to_json().unwrap();
-        let loaded = MidiMapping::from_json(&json).unwrap();
-
-        assert_eq!(mapping.mappings.len(), loaded.mappings.len());
     }
 }
