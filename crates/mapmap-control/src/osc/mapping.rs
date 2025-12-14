@@ -102,4 +102,28 @@ mod tests {
 
         assert_eq!(mapping, loaded);
     }
+
+    #[test]
+    fn test_save_load_file() {
+        let mut mapping = OscMapping::new();
+        mapping.set_mapping("/test/save".into(), ControlTarget::MasterBlackout);
+
+        let mut path = std::env::temp_dir();
+        path.push("mapmap_test_osc_mapping.json");
+
+        // Ensure cleanup from previous runs
+        if path.exists() {
+            let _ = std::fs::remove_file(&path);
+        }
+
+        assert!(mapping.save(&path).is_ok());
+
+        let mut loaded = OscMapping::new();
+        assert!(loaded.load(&path).is_ok());
+
+        assert_eq!(mapping, loaded);
+
+        // Cleanup
+        let _ = std::fs::remove_file(&path);
+    }
 }

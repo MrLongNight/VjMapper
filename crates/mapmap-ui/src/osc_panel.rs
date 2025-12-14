@@ -84,10 +84,8 @@ pub fn render_osc_panel(ui: &Ui, app_ui: &mut AppUI, control_manager: &mut Contr
                 {
                     let err_msg = format!("Failed to save OSC mappings: {}", e);
                     tracing::error!("{}", err_msg);
-                    eprintln!("{}", err_msg); // Ensure visible in CI logs
-
-                    // Explicitly exit on save failure as requested for CI/Debugging
-                    std::process::exit(1);
+                    eprintln!("{}", err_msg);
+                    // Do not exit process, just log error.
                 }
             }
         });
