@@ -31,21 +31,27 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install build dependencies (vcpkg/FFmpeg)
+
+      - name: Ensure Chocolatey is available
         run: |
-          choco install vcpkg -y
-          vcpkg install ffmpeg:x64-windows
-          echo "VCPKG_ROOT=C:\vcpkg" | Out-File -FilePath $env:GITHUB_ENV -Append
+          if (!(Get-Command choco -ErrorAction SilentlyContinue)) {
+            Set-ExecutionPolicy Bypass -Scope Process -Force
+            iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+          }
+
+      - name: Install FFmpeg (Chocolatey)
+        run: choco install ffmpeg --no-progress -y
+
       - name: Setup Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: ${{ env.RUST_TOOLCHAIN }}
           profile: minimal
           override: true
+
       - name: Build Release
-        env:
-          VCPKG_ROOT: C:\vcpkg
         run: cargo build --release -p mapmap
+
       - name: Check if binary exists and package
         run: |
           if (!(Test-Path "target\release\mapmap.exe")) {
@@ -54,6 +60,7 @@ jobs:
           }
           mkdir dist
           copy target\release\mapmap.exe dist\VjMapper.exe
+
       - name: Prepare ZIP
         run: powershell -Command "Compress-Archive -Path dist\* -DestinationPath vjmapper-windows-x64.zip"
       - name: Upload ZIP Artifact
@@ -67,34 +74,43 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Install build dependencies (vcpkg/FFmpeg)
+
+      - name: Ensure Chocolatey is available
         run: |
-          choco install vcpkg -y
-          vcpkg install ffmpeg:x64-windows
-          echo "VCPKG_ROOT=C:\vcpkg" | Out-File -FilePath $env:GITHUB_ENV -Append
+          if (!(Get-Command choco -ErrorAction SilentlyContinue)) {
+            Set-ExecutionPolicy Bypass -Scope Process -Force
+            iex ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
+          }
+
+      - name: Install FFmpeg (Chocolatey)
+        run: choco install ffmpeg --no-progress -y
+
       - name: Setup Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: ${{ env.RUST_TOOLCHAIN }}
           profile: minimal
           override: true
+
       - name: Build Release
-        env:
-          VCPKG_ROOT: C:\vcpkg
         run: cargo build --release -p mapmap
+
       - name: Check if binary exists
         run: |
           if (!(Test-Path "target\release\mapmap.exe")) {
             Write-Host "Build fehlgeschlagen: mapmap.exe fehlt!"
             exit 1
           }
+
       - name: Install WiX Toolset
         run: choco install wixtoolset -y
+
       - name: Build MSI (requires valid .wxs file!)
         shell: pwsh
         run: |
           candle.exe .\crates\mapmap\wix\vjmapper.wxs -out vjmapper.wixobj
           light.exe vjmapper.wixobj -out vjmapper-windows-installer.msi
+
       - name: Upload MSI
         uses: actions/upload-artifact@v4
         with:
@@ -106,9 +122,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Installiere FFmpeg-Entwicklerpakete
+
+      - name: Install all FFmpeg Dev dependencies and system libs
         run: |
-          sudo apt-get update
+          sudo apt-get update -y
           sudo apt-get install -y \
             build-essential \
             pkg-config \
@@ -136,25 +153,30 @@ jobs:
           pkg-config --exists freetype2 && echo "✓ Freetype gefunden" || (echo "✗ Freetype fehlt"; exit 1)
           pkg-config --exists alsa && echo "✓ ALSA gefunden" || (echo "✗ ALSA fehlt"; exit 1)
           pkg-config --exists libavutil && echo "✓ libavutil gefunden" || (echo "✗ libavutil fehlt"; exit 1)
+
       - name: Setup Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: ${{ env.RUST_TOOLCHAIN }}
           profile: minimal
           override: true
+
       - name: Build Release
         run: cargo build --release -p mapmap
+
       - name: Check if binary exists
         run: |
           if [ ! -f target/release/mapmap ]; then
             echo "Build fehlgeschlagen: mapmap-Binary fehlt!"
             exit 1
           fi
+
       - name: Package tar.gz
         run: |
           mkdir -p dist
           cp target/release/mapmap dist/
           tar -czvf vjmapper-linux-x64.tar.gz -C dist mapmap
+
       - name: Upload Linux Artifact
         uses: actions/upload-artifact@v4
         with:
