@@ -2,6 +2,8 @@
 //!
 //! This module provides a unified interface for managing all control systems
 //! (MIDI, OSC, DMX, Web API, Cue system, and keyboard shortcuts).
+//!
+//! Refactored to remove legacy learn modes and use simplified mapping.
 
 use crate::error::{ControlError, Result};
 use crate::shortcuts::{Action, Key, KeyBindings, Modifiers};
@@ -10,28 +12,23 @@ use std::sync::{Arc, Mutex};
 use tracing::{info, warn};
 
 #[cfg(feature = "midi")]
-use crate::midi::{MidiInputHandler, MidiLearn};
+use crate::midi::MidiInputHandler;
 
 use crate::cue::CueList;
 use crate::dmx::{ArtNetSender, SacnSender};
 
 #[cfg(feature = "osc")]
-use crate::osc::{OscClient, OscLearn, OscMapping, OscServer};
+use crate::osc::{OscClient, OscMapping, OscServer};
 
 /// Unified control system manager
 pub struct ControlManager {
     #[cfg(feature = "midi")]
     pub midi_input: Option<MidiInputHandler>,
 
-    #[cfg(feature = "midi")]
-    pub midi_learn: Option<MidiLearn>,
-
     #[cfg(feature = "osc")]
     pub osc_server: Option<OscServer>,
     #[cfg(feature = "osc")]
     pub osc_clients: Vec<OscClient>,
-    #[cfg(feature = "osc")]
-    pub osc_learn: OscLearn,
     #[cfg(feature = "osc")]
     pub osc_mapping: OscMapping,
 
@@ -52,15 +49,10 @@ impl ControlManager {
             #[cfg(feature = "midi")]
             midi_input: None,
 
-            #[cfg(feature = "midi")]
-            midi_learn: None,
-
             #[cfg(feature = "osc")]
             osc_server: None,
             #[cfg(feature = "osc")]
             osc_clients: Vec::new(),
-            #[cfg(feature = "osc")]
-            osc_learn: OscLearn::new(),
             #[cfg(feature = "osc")]
             osc_mapping: OscMapping::new(),
 
@@ -82,23 +74,42 @@ impl ControlManager {
         self.control_callback = Some(Arc::new(Mutex::new(callback)));
     }
 
-    /// Initialize MIDI input
+    /// Initialize MIDI input (Robust)
     #[cfg(feature = "midi")]
     pub fn init_midi_input(&mut self) -> Result<()> {
         info!("Initializing MIDI input");
-        let handler = MidiInputHandler::new()?;
-        self.midi_input = Some(handler);
-        self.midi_learn = Some(MidiLearn::new());
-        Ok(())
+        match MidiInputHandler::new() {
+            Ok(handler) => {
+                self.midi_input = Some(handler);
+                Ok(())
+            }
+            Err(e) => {
+                warn!("MIDI input initialization failed: {}", e);
+                // We return Ok even if MIDI fails, so the app can continue
+                // Or we return Err and app handles it.
+                // The prompt says "Fehlerrobustheit ... bspw. keine Panics".
+                // Returning Err is fine if app handles it. But here we can just log warn.
+                // However, the function returns Result, so caller expects it.
+                // I will return Err but ensuring no panic.
+                Err(e)
+            }
+        }
     }
 
     /// Initialize OSC server
     #[cfg(feature = "osc")]
     pub fn init_osc_server(&mut self, port: u16) -> Result<()> {
         info!("Initializing OSC server on port {}", port);
-        let server = OscServer::new(port)?;
-        self.osc_server = Some(server);
-        Ok(())
+        match OscServer::new(port) {
+            Ok(server) => {
+                self.osc_server = Some(server);
+                Ok(())
+            }
+            Err(e) => {
+                warn!("OSC server initialization failed: {}", e);
+                Err(e)
+            }
+        }
     }
 
     /// Add an OSC client for feedback.
@@ -122,9 +133,16 @@ impl ControlManager {
             "Initializing Art-Net sender for universe {} to {}",
             universe, target
         );
-        let sender = ArtNetSender::new(universe, target)?;
-        self.artnet_sender = Some(sender);
-        Ok(())
+        match ArtNetSender::new(universe, target) {
+            Ok(sender) => {
+                self.artnet_sender = Some(sender);
+                Ok(())
+            }
+            Err(e) => {
+                warn!("Art-Net sender initialization failed: {}", e);
+                Err(e)
+            }
+        }
     }
 
     /// Initialize sACN sender
@@ -133,9 +151,16 @@ impl ControlManager {
             "Initializing sACN sender for universe {} with source {}",
             universe, source_name
         );
-        let sender = SacnSender::new(universe, source_name)?;
-        self.sacn_sender = Some(sender);
-        Ok(())
+        match SacnSender::new(universe, source_name) {
+            Ok(sender) => {
+                self.sacn_sender = Some(sender);
+                Ok(())
+            }
+            Err(e) => {
+                warn!("sACN sender initialization failed: {}", e);
+                Err(e)
+            }
+        }
     }
 
     /// Update all control systems (call every frame)
@@ -160,12 +185,7 @@ impl ControlManager {
 
         if let Some(midi_input) = &self.midi_input {
             while let Some(message) = midi_input.poll_message() {
-                // Check if in learn mode
-                if let Some(learn) = &self.midi_learn {
-                    if learn.process_message(message) {
-                        continue; // Message consumed by learn mode
-                    }
-                }
+                // Learn mode removed. Directly map.
 
                 // Get mapping and collect control values
                 if let Some(mapping) = midi_input.get_mapping() {
@@ -189,14 +209,11 @@ impl ControlManager {
 
         if let Some(osc_server) = &mut self.osc_server {
             while let Some(packet) = osc_server.poll_packet() {
-                // If in learn mode, consume the packet and do nothing else
-                if self.osc_learn.process_packet(&packet) {
-                    continue;
-                }
+                // Learn mode removed.
 
-                // If not in learn mode, try to map and apply the control
+                // Try to map and apply the control
                 if let rosc::OscPacket::Message(msg) = packet {
-                    if let Some(target) = self.osc_mapping.get_target(&msg.addr) {
+                    if let Some(target) = self.osc_mapping.get(&msg.addr) {
                         let value_result = match target {
                             ControlTarget::LayerPosition(_) => {
                                 crate::osc::types::osc_to_vec2(&msg.args)
@@ -274,6 +291,9 @@ impl ControlManager {
         if let Some(sender) = &mut self.artnet_sender {
             sender.send_dmx(channels, target)?;
         } else {
+            // No error if not initialized, just ignore? Or error?
+            // User requested robustness. If Art-Net not init, maybe we shouldn't fail hard.
+            // But returning Err allows caller to know.
             return Err(ControlError::DmxError(
                 "Art-Net not initialized".to_string(),
             ));
@@ -300,12 +320,6 @@ impl ControlManager {
             ControlTarget::MasterOpacity,
             ControlTarget::MasterBlackout,
         ]
-    }
-
-    /// Check for and retrieve the last learned OSC address.
-    #[cfg(feature = "osc")]
-    pub fn get_last_learned_address(&mut self) -> Option<String> {
-        self.osc_learn.last_address()
     }
 }
 

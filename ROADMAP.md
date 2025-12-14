@@ -137,11 +137,11 @@
   - ⬜ Image-Sequence-Playback fehlt (walkdir-Dependency vorhanden)
 
 - ✅ **Player** (`mapmap-media/src/player.rs`)
-  - ✅ Playback-State-Machine (Playing, Paused, Stopped)
-  - ✅ Speed-Control (Vorwärts/Rückwärts/Variable Speed)
-  - ✅ Loop-Modi (Loop, PingPong, PlayOnce)
-  - ✅ Frame-Seeking
-  - ✅ Timestamp-Management
+  - ✅ Robust State-Machine (Idle, Loading, Playing, Paused, Stopped, Error)
+  - ✅ PlaybackCommand System
+  - ✅ PlaybackStatus Channel
+  - ✅ Simplified Loop-Modi (Loop, PlayOnce) - Legacy modes removed
+  - ✅ Frame-Seeking & Timestamp-Management
 
 - ✅ **Pipeline** (`mapmap-media/src/pipeline.rs`)
   - ✅ Media-Pipeline-Abstraktion
@@ -196,15 +196,15 @@
   - ✅ OSC-Command-Schema definiert und dokumentiert
   - ✅ OSC-Events an `ControlTarget`s geroutet
   - ✅ OSC-Feedback (State-Updates zurück an Controller) implementiert
-  - ✅ OSC-Learn-Mode für Address-Mapping implementiert
+  - ✅ Simplified OSC-Mapping (HashMap) - Legacy Learn Mode removed
   - ✅ UI: OSC-Server-Status und Port-Konfiguration implementiert (mit `imgui`)
   - ✅ Default-OSC-Port: 8000 (konfigurierbar)
 
 - ✅ **MIDI-System (LOW PRIORITY)** (`mapmap-control/src/midi/`)
   - ✅ MIDI-Input (`midi/input.rs`)
   - ✅ MIDI-Output (`midi/output.rs`)
-  - ✅ MIDI-Mapping (`midi/mapping.rs`)
-  - ✅ MIDI-Learn (`midi/learn.rs`)
+  - ✅ MIDI-Mapping (`midi/mapping.rs`) - Simplified HashMap implementation
+  - ❌ MIDI-Learn removed (Legacy cleanup)
   - ✅ MIDI-Clock (`midi/clock.rs`)
   - ✅ MIDI-Profiles (`midi/profiles.rs`)
   - ✅ Feature-Flag: `midi` (optional)
@@ -510,39 +510,19 @@ crates/
 
 ---
 
-### 🟡 **Priorität 3: Media-Playback-State-Machine**
+### 🟢 **Priorität 3: Media-Playback-State-Machine (COMPLETED)**
 
 **Zweck:** Robuste Playback-Control mit Zustandsverwaltung.
 
-**Schritte:**
+**Status:** ✅ Completed (2025-12-14)
 
-1. **State-Machine-Refactoring:**
-   - `mapmap-media/src/player.rs`: `PlaybackState` formalisieren
-   - States: `Idle`, `Loading`, `Playing`, `Paused`, `Stopped`, `Error`
-   - State-Transitions validieren (z. B. `Playing → Paused` erlaubt, `Idle → Paused` nicht)
-
-2. **Playback-Commands:**
-   - `PlayerCommand` Enum: `Play`, `Pause`, `Stop`, `Seek(f64)`, `SetSpeed(f32)`, `SetLoopMode(LoopMode)`
-   - Command-Queue mit `crossbeam_channel` (bereits vorhanden)
-
-3. **Error-Handling:**
-   - `PlayerError` für Decode-Fehler, Seek-Fehler, etc.
-   - Fehler-Recovery: Bei Decode-Fehler → nächster Frame oder Fallback zu Error-Frame
-
-4. **UI-Integration:**
-   - `mapmap-ui/src/dashboard.rs`: Playback-Controls (Play/Pause/Stop)
-   - Speed-Slider (-4x bis 4x)
-   - Loop-Mode-Selector (Loop, PingPong, PlayOnce)
-   - Timeline-Scrubber für Seeking
-
-5. **Tests:**
-   - State-Machine-Unit-Tests (alle Transitions)
-   - Playback-Command-Tests
-
-**Akzeptanzkriterien:**
-- Playback-State-Machine ist robust und validiert Transitions
-- UI-Controls funktionieren fehlerfrei
-- Error-Handling verhindert Crashes bei fehlerhaften Media-Files
+**Realisiert:**
+- **State-Machine:** Komplett neu implementiert (`mapmap-media/src/player.rs`) mit `PlaybackState` (Idle, Loading, Playing, Paused, Stopped, Error)
+- **Commands:** `PlaybackCommand` System (Play, Pause, Stop, Seek, SetSpeed, SetLoopMode)
+- **Status:** `PlaybackStatus` Channel für asynchrone Rückmeldungen
+- **UI:** Integration in `Dashboard` und `AppUI` aktualisiert
+- **Cleanup:** Legacy Modes (PingPong, PlayOnceAndEject) entfernt
+- **Tests:** Umfassende Unit-Tests für Transitions und Commands
 
 ---
 

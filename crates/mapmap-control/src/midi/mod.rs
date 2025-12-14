@@ -5,8 +5,6 @@ mod clock;
 #[cfg(feature = "midi")]
 mod input;
 #[cfg(feature = "midi")]
-mod learn;
-#[cfg(feature = "midi")]
 mod mapping;
 #[cfg(feature = "midi")]
 mod output;
@@ -17,8 +15,6 @@ mod profiles;
 pub use clock::*;
 #[cfg(feature = "midi")]
 pub use input::*;
-#[cfg(feature = "midi")]
-pub use learn::*;
 #[cfg(feature = "midi")]
 pub use mapping::*;
 #[cfg(feature = "midi")]

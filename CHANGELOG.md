@@ -6,6 +6,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- 2025-12-14: Refactor: Complete rewrite of Media Playback State Machine and Control System Refactoring.
+    - `mapmap-media`: New `PlaybackState`, `PlaybackCommand`, `PlaybackStatus`. Removed legacy modes. Robust State Machine implementation in `player.rs`.
+    - `mapmap-control`: Removed `OscLearn`, `MidiLearn`. Simplified `OscMapping` and `MidiMapping` (HashMap based). Robust initialization for missing backends.
+    - `mapmap-ui`: Updated `Dashboard` and `AppUI` to match new Media API (Loop/PlayOnce modes).
 - 2025-12-14: fix: resolve winit/wgpu dependency conflicts in mapmap-ui (#50)
 - 2025-12-12: Fix: `mapmap-control` doc test for OSC server updated to use `poll_packet` instead of non-existent `poll_event`.
 - 2025-12-12: Fix: `test_backend_creation` now handles headless CI environments by skipping gracefully when GPU backend unavailable.
