@@ -114,6 +114,7 @@ jobs:
           libavfilter-dev \
           ffmpeg \
           libasound2-dev
+        bash scripts/install-ffmpeg-dev.sh
         # Verify installations
         pkg-config --exists fontconfig && echo "✓ Fontconfig found" || echo "✗ Fontconfig not found"
         pkg-config --exists freetype2 && echo "✓ FreeType found" || echo "✗ FreeType not found"
