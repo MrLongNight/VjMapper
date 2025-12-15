@@ -5,6 +5,7 @@
 //! - Texture pool management
 //! - Shader compilation and hot-reloading
 //! - GPU profiling
+//! - Effect chain post-processing
 
 use thiserror::Error;
 
@@ -12,6 +13,7 @@ pub mod backend;
 pub mod color_calibration_renderer;
 pub mod compositor;
 pub mod edge_blend_renderer;
+pub mod effect_chain_renderer;
 pub mod mesh_renderer;
 pub mod oscillator_renderer;
 pub mod quad;
@@ -22,6 +24,9 @@ pub use backend::{RenderBackend, WgpuBackend};
 pub use color_calibration_renderer::ColorCalibrationRenderer;
 pub use compositor::Compositor;
 pub use edge_blend_renderer::EdgeBlendRenderer;
+pub use effect_chain_renderer::{
+    Effect, EffectChain, EffectChainRenderer, EffectParams, EffectType,
+};
 pub use mesh_renderer::MeshRenderer;
 pub use oscillator_renderer::OscillatorRenderer;
 pub use quad::QuadRenderer;

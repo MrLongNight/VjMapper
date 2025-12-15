@@ -569,24 +569,39 @@ crates/
 
 ---
 
-### 🟡 **Priorität 4: Effect-Chain-Hooks und Integration**
+### � **Priorität 4: Effect-Chain-Hooks und Integration (TEILWEISE COMPLETED)**
 
 **Zweck:** Shader-Graph in Render-Pipeline integrieren, Effect-Chain nutzbar machen.
 
-**Schritte:**
+**Status:** 🟢 Core-Implementierung abgeschlossen (2025-12-15)
+
+**Realisiert:**
+- ✅ **Effect-Chain-Renderer:** `mapmap-render/src/effect_chain_renderer.rs` erstellt
+- ✅ **Multi-Pass-Rendering:** Ping-Pong-Buffers für mehrstufige Effects implementiert
+- ✅ **Effect-Parameter-System:** `EffectParams` Uniform-Buffer an GPU
+- ✅ **10 Effekt-Typen:** ColorAdjust, Blur, ChromaticAberration, EdgeDetect, Glow, Kaleidoscope, Invert, Pixelate, Vignette, FilmGrain
+- ✅ **WGSL Shader:** 9 Shader-Dateien in `crates/mapmap-render/shaders/`
+- ✅ **Unit-Tests:** 5 Tests für EffectChain Logik
+
+**Offen:**
+- ⬜ **Hot-Reload:** File-Watcher für `.wgsl`-Files (via `notify` crate)
+- ⬜ **UI-Integration:** Effect-Chain-Liste in Dashboard
+- ⬜ **Preset-System:** Effect-Presets als JSON/RON speichern
+
+**Schritte (Archiv):**
 
 1. **Shader-Graph-zu-WGSL-Pipeline:**
    - `mapmap-core/src/codegen.rs`: WGSL-Codegen testen und debuggen
    - Test: Shader-Graph → WGSL-String → wgpu::ShaderModule
 
 2. **Effect-Chain-Renderer:**
-   - `mapmap-render/src/effect_chain_renderer.rs` erstellen
-   - Multi-Pass-Rendering: Input-Texture → Effect 1 → Effect 2 → ... → Output-Texture
-   - Ping-Pong-Buffers für mehrstufige Effects
+   - `mapmap-render/src/effect_chain_renderer.rs` erstellen ✅
+   - Multi-Pass-Rendering: Input-Texture → Effect 1 → Effect 2 → ... → Output-Texture ✅
+   - Ping-Pong-Buffers für mehrstufige Effects ✅
 
 3. **Effect-Parameter-Binding:**
-   - Shader-Graph-Parameter als Uniform-Buffer an GPU schicken
-   - Parameter-Updates via `wgpu::Queue::write_buffer()`
+   - Shader-Graph-Parameter als Uniform-Buffer an GPU schicken ✅
+   - Parameter-Updates via `wgpu::Queue::write_buffer()` ✅
 
 4. **Hot-Reload:**
    - File-Watcher für `.wgsl`-Files (via `notify` crate)
@@ -604,10 +619,10 @@ crates/
    - Preset-Browser in UI
 
 **Akzeptanzkriterien:**
-- Shader-Graph wird zu WGSL kompiliert
-- Effect-Chain läuft in Render-Pipeline
-- Parameter-Änderungen in UI wirken sich in Echtzeit aus
-- Shader-Hot-Reload funktioniert
+- ✅ Shader-Graph wird zu WGSL kompiliert
+- ✅ Effect-Chain läuft in Render-Pipeline
+- ⬜ Parameter-Änderungen in UI wirken sich in Echtzeit aus
+- ⬜ Shader-Hot-Reload funktioniert
 
 ---
 

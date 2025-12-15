@@ -86,6 +86,9 @@ anyhow = "1.0"
 proptest = "1.4"
 criterion = "0.5"
 
+# File watching
+notify = "6.1"
+
 # Build dependencies
 bindgen = "0.69"
 cbindgen = "0.26"
