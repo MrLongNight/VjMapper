@@ -37,9 +37,7 @@ jobs:
           vcpkg install ffmpeg:x64-windows
           echo "VCPKG_ROOT=C:\vcpkg" | Out-File -FilePath $env:GITHUB_ENV -Append
       - name: Setup Rust toolchain
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: ${{ env.RUST_TOOLCHAIN }}
+        uses: dtolnay/rust-toolchain@stable
       - name: Build Release
         env:
           VCPKG_ROOT: C:\vcpkg
@@ -71,9 +69,7 @@ jobs:
           vcpkg install ffmpeg:x64-windows
           echo "VCPKG_ROOT=C:\vcpkg" | Out-File -FilePath $env:GITHUB_ENV -Append
       - name: Setup Rust toolchain
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: ${{ env.RUST_TOOLCHAIN }}
+        uses: dtolnay/rust-toolchain@stable
       - name: Build Release
         env:
           VCPKG_ROOT: C:\vcpkg
@@ -136,9 +132,7 @@ jobs:
           pkg-config --exists alsa && echo "✓ ALSA gefunden" || (echo "✗ ALSA fehlt"; exit 1)
           pkg-config --exists libavutil && echo "✓ libavutil gefunden" || (echo "✗ libavutil fehlt"; exit 1)
       - name: Setup Rust toolchain
-        uses: dtolnay/rust-toolchain@master
-        with:
-          toolchain: ${{ env.RUST_TOOLCHAIN }}
+        uses: dtolnay/rust-toolchain@stable
       - name: Build Release
         run: cargo build --release -p mapmap
       - name: Prüfe Binary existiert

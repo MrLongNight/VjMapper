@@ -35,9 +35,7 @@ jobs:
         queries: security-and-quality
 
     - name: Install Rust toolchain (security)
-      uses: dtolnay/rust-toolchain@master
-      with:
-        toolchain: nightly
+      uses: dtolnay/rust-toolchain@nightly
 
     - name: Install system dependencies
       run: |
