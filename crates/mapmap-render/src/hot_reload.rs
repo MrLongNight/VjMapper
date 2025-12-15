@@ -8,8 +8,6 @@ use notify::{Config, Event, EventKind, RecommendedWatcher, RecursiveMode, Watche
 use std::collections::HashMap;
 use std::fs;
 use std::path::{Path, PathBuf};
-use std::sync::Arc;
-use std::thread;
 use std::time::{Duration, Instant};
 use thiserror::Error;
 use tracing::{debug, error, info, warn};
@@ -354,7 +352,6 @@ impl HotReloadIntegration {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::env::temp_dir;
 
     #[test]
     fn test_shader_status_initial() {

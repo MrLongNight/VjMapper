@@ -6,6 +6,7 @@
 //! - Window management
 //! - Control panels
 //! - Advanced authoring UI (Phase 6)
+//! - Effect Chain Panel (Phase 3)
 
 // Phase 3: Effects Pipeline UI (ImGui-based)
 pub mod shader_graph_editor;
@@ -14,6 +15,7 @@ pub mod timeline;
 // Phase 6: Advanced Authoring UI (egui-based)
 pub mod asset_manager;
 pub mod dashboard;
+pub mod effect_chain_panel;
 pub mod media_browser;
 pub mod mesh_editor;
 pub mod node_editor;
@@ -28,6 +30,9 @@ pub use timeline::{TimelineAction, TimelineEditor};
 // Phase 6 exports
 pub use asset_manager::{AssetManager, AssetManagerAction, EffectPreset, TransformPreset};
 pub use dashboard::{Dashboard, DashboardAction, DashboardWidget, WidgetType};
+pub use effect_chain_panel::{
+    EffectChainAction, EffectChainPanel, PresetEntry, UIEffect, UIEffectChain,
+};
 pub use imgui::OwnedDrawData;
 pub use media_browser::{MediaBrowser, MediaBrowserAction, MediaEntry, MediaType};
 pub use mesh_editor::{MeshEditor, MeshEditorAction};

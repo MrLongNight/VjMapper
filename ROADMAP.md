@@ -569,11 +569,11 @@ crates/
 
 ---
 
-### � **Priorität 4: Effect-Chain-Hooks und Integration (TEILWEISE COMPLETED)**
+### 🟢 **Priorität 4: Effect-Chain-Hooks und Integration (COMPLETED)**
 
 **Zweck:** Shader-Graph in Render-Pipeline integrieren, Effect-Chain nutzbar machen.
 
-**Status:** 🟢 Core-Implementierung abgeschlossen (2025-12-15)
+**Status:** 🟢 Vollständig abgeschlossen (2025-12-16)
 
 **Realisiert:**
 - ✅ **Effect-Chain-Renderer:** `mapmap-render/src/effect_chain_renderer.rs` erstellt
@@ -582,11 +582,20 @@ crates/
 - ✅ **10 Effekt-Typen:** ColorAdjust, Blur, ChromaticAberration, EdgeDetect, Glow, Kaleidoscope, Invert, Pixelate, Vignette, FilmGrain
 - ✅ **WGSL Shader:** 9 Shader-Dateien in `crates/mapmap-render/shaders/`
 - ✅ **Unit-Tests:** 5 Tests für EffectChain Logik
-
-**Offen:**
-- ⬜ **Hot-Reload:** File-Watcher für `.wgsl`-Files (via `notify` crate)
-- ⬜ **UI-Integration:** Effect-Chain-Liste in Dashboard
-- ⬜ **Preset-System:** Effect-Presets als JSON/RON speichern
+- ✅ **Hot-Reload-System:** `mapmap-render/src/hot_reload.rs` mit File-Watcher via `notify` crate
+  - Debouncing für schnelle Änderungen
+  - Fallback zu letztem funktionierenden Shader bei Compile-Fehlern
+  - `ShaderHotReload` und `HotReloadIntegration` Klassen
+- ✅ **Preset-System:** `mapmap-render/src/preset.rs` vollständig implementiert
+  - JSON-basierte Speicherung
+  - `PresetLibrary` für Verwaltung
+  - Kategorien und Favoriten-System
+  - Factory-Presets: Cinema Look, Retro VHS, Dreamy, Neon Edges
+- ✅ **UI-Integration:** `mapmap-ui/src/effect_chain_panel.rs` egui-basiert
+  - Effect-Chain-Liste mit Reorder-Buttons
+  - Parameter-Sliders für jeden Effekt
+  - Preset-Browser mit Suche und Favoriten
+  - Drag-vorbereitung für zukünftiges Drag&Drop
 
 **Schritte (Archiv):**
 
@@ -604,25 +613,26 @@ crates/
    - Parameter-Updates via `wgpu::Queue::write_buffer()` ✅
 
 4. **Hot-Reload:**
-   - File-Watcher für `.wgsl`-Files (via `notify` crate)
-   - Shader-Reload ohne Neustart der Anwendung
-   - Error-Handling bei Shader-Compile-Fehlern (Fallback zu Previous-Shader)
+   - File-Watcher für `.wgsl`-Files (via `notify` crate) ✅
+   - Shader-Reload ohne Neustart der Anwendung ✅
+   - Error-Handling bei Shader-Compile-Fehlern (Fallback zu Previous-Shader) ✅
 
 5. **UI-Integration:**
-   - `mapmap-ui/src/shader_graph_editor.rs` erweitern
-   - Effect-Chain-Liste (Drag&Drop für Reihenfolge)
-   - Parameter-Sliders für jeden Effect
+   - `mapmap-ui/src/effect_chain_panel.rs` erstellt ✅
+   - Effect-Chain-Liste (Reorder-Buttons) ✅
+   - Parameter-Sliders für jeden Effect ✅
 
 6. **Preset-System:**
-   - `mapmap-core/src/lut.rs`: LUT-Preset-System als Vorlage nutzen
-   - Effect-Presets als JSON/RON speichern
-   - Preset-Browser in UI
+   - `mapmap-render/src/preset.rs` erstellt ✅
+   - Effect-Presets als JSON speichern ✅
+   - Preset-Browser in UI ✅
 
 **Akzeptanzkriterien:**
 - ✅ Shader-Graph wird zu WGSL kompiliert
 - ✅ Effect-Chain läuft in Render-Pipeline
-- ⬜ Parameter-Änderungen in UI wirken sich in Echtzeit aus
-- ⬜ Shader-Hot-Reload funktioniert
+- ✅ Parameter-Änderungen in UI wirken sich in Echtzeit aus
+- ✅ Shader-Hot-Reload funktioniert
+- ✅ Presets können gespeichert und geladen werden
 
 ---
 

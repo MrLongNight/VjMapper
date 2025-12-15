@@ -3,7 +3,7 @@
 //! Save/Load Effect Chain configurations as JSON files.
 //! Provides preset management with categories and favorites.
 
-use crate::effect_chain_renderer::{Effect, EffectChain, EffectType};
+use crate::effect_chain_renderer::{EffectChain, EffectType};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::fs;
@@ -174,21 +174,8 @@ impl PresetLibrary {
             for entry in entries.flatten() {
                 let path = entry.path();
 
-                // Check if it's a JSON file
-                if path.extension().map_or(false, |ext| ext == "json") {
-                    match EffectPreset::load(&path) {
-                        Ok(preset) => {
-                            categories_set.insert(preset.metadata.category.clone());
-                            self.cache.insert(path, preset);
-                        }
-                        Err(e) => {
-                            warn!("Failed to load preset {:?}: {}", path, e);
-                        }
-                    }
-                }
-
-                // Also scan subdirectories (categories)
                 if path.is_dir() {
+                    // Scan subdirectories (categories)
                     if let Ok(sub_entries) = fs::read_dir(&path) {
                         for sub_entry in sub_entries.flatten() {
                             let sub_path = sub_entry.path();
@@ -203,6 +190,17 @@ impl PresetLibrary {
                                     }
                                 }
                             }
+                        }
+                    }
+                } else if path.extension().map_or(false, |ext| ext == "json") {
+                    // Check if it's a JSON file
+                    match EffectPreset::load(&path) {
+                        Ok(preset) => {
+                            categories_set.insert(preset.metadata.category.clone());
+                            self.cache.insert(path, preset);
+                        }
+                        Err(e) => {
+                            warn!("Failed to load preset {:?}: {}", path, e);
                         }
                     }
                 }

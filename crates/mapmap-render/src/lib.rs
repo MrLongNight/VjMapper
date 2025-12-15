@@ -6,6 +6,7 @@
 //! - Shader compilation and hot-reloading
 //! - GPU profiling
 //! - Effect chain post-processing
+//! - Preset system for effect chains
 
 use thiserror::Error;
 
@@ -14,8 +15,10 @@ pub mod color_calibration_renderer;
 pub mod compositor;
 pub mod edge_blend_renderer;
 pub mod effect_chain_renderer;
+pub mod hot_reload;
 pub mod mesh_renderer;
 pub mod oscillator_renderer;
+pub mod preset;
 pub mod quad;
 pub mod shader;
 pub mod texture;
@@ -27,8 +30,10 @@ pub use edge_blend_renderer::EdgeBlendRenderer;
 pub use effect_chain_renderer::{
     Effect, EffectChain, EffectChainRenderer, EffectParams, EffectType,
 };
+pub use hot_reload::{HotReloadIntegration, ShaderChangeEvent, ShaderHotReload, ShaderStatus};
 pub use mesh_renderer::MeshRenderer;
 pub use oscillator_renderer::OscillatorRenderer;
+pub use preset::{EffectPreset, PresetLibrary, PresetMetadata};
 pub use quad::QuadRenderer;
 pub use shader::{ShaderHandle, ShaderSource};
 pub use texture::{TextureDescriptor, TextureHandle, TexturePool};
