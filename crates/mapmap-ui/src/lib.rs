@@ -16,6 +16,7 @@ pub mod timeline;
 pub mod asset_manager;
 pub mod dashboard;
 pub mod effect_chain_panel;
+pub mod i18n;
 pub mod media_browser;
 pub mod mesh_editor;
 pub mod node_editor;
@@ -23,6 +24,8 @@ pub mod osc_panel;
 pub mod theme;
 pub mod timeline_v2;
 pub mod undo_redo;
+
+pub use i18n::LocaleManager;
 
 pub use shader_graph_editor::{ShaderGraphAction, ShaderGraphEditor};
 pub use timeline::{TimelineAction, TimelineEditor};
@@ -105,6 +108,9 @@ pub enum UIAction {
 
     // Audio actions
     SelectAudioDevice(String),
+
+    // Settings
+    SetLanguage(String),
 }
 
 pub struct ImGuiContext {
@@ -246,6 +252,7 @@ pub struct AppUI {
     pub selected_audio_device: String,
     pub recent_files: Vec<String>,
     pub actions: Vec<UIAction>,
+    pub i18n: LocaleManager,
 }
 
 impl Default for AppUI {
@@ -276,6 +283,7 @@ impl Default for AppUI {
             selected_audio_device: "None".to_string(),
             recent_files: Vec::new(),
             actions: Vec::new(),
+            i18n: LocaleManager::default(),
         }
     }
 }
@@ -362,21 +370,21 @@ impl AppUI {
     /// Render main menu bar
     pub fn render_menu_bar(&mut self, ui: &Ui) {
         ui.main_menu_bar(|| {
-            ui.menu("File", || {
-                if ui.menu_item("Load Video") {
+            ui.menu(self.i18n.t("menu-file"), || {
+                if ui.menu_item(self.i18n.t("menu-file-load-video")) {
                     // TODO: Open file dialog
                     self.actions.push(UIAction::LoadVideo(String::new()));
                 }
-                if ui.menu_item("Save Project") {
+                if ui.menu_item(self.i18n.t("menu-file-save-project")) {
                     self.actions.push(UIAction::SaveProject(String::new()));
                 }
-                if ui.menu_item("Load Project") {
+                if ui.menu_item(self.i18n.t("menu-file-load-project")) {
                     self.actions.push(UIAction::LoadProject(String::new()));
                 }
 
                 // Recent Files Submenu
                 if !self.recent_files.is_empty() {
-                    ui.menu("Open Recent", || {
+                    ui.menu(self.i18n.t("menu-file-open-recent"), || {
                         for path in &self.recent_files {
                             // Display only the filename if possible, otherwise full path
                             let label = std::path::Path::new(path)
@@ -392,12 +400,12 @@ impl AppUI {
                 }
 
                 ui.separator();
-                if ui.menu_item("Exit") {
+                if ui.menu_item(self.i18n.t("menu-file-exit")) {
                     self.actions.push(UIAction::Exit);
                 }
             });
 
-            ui.menu("View", || {
+            ui.menu(self.i18n.t("menu-view"), || {
                 ui.checkbox("Show OSC Panel", &mut self.show_osc_panel);
                 ui.checkbox("Show Controls", &mut self.show_controls);
                 ui.checkbox("Show Layers", &mut self.show_layers);
@@ -414,9 +422,19 @@ impl AppUI {
                 }
             });
 
-            ui.menu("Help", || {
-                if ui.menu_item("About") {
+            ui.menu(self.i18n.t("menu-help"), || {
+                if ui.menu_item(self.i18n.t("menu-help-about")) {
                     // Show about dialog
+                }
+
+                ui.separator();
+
+                // Language Selection
+                if ui.menu_item("English") {
+                    self.actions.push(UIAction::SetLanguage("en".to_string()));
+                }
+                if ui.menu_item("Deutsch") {
+                    self.actions.push(UIAction::SetLanguage("de".to_string()));
                 }
             });
         });

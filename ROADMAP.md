@@ -819,39 +819,32 @@ crates/
 
 ---
 
-### 🟡 **Priorität 9: Internationalisierung (i18n) – NEU**
+### 🟡 **Priorität 9: Internationalisierung (i18n) (IN PROGRESS)**
 
 **Zweck:** UI-Sprache zwischen Deutsch und Englisch umschaltbar machen.
 
 **Schritte:**
 
 1. **i18n-Framework auswählen:**
-   - Option A: `fluent-rs` (Mozilla Fluent) – Empfohlen für Flexibilität
-   - Option B: `rust-i18n` – Einfacher zu integrieren
-   - Entscheidung: `fluent-rs` wegen besserer Pluralisierung und Rich-Text
+   - ✅ Option A: `fluent-rs` (Mozilla Fluent) – Empfohlen für Flexibilität
 
 2. **Übersetzungsdateien erstellen:**
-   ```
-   locales/
-   ├── en/
-   │   └── main.ftl          # Englische Übersetzungen
-   └── de/
-       └── main.ftl          # Deutsche Übersetzungen
-   ```
+   - ✅ `crates/mapmap-ui/locales/en/main.ftl`
+   - ✅ `crates/mapmap-ui/locales/de/main.ftl`
 
 3. **i18n-Modul implementieren:**
-   - `mapmap-ui/src/i18n.rs`: Sprachmanager
-   - `LocaleManager` mit `set_locale()`, `get_locale()`, `t()` (translate)
-   - Fallback auf Englisch wenn Übersetzung fehlt
+   - ✅ `mapmap-ui/src/i18n.rs`: Sprachmanager
+   - ✅ `LocaleManager` mit `set_locale()`, `t()` (translate) implemented
+   - ✅ Fallback auf Englisch wenn Übersetzung fehlt
 
 4. **UI-Integration:**
-   - Sprachauswahl-Dropdown in Settings-Panel
-   - Dynamischer Sprachwechsel ohne Neustart
-   - Alle UI-Strings durch `t!("key")` Makro ersetzen
+   - ✅ Sprachauswahl im Help-Menü (vorläufig)
+   - ✅ Dynamischer Sprachwechsel ohne Neustart
+   - 🟡 Alle UI-Strings durch `t!("key")` Makro ersetzen (Menu Bar erledigt)
 
 5. **Persistenz:**
-   - Spracheinstellung in User-Config speichern (`~/.vjmapper/config.toml`)
-   - Beim Start aus Config laden
+   - ✅ Spracheinstellung in `AppSettings` speichern
+   - ✅ Beim Start aus Config laden
 
 6. **Übersetzungsarbeit:**
    - Alle UI-Strings extrahieren (ca. 200-300 Strings)
@@ -1525,9 +1518,8 @@ cargo bench --workspace --features audio,ffmpeg
 10. 🟡 **MCP-Server Integration** – NEU: AI-gestützte Steuerung
 
 **Nächste Schritte:**
-1. Internationalisierung (i18n) starten (`fluent-rs` integration)
-2. UI-Strings extrahieren und übersetzen
-3. MCP-Server Crate erstellen (`crates/mapmap-mcp`)
+1. MCP-Server Crate erstellen (`crates/mapmap-mcp`)
+2. Restliche UI-Strings extrahieren und in FTL-Dateien übertragen
 6. **NEU:** i18n-Framework (`fluent-rs`) integrieren
 7. **NEU:** MCP-Server-Crate (`mapmap-mcp/`) erstellen
 

@@ -1,0 +1,10 @@
+app-title = MapMap - VJ Projection Mapping
+menu-file = File
+menu-file-load-video = Load Video
+menu-file-save-project = Save Project
+menu-file-load-project = Load Project
+menu-file-open-recent = Open Recent
+menu-file-exit = Exit
+menu-view = View
+menu-help = Help
+menu-help-about = About

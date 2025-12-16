@@ -36,6 +36,11 @@ parking_lot = { workspace = true }
 anyhow = { workspace = true }
 thiserror = { workspace = true }
 tracing = { workspace = true }
+fluent = { workspace = true }
+fluent-langneg = { workspace = true }
+unic-langid = { workspace = true }
+rust-embed = { workspace = true }
+once_cell = { workspace = true }
 
 [features]
 default = ["cpal"]

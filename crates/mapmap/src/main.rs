@@ -296,6 +296,12 @@ impl App {
                     let path = PathBuf::from(path_str);
                     self.load_project_file(&path);
                 }
+                mapmap_ui::UIAction::SetLanguage(lang_code) => {
+                    self.state.settings.language = lang_code.clone();
+                    self.state.dirty = true;
+                    self.ui_state.i18n.set_locale(&lang_code);
+                    info!("Language switched to: {}", lang_code);
+                }
                 // TODO: Handle other actions (AddLayer, etc.) here or delegating to state
                 _ => {}
             }
@@ -309,6 +315,9 @@ impl App {
         match load_project(path) {
             Ok(new_state) => {
                 self.state = new_state;
+                // Sync language to UI
+                self.ui_state.i18n.set_locale(&self.state.settings.language);
+
                 info!("Project loaded from {:?}", path);
 
                 // Add to recent files

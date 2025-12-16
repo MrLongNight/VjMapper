@@ -73,6 +73,8 @@ pub struct AppSettings {
     pub dark_mode: bool,
     /// UI scale factor
     pub ui_scale: f32,
+    /// UI Language code (en, de)
+    pub language: String,
 }
 
 impl Default for AppSettings {
@@ -81,6 +83,7 @@ impl Default for AppSettings {
             master_volume: 1.0,
             dark_mode: true,
             ui_scale: 1.0,
+            language: "en".to_string(),
         }
     }
 }
