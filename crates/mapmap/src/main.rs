@@ -47,6 +47,8 @@ struct App {
     egui_state: State,
     /// The egui renderer.
     egui_renderer: Renderer,
+    /// Last autosave timestamp.
+    last_autosave: std::time::Instant,
 }
 
 impl App {
@@ -125,6 +127,7 @@ impl App {
             egui_context,
             egui_state,
             egui_renderer,
+            last_autosave: std::time::Instant::now(),
         })
     }
 
@@ -204,6 +207,20 @@ impl App {
                 }
             }
             Event::AboutToWait => {
+                // Autosave check (every 5 minutes)
+                if self.state.dirty
+                    && self.last_autosave.elapsed() >= std::time::Duration::from_secs(300)
+                {
+                    let autosave_path = PathBuf::from(".mapmap_autosave");
+                    if let Err(e) = save_project(&self.state, &autosave_path) {
+                        error!("Autosave failed: {}", e);
+                    } else {
+                        info!("Autosave successful");
+                        self.last_autosave = std::time::Instant::now();
+                        // Note: We don't clear dirty flag on autosave, only on explicit save
+                    }
+                }
+
                 // Process audio
                 if let Some(backend) = &mut self.audio_backend {
                     let samples = backend.get_samples();
@@ -272,15 +289,12 @@ impl App {
                     };
 
                     if !path.as_os_str().is_empty() {
-                        match load_project(&path) {
-                            Ok(new_state) => {
-                                self.state = new_state;
-                                info!("Project loaded from {:?}", path);
-                                // TODO: Re-initialize systems if needed (e.g. audio backend settings)
-                            }
-                            Err(e) => error!("Failed to load project: {}", e),
-                        }
+                        self.load_project_file(&path);
                     }
+                }
+                mapmap_ui::UIAction::LoadRecentProject(path_str) => {
+                    let path = PathBuf::from(path_str);
+                    self.load_project_file(&path);
                 }
                 // TODO: Handle other actions (AddLayer, etc.) here or delegating to state
                 _ => {}
@@ -288,6 +302,31 @@ impl App {
         }
 
         Ok(())
+    }
+
+    /// Helper to load a project file and update state
+    fn load_project_file(&mut self, path: &PathBuf) {
+        match load_project(path) {
+            Ok(new_state) => {
+                self.state = new_state;
+                info!("Project loaded from {:?}", path);
+
+                // Add to recent files
+                if let Some(path_str) = path.to_str() {
+                    let p = path_str.to_string();
+                    // Remove if exists to move to top
+                    if let Some(pos) = self.ui_state.recent_files.iter().position(|x| x == &p) {
+                        self.ui_state.recent_files.remove(pos);
+                    }
+                    self.ui_state.recent_files.insert(0, p);
+                    // Limit to 10
+                    if self.ui_state.recent_files.len() > 10 {
+                        self.ui_state.recent_files.pop();
+                    }
+                }
+            }
+            Err(e) => error!("Failed to load project: {}", e),
+        }
     }
 
     /// Renders a single frame for a given output.

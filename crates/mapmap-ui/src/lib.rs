@@ -60,6 +60,7 @@ pub enum UIAction {
     LoadVideo(String),
     SaveProject(String),
     LoadProject(String),
+    LoadRecentProject(String),
     Exit,
 
     // Mapping actions
@@ -243,6 +244,7 @@ pub struct AppUI {
     pub selected_output_id: Option<u64>,
     pub audio_devices: Vec<String>,
     pub selected_audio_device: String,
+    pub recent_files: Vec<String>,
     pub actions: Vec<UIAction>,
 }
 
@@ -272,6 +274,7 @@ impl Default for AppUI {
             selected_output_id: None,
             audio_devices: vec!["None".to_string()],
             selected_audio_device: "None".to_string(),
+            recent_files: Vec::new(),
             actions: Vec::new(),
         }
     }
@@ -370,6 +373,24 @@ impl AppUI {
                 if ui.menu_item("Load Project") {
                     self.actions.push(UIAction::LoadProject(String::new()));
                 }
+
+                // Recent Files Submenu
+                if !self.recent_files.is_empty() {
+                    ui.menu("Open Recent", || {
+                        for path in &self.recent_files {
+                            // Display only the filename if possible, otherwise full path
+                            let label = std::path::Path::new(path)
+                                .file_name()
+                                .and_then(|n| n.to_str())
+                                .unwrap_or(path);
+
+                            if ui.menu_item(label) {
+                                self.actions.push(UIAction::LoadRecentProject(path.clone()));
+                            }
+                        }
+                    });
+                }
+
                 ui.separator();
                 if ui.menu_item("Exit") {
                     self.actions.push(UIAction::Exit);
