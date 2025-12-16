@@ -31,6 +31,10 @@ pub struct AppState {
     /// Application settings
     #[serde(default)]
     pub settings: AppSettings,
+
+    /// Dirty flag (has changes?) - Not serialized
+    #[serde(skip)]
+    pub dirty: bool,
 }
 
 impl Default for AppState {
@@ -44,6 +48,7 @@ impl Default for AppState {
             output_manager: OutputManager::new((1920, 1080)),
             audio_config: AudioConfig::default(),
             settings: AppSettings::default(),
+            dirty: false,
         }
     }
 }

@@ -645,7 +645,7 @@ crates/
 
 ---
 
-### 🟡 **Priorität 5: Projektformat und Persistenz (IN PROGRESS)**
+### 🟢 **Priorität 5: Projektformat und Persistenz (COMPLETED)**
 
 **Zweck:** Save/Load von Projekten, um Setups zu speichern und wiederherzustellen.
 
@@ -673,12 +673,12 @@ crates/
    - Migration von älteren Versionen (z. B. v0.1.0 → v0.2.0)
 
 4. **Auto-Save:**
-   - Periodisches Auto-Save (alle 5 Minuten)
-   - Auto-Save-File: `.mapmap_autosave`
+   - ✅ Periodisches Auto-Save (alle 5 Minuten)
+   - ✅ Auto-Save-File: `.mapmap_autosave`
 
 5. **Recent-Files:**
-   - Recent-Files-Liste in User-Config speichern
-   - UI: Recent-Files-Menu in Dashboard
+   - ✅ Recent-Files-Liste in User-Config speichern (in AppUI state)
+   - ✅ UI: Recent-Files-Menu in Dashboard
 
 6. **UI-Integration:**
    - ✅ File-Menu: New, Open, Save, Save As, Recent Files (Save/Load implementiert)
@@ -1517,7 +1517,7 @@ cargo bench --workspace --features audio,ffmpeg
 2. 🟢 OSC-Command-Schema und Integration ✅ COMPLETED (2025-12-15)
 3. 🟢 Media-Playback-State-Machine ✅ COMPLETED (2025-12-14)
 4. 🟢 Effect-Chain-Hooks ✅ COMPLETED (2025-12-16)
-5. 🟡 Projektformat und Persistenz (Save/Load implementiert)
+5. 🟢 Projektformat und Persistenz ✅ COMPLETED (2025-12-16)
 6. 🟢 Multi-Window-Rendering (Phase 2 Completion)
 7. 🟢 CI/CD mit Audio und FFmpeg (Builds automatisieren)
 8. 🟢 Dokumentation und DX (Onboarding verbessern)
@@ -1525,11 +1525,9 @@ cargo bench --workspace --features audio,ffmpeg
 10. 🟡 **MCP-Server Integration** – NEU: AI-gestützte Steuerung
 
 **Nächste Schritte:**
-1. Audio-Backend-Verdrahtung starten (`mapmap-core/src/audio/backend.rs` erstellen)
-2. OSC-Command-Schema dokumentieren (`mapmap-control/src/osc/mod.rs` erweitern)
-3. UI-Panels für Audio und OSC erstellen (`mapmap-ui/src/audio_config.rs`, `mapmap-ui/src/osc_config.rs`)
-4. CI/CD anpassen (Audio + FFmpeg aktivieren)
-5. Tests schreiben und laufen lassen
+1. Internationalisierung (i18n) starten (`fluent-rs` integration)
+2. UI-Strings extrahieren und übersetzen
+3. MCP-Server Crate erstellen (`crates/mapmap-mcp`)
 6. **NEU:** i18n-Framework (`fluent-rs`) integrieren
 7. **NEU:** MCP-Server-Crate (`mapmap-mcp/`) erstellen
 
