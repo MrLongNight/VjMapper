@@ -62,6 +62,17 @@ jobs:
       contents: read
         
     steps:
+    - name: Free Disk Space (Ubuntu)
+      uses: jlumbroso/free-disk-space@main
+      with:
+        # this might remove tools that are actually needed, if set to "true" but usually safe for rust builds
+        tool-cache: false
+        android: true
+        dotnet: true
+        haskell: true
+        large-packages: true
+        swap-storage: true
+        
     - uses: actions/checkout@v4
 
     - name: Install Rust (nightly)
@@ -69,23 +80,8 @@ jobs:
       with:
         components: rustfmt, clippy
 
-    - name: Cache Cargo registry and git
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.cargo/registry
-          ~/.cargo/git
-        key: ${{ runner.os }}-cargo-registry-${{ hashFiles('**/Cargo.lock') }}-${{ env.RUST_TOOLCHAIN }}
-        restore-keys: |
-          ${{ runner.os }}-cargo-registry-
-
-    - name: Cache Cargo target
-      uses: actions/cache@v4
-      with:
-        path: target
-        key: ${{ runner.os }}-cargo-target-${{ hashFiles('**/Cargo.lock') }}-${{ env.RUST_TOOLCHAIN }}
-        restore-keys: |
-          ${{ runner.os }}-cargo-target-
+    - name: Rust Cache
+      uses: swatinem/rust-cache@v2
 
     - name: Install system dependencies (Ubuntu)
       run: |
@@ -115,25 +111,22 @@ jobs:
         pkg-config --exists alsa && echo "✓ ALSA found" || echo "✗ ALSA not found"
         pkg-config --exists libavutil && echo "✓ libavutil found" || (echo "✗ libavutil not found"; exit 1)
 
-    - name: Build (Debug)
+    # We only build RELEASE to save disk space (debug artifacts are huge)
+    - name: Build & Test (Release)
       env:
         RUST_BACKTRACE: full
-      run: cargo build --verbose --all-features
-
-    - name: Build (Release)
-      env:
-        RUST_BACKTRACE: full
-      run: cargo build --release --verbose --all-features
-
-    - name: Run tests
+      run: |
+        cargo build --release --verbose --all-features
+        
+    - name: Run tests (Release)
       if: ${{ github.event.inputs.skip_tests != 'true' }}
       env:
         RUST_BACKTRACE: full
-      run: cargo test --workspace --verbose --all-features
+      run: cargo test --release --workspace --verbose --all-features
 
     - name: Run doc tests
       if: ${{ github.event.inputs.skip_tests != 'true' }}
-      run: cargo test --doc --verbose --all-features
+      run: cargo test --release --doc --verbose --all-features
 
     - name: Generate documentation
       run: cargo doc --no-deps --all-features
@@ -141,8 +134,8 @@ jobs:
     - name: Upload artifacts (Release binary)
       uses: actions/upload-artifact@v4
       with:
-        name: vjmapper-ubuntu-audio-release
-        path: target/release/mapmap
+        name: mapflow-ubuntu-audio-release
+        path: target/release/MapFlow
         if-no-files-found: ignore
 
   # Security scanning
