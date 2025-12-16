@@ -1,4 +1,4 @@
-name: "CI-05: PR Auto-Merge"
+name: "CI-05:PR_Auto-Merge"
 
 on:
   pull_request:
@@ -25,7 +25,7 @@ jobs:
   auto-merge:
     name: Auto-Merge Jules PR
     runs-on: ubuntu-latest
-    if: |
+    if: ${{ 
       (github.event.pull_request &&
        (contains(github.event.pull_request.labels.*.name, 'jules-pr') || 
         contains(github.event.pull_request.body, 'Created by Jules')) &&
@@ -35,6 +35,7 @@ jobs:
        github.event.workflow_run.conclusion != 'skipped' &&
        env.AUTO_MERGE_ENABLED == 'true') ||
       github.event_name == 'workflow_dispatch'
+    }}
     
     steps:
     - name: Find Jules PR for workflow run
@@ -124,13 +125,13 @@ jobs:
               }
               // Basic solution suggestions based on common Rust/CI issues
               if (failure.name.includes('test') && failure.output.summary.includes('failed')) {
-                analysis += `**Lösungsansatz:** Überprüfe die Testfälle auf Assertions-Fehler. Führe \`cargo test -- --nocapture\` lokal aus, um detaillierte Ausgaben zu sehen. Stelle sicher, dass alle Abhängigkeiten korrekt sind.\n\n`;
+                analysis += `**Lösungsansatz:** Überprüfe die Testfälle auf Assertions-Fehler. Führe \`cargo test -- --nocapture\` lokal aus, um detaillierte Ausgaben zu sehen. Stelle sicher, das[...]`
               } else if (failure.name.includes('clippy') && failure.output.summary.includes('warning')) {
-                analysis += `**Lösungsansatz:** Clippy-Warnungen beheben. Führe \`cargo clippy --fix\` aus, um automatische Korrekturen anzuwenden. Überprüfe Rust-API-Guidelines für Stil-Konformität.\n\n`;
+                analysis += `**Lösungsansatz:** Clippy-Warnungen beheben. Führe \`cargo clippy --fix\` aus, um automatische Korrekturen anzuwenden. Überprüfe Rust-API-Guidelines für Stil-Konformi[...]`
               } else if (failure.name.includes('fmt') && failure.output.summary.includes('format')) {
                 analysis += `**Lösungsansatz:** Code-Formatierung anpassen. Führe \`cargo fmt\` aus, um den Code automatisch zu formatieren.\n\n`;
               } else {
-                analysis += `**Lösungsansatz:** Überprüfe die vollständigen Logs für weitere Details. Konsultiere die Projekt-Dokumentation in \`docs/\` oder \`AGENTS.md\` für spezifische Guidelines.\n\n`;
+                analysis += `**Lösungsansatz:** Überprüfe die vollständigen Logs für weitere Details. Konsultiere die Projekt-Dokumentation in \`docs/\` oder \`AGENTS.md\` für spezifische Guidel[...]`
               }
             });
             
