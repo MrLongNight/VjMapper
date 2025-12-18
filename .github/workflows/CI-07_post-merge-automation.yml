@@ -27,11 +27,10 @@ jobs:
     name: Post-Merge Actions
     runs-on: ubuntu-latest
     if: |
-      env.JULES_AUTOMATION_ENABLED == 'true' &&
-      ((github.event.pull_request.merged == true && 
+      (github.event.pull_request.merged == true && 
        (contains(github.event.pull_request.labels.*.name, 'jules-pr') || 
         contains(github.event.pull_request.body, 'Created by Jules'))) ||
-      github.event_name == 'workflow_dispatch')
+      github.event_name == 'workflow_dispatch'
     
     
     steps:
@@ -46,6 +45,12 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            // Check conditions internally to satisfy linter
+            if (process.env.JULES_AUTOMATION_ENABLED !== 'true') {
+              core.setOutput('has_pr', 'false');
+              return;
+            }
+
             const prNumber = context.payload.pull_request?.number || 
                             parseInt('${{ github.event.inputs.pr_number }}' || '0');
             
@@ -195,10 +200,16 @@ jobs:
 
       - name: Close related issue
         id: close-issue
-        if: steps.get-details.outputs.has_issue == 'true' && steps.get-details.outputs.issue_already_closed == 'false'
         uses: actions/github-script@v7
         with:
           script: |
+            if (process.env.JULES_AUTOMATION_ENABLED !== 'true' || 
+                '${{ steps.get-details.outputs.has_issue }}' !== 'true' || 
+                '${{ steps.get-details.outputs.issue_already_closed }}' !== 'false') {
+              core.info('Skipping issue close');
+              return;
+            }
+
             const issueNum = parseInt('${{ steps.get-details.outputs.issue_number }}');
             const prNumber = parseInt('${{ steps.get-details.outputs.pr_number }}');
             
@@ -220,9 +231,14 @@ jobs:
 
       - name: Update ROADMAP.md
         id: update-roadmap
-        if: steps.get-details.outputs.has_issue == 'true'
         continue-on-error: true
         run: |
+          # Internal check for conditions
+          if [ "${{ env.JULES_AUTOMATION_ENABLED }}" != "true" ] || [ "${{ steps.get-details.outputs.has_issue }}" != "true" ]; then
+            echo "Skipping roadmap update"
+            exit 0
+          fi
+
           set +e  # Don't exit on errors - we want to handle them gracefully
           
           ISSUE_NUM="${{ steps.get-details.outputs.issue_number }}"
@@ -322,9 +338,14 @@ jobs:
           exit 0
 
       - name: Commit ROADMAP changes
-        if: steps.update-roadmap.outputs.roadmap_updated == 'true'
         continue-on-error: true
         run: |
+          # Internal check for conditions
+          if [ "${{ env.JULES_AUTOMATION_ENABLED }}" != "true" ] || [ "${{ steps.update-roadmap.outputs.roadmap_updated }}" != "true" ]; then
+             echo "Skipping commit"
+             exit 0
+          fi
+
           set +e  # Don't exit on errors
           
           git config user.name 'github-actions[bot]'
@@ -373,6 +394,10 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            if (process.env.JULES_AUTOMATION_ENABLED !== 'true') {
+              return;
+            }
+            
             const prNumber = parseInt('${{ steps.get-details.outputs.pr_number }}');
             const hasIssue = '${{ steps.get-details.outputs.has_issue }}' === 'true';
             const issueNumber = '${{ steps.get-details.outputs.issue_number }}';
@@ -417,6 +442,12 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            if (process.env.JULES_AUTOMATION_ENABLED !== 'true') {
+              console.log('Skipping next Jules session trigger');
+              core.setOutput('triggered', 'false');
+              return;
+            }
+
             console.log('🔄 Triggering CI-04 for next Jules task...');
             
             try {
@@ -437,6 +468,11 @@ jobs:
       - name: Summary
         if: always()
         run: |
+          if [ "${{ env.JULES_AUTOMATION_ENABLED }}" != "true" ]; then
+             echo "Skipping summary"
+             exit 0
+          fi
+          
           echo ""
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo "📝 CI-07: Post-Merge Automation completed"

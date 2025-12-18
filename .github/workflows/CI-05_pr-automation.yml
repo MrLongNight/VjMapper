@@ -30,25 +30,27 @@ jobs:
     name: Auto-Merge Jules PR
     runs-on: ubuntu-latest
     if: | 
-      env.JULES_AUTOMATION_ENABLED == 'true' &&
-      ((github.event.pull_request &&
+      (github.event.pull_request &&
        (contains(github.event.pull_request.labels.*.name, 'jules-pr') || 
         contains(github.event.pull_request.body, 'Created by Jules')) &&
-       github.event.pull_request.draft == false &&
-       env.AUTO_MERGE_ENABLED == 'true') ||
+       github.event.pull_request.draft == false) ||
       (github.event.workflow_run &&
-       github.event.workflow_run.conclusion != 'skipped' &&
-       env.AUTO_MERGE_ENABLED == 'true') ||
-      github.event_name == 'workflow_dispatch')
+       github.event.workflow_run.conclusion != 'skipped') ||
+      github.event_name == 'workflow_dispatch'
     
     
     steps:
     - name: Find Jules PR for workflow run
       id: find-pr
-      if: github.event_name == 'workflow_run'
       uses: actions/github-script@v7
       with:
         script: |
+          // Check conditions internally to satisfy linter
+          if (context.eventName !== 'workflow_run' || process.env.JULES_AUTOMATION_ENABLED !== 'true') {
+            core.setOutput('has_pr', 'false');
+            return;
+          }
+
           const run = context.payload.workflow_run;
           const { data: prs } = await github.rest.pulls.list({
             owner: context.repo.owner,
@@ -72,13 +74,15 @@ jobs:
     - name: Check for check failures and comment if needed
       id: check-failures
       uses: actions/github-script@v7
-      env:
-        PR_FROM_EVENT: ${{ github.event.pull_request.number || '' }}
-        PR_FROM_WORKFLOW: ${{ steps.find-pr.outputs.pr_number || '' }}
       with:
         script: |
+          // Check master switch
+          if (process.env.JULES_AUTOMATION_ENABLED !== 'true') {
+            return;
+          }
+
           // Determine PR number
-          let prNumber = process.env.PR_FROM_EVENT || process.env.PR_FROM_WORKFLOW;
+          let prNumber = '${{ github.event.pull_request.number }}' || '${{ steps.find-pr.outputs.pr_number }}';
           if (!prNumber && context.payload.issue) {
             prNumber = context.payload.issue.number;
           }
@@ -130,13 +134,13 @@ jobs:
               }
               // Basic solution suggestions based on common Rust/CI issues
               if (failure.name.includes('test') && failure.output.summary.includes('failed')) {
-                analysis += `**Lösungsansatz:** Überprüfe die Testfälle auf Assertions-Fehler. Führe \`cargo test -- --nocapture\` lokal aus, um detaillierte Ausgaben zu sehen. Stelle sicher, das[...]`
+                analysis += `**Lösungsansatz:** Überprüfe die Testfälle auf Assertions-Fehler. Führe \`cargo test -- --nocapture\` lokal aus, um detaillierte Ausgaben zu sehen. Stelle sicher, dass alle Abhängigkeiten korrekt installiert sind.\n\n`;
               } else if (failure.name.includes('clippy') && failure.output.summary.includes('warning')) {
-                analysis += `**Lösungsansatz:** Clippy-Warnungen beheben. Führe \`cargo clippy --fix\` aus, um automatische Korrekturen anzuwenden. Überprüfe Rust-API-Guidelines für Stil-Konformi[...]`
+                analysis += `**Lösungsansatz:** Clippy-Warnungen beheben. Führe \`cargo clippy --fix\` aus, um automatische Korrekturen anzuwenden. Überprüfe Rust-API-Guidelines für Stil-Konformität.\n\n`;
               } else if (failure.name.includes('fmt') && failure.output.summary.includes('format')) {
                 analysis += `**Lösungsansatz:** Code-Formatierung anpassen. Führe \`cargo fmt\` aus, um den Code automatisch zu formatieren.\n\n`;
               } else {
-                analysis += `**Lösungsansatz:** Überprüfe die vollständigen Logs für weitere Details. Konsultiere die Projekt-Dokumentation in \`docs/\` oder \`AGENTS.md\` für spezifische Guidel[...]`
+                analysis += `**Lösungsansatz:** Überprüfe die vollständigen Logs für weitere Details. Konsultiere die Projekt-Dokumentation in \`docs/\` oder \`AGENTS.md\` für spezifische Guidelines.\n\n`;
               }
             });
             
@@ -156,13 +160,11 @@ jobs:
 
     - name: Auto-merge Jules PR if all checks pass
       uses: actions/github-script@v7
-      env:
-        PR_FROM_EVENT: ${{ github.event.pull_request.number || '' }}
-        PR_FROM_WORKFLOW: ${{ steps.find-pr.outputs.pr_number || '' }}
+      if: env.JULES_AUTOMATION_ENABLED == 'true'
       with:
         script: |
           // Determine PR number
-          let prNumber = process.env.PR_FROM_EVENT || process.env.PR_FROM_WORKFLOW;
+          let prNumber = '${{ github.event.pull_request.number }}' || '${{ steps.find-pr.outputs.pr_number }}';
           if (!prNumber && context.payload.issue) {
             prNumber = context.payload.issue.number;
           }
