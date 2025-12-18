@@ -147,3 +147,166 @@ timeline-window-title = Timeline
 curve-editor-title = Curve Editor
 curve-editor-editing = Editing
 curve-editor-select-track = Select a track to edit curves
+
+# Playback
+playback-title = Playback Controls
+playback-video = Video Playback
+playback-play = Play
+playback-pause = Pause
+playback-stop = Stop
+playback-speed = Speed
+playback-mode = Mode:
+playback-loop = Loop
+playback-play-once = Play Once
+
+# Performance
+perf-title = Performance
+perf-fps = FPS: { $val }
+perf-frametime = Frame Time: { $val } ms
+perf-demo = MapMap Phase 0 Demo
+
+# Layers
+layers-title = Layers
+layers-total = Total Layers: { $count }
+layers-bypass = Bypass (B)
+layers-solo = Solo (S)
+layers-blend-mode = Blend Mode
+layers-opacity = Opacity (V)
+layers-duplicate = Duplicate
+layers-remove = Remove
+layers-add = Add Layer
+layers-eject-all = Eject All (X)
+
+# Paints
+paints-title = Paints
+paints-total = Total Paints: { $count }
+paints-playing = Playing
+paints-loop = Loop
+paints-speed = Speed
+paints-color = Color
+paints-add = Add Paint
+
+# Mappings
+mappings-title = Mappings
+mappings-total = Total Mappings: { $count }
+mappings-solo = Solo
+mappings-lock = Lock
+mappings-opacity = Opacity
+mappings-depth = Depth
+mappings-mesh = Mesh: { $type } ({ $count } vertices)
+mappings-remove-this = Remove This
+mappings-add-quad = Add Quad Mapping
+
+# Transform
+transform-title = Transform Controls
+transform-phase1 = Phase 1: Transform System
+transform-editing = Editing: { $name }
+transform-position = Position:
+transform-scale = Scale:
+transform-width = Width
+transform-height = Height
+transform-reset-scale = Reset Scale (1:1)
+transform-rotation = Rotation (degrees):
+transform-reset-rotation = Reset Rotation
+transform-anchor = Anchor Point (0-1):
+transform-center = Center Anchor (0.5, 0.5)
+transform-presets = Resize Presets:
+transform-fill = Fill (Cover)
+transform-fit = Fit (Contain)
+transform-stretch = Stretch (Distort)
+transform-original = Original (1:1)
+transform-no-selection = Selected layer not found.
+transform-no-layer = No layer selected.
+transform-select-tip = Click a layer name in the\nLayers panel to select it.
+
+# Master
+master-title = Master Controls
+master-phase1 = Phase 1: Master Controls
+master-composition = Composition:
+master-opacity = Master Opacity (M)
+master-speed = Master Speed (S)
+master-size = Size: { $w }x{ $h }
+master-framerate = Frame Rate: { $fps } fps
+master-multipliers = Effective Multipliers:
+master-help-opacity = All layer opacity × Master Opacity
+master-help-speed = All playback speed × Master Speed
+
+# Output
+output-title = Outputs
+output-config-title = Multi-Output Configuration
+output-canvas = Canvas: { $w }x{ $h }
+output-total = Outputs: { $count }
+output-quick-2x2 = 2x2 Projector Array
+output-add = Add Output
+output-selected = Selected Output Settings
+output-name = Name: { $name }
+output-res = Resolution: { $w }x{ $h }
+output-region = Canvas Region:
+output-blend-status = Edge Blending:
+output-calib-status = Color Calibration:
+output-tip = Tip:
+output-tip-text = Edge Blending and Color Calibration panels open automatically!
+output-remove = Remove Output
+output-multi-active = Multi-window rendering: ACTIVE
+output-multi-help = Output windows are automatically created and synchronized
+
+# Edge Blend
+blend-title = Edge Blending
+blend-output = Output: { $name }
+blend-left = Left Edge
+blend-right = Right Edge
+blend-top = Top Edge
+blend-bottom = Bottom Edge
+blend-gamma = Blend Gamma
+blend-reset = Reset to Defaults
+blend-width = Width
+blend-offset = Offset
+
+# Color Calibration
+calib-title = Color Calibration
+calib-brightness = Brightness
+calib-contrast = Contrast
+calib-gamma = Gamma (Per Channel)
+calib-red = Red Gamma
+calib-green = Green Gamma
+calib-blue = Blue Gamma
+calib-temp = Color Temperature
+calib-sat = Saturation
+calib-reset = Reset to Defaults
+
+# Oscillator
+osc-title = Oscillator Distortion
+osc-enable = Enable Effect
+osc-presets = Quick Presets:
+osc-subtle = Subtle
+osc-dramatic = Dramatic
+osc-rings = Rings
+osc-reset = Reset
+osc-dist-params = Distortion Parameters
+osc-amount = Amount
+osc-scale = Scale
+osc-speed = Speed
+osc-visual = Visual Overlay
+osc-overlay-opacity = Overlay Opacity
+osc-color-mode = Color Mode
+osc-sim-params = Simulation Parameters
+osc-res = Resolution
+osc-radius = Kernel Radius
+osc-noise = Noise Amount
+osc-freq-min = Frequency Min (Hz)
+osc-freq-max = Frequency Max (Hz)
+osc-coord-mode = Coordinate Mode
+osc-phase-init = Phase Init
+osc-coupling = Coupling Rings (Advanced)
+osc-ring = Ring { $id }
+osc-ring-dist = Distance
+osc-ring-width = Width
+osc-ring-coup = Coupling
+osc-ring-reset = Reset Ring
+osc-ring-clear = Clear Ring
+
+# Audio
+audio-title = Audio Analysis
+audio-input = Audio Input
+audio-device = Device
+audio-spectrum = Frequency Spectrum

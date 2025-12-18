@@ -138,6 +138,31 @@ impl ImGuiContext {
         // Setup fonts
         imgui.io_mut().font_global_scale = 1.0;
 
+        // Apply professional dark theme (matching egui style)
+        let style = imgui.style_mut();
+        style.window_rounding = 2.0;
+        style.frame_rounding = 2.0;
+        style.grab_rounding = 2.0;
+        style.popup_rounding = 2.0;
+        style.scrollbar_rounding = 2.0;
+        style.colors[imgui::StyleColor::Text as usize] = [0.86, 0.86, 0.86, 1.00];
+        style.colors[imgui::StyleColor::WindowBg as usize] = [0.10, 0.10, 0.10, 1.00];
+        style.colors[imgui::StyleColor::Border as usize] = [0.20, 0.20, 0.20, 1.00];
+        style.colors[imgui::StyleColor::FrameBg as usize] = [0.16, 0.16, 0.16, 1.00];
+        style.colors[imgui::StyleColor::FrameBgHovered as usize] = [0.20, 0.20, 0.20, 1.00];
+        style.colors[imgui::StyleColor::FrameBgActive as usize] = [0.24, 0.47, 0.78, 1.00];
+        style.colors[imgui::StyleColor::TitleBg as usize] = [0.12, 0.12, 0.12, 1.00];
+        style.colors[imgui::StyleColor::TitleBgActive as usize] = [0.16, 0.16, 0.16, 1.00];
+        style.colors[imgui::StyleColor::CheckMark as usize] = [0.24, 0.47, 0.78, 1.00];
+        style.colors[imgui::StyleColor::SliderGrab as usize] = [0.24, 0.47, 0.78, 1.00];
+        style.colors[imgui::StyleColor::SliderGrabActive as usize] = [0.28, 0.52, 0.85, 1.00];
+        style.colors[imgui::StyleColor::Button as usize] = [0.16, 0.16, 0.16, 1.00];
+        style.colors[imgui::StyleColor::ButtonHovered as usize] = [0.20, 0.20, 0.20, 1.00];
+        style.colors[imgui::StyleColor::ButtonActive as usize] = [0.24, 0.47, 0.78, 1.00];
+        style.colors[imgui::StyleColor::Header as usize] = [0.16, 0.16, 0.16, 1.00];
+        style.colors[imgui::StyleColor::HeaderHovered as usize] = [0.20, 0.20, 0.20, 1.00];
+        style.colors[imgui::StyleColor::HeaderActive as usize] = [0.24, 0.47, 0.78, 1.00];
+
         // Create renderer
         let renderer_config = RendererConfig {
             texture_format: surface_format,
@@ -302,22 +327,23 @@ impl AppUI {
             return;
         }
 
-        ui.window("Playback Controls")
+        ui.window(self.i18n.t("panel-playback"))
             .size([320.0, 360.0], Condition::FirstUseEver)
+            .position([380.0, 10.0], Condition::FirstUseEver)
             .build(|| {
-                ui.text("Video Playback");
+                ui.text(self.i18n.t("header-video-playback"));
                 ui.separator();
 
                 // Transport controls
-                if ui.button("Play") {
+                if ui.button(self.i18n.t("btn-play")) {
                     self.actions.push(UIAction::Play);
                 }
                 ui.same_line();
-                if ui.button("Pause") {
+                if ui.button(self.i18n.t("btn-pause")) {
                     self.actions.push(UIAction::Pause);
                 }
                 ui.same_line();
-                if ui.button("Stop") {
+                if ui.button(self.i18n.t("btn-stop")) {
                     self.actions.push(UIAction::Stop);
                 }
 
@@ -325,14 +351,19 @@ impl AppUI {
 
                 // Speed control
                 let old_speed = self.playback_speed;
-                ui.slider("Speed", 0.1, 2.0, &mut self.playback_speed);
+                ui.slider(
+                    self.i18n.t("label-speed"),
+                    0.1,
+                    2.0,
+                    &mut self.playback_speed,
+                );
                 if (self.playback_speed - old_speed).abs() > 0.001 {
                     self.actions.push(UIAction::SetSpeed(self.playback_speed));
                 }
 
                 // Loop control
-                ui.text("Mode:");
-                let mode_names = ["Loop", "Play Once"];
+                ui.text(format!("{}:", self.i18n.t("label-mode")));
+                let mode_names = [self.i18n.t("mode-loop"), self.i18n.t("mode-play-once")];
                 let mut mode_idx = match self.loop_mode {
                     mapmap_media::LoopMode::Loop => 0,
                     mapmap_media::LoopMode::PlayOnce => 1,
@@ -358,14 +389,18 @@ impl AppUI {
             return;
         }
 
-        ui.window("Performance")
+        ui.window(self.i18n.t("panel-performance"))
             .size([250.0, 120.0], Condition::FirstUseEver)
             .position([10.0, 10.0], Condition::FirstUseEver)
             .build(|| {
-                ui.text(format!("FPS: {:.1}", fps));
-                ui.text(format!("Frame Time: {:.2} ms", frame_time_ms));
+                ui.text(format!("{}: {:.1}", self.i18n.t("label-fps"), fps));
+                ui.text(format!(
+                    "{}: {:.2} ms",
+                    self.i18n.t("label-frame-time"),
+                    frame_time_ms
+                ));
                 ui.separator();
-                ui.text("MapMap Phase 0 Demo");
+                ui.text(self.i18n.t("demo-text"));
             });
     }
 
@@ -454,11 +489,15 @@ impl AppUI {
             return;
         }
 
-        ui.window("Layers")
+        ui.window(self.i18n.t("panel-layers"))
             .size([380.0, 600.0], Condition::FirstUseEver)
-            .position([1520.0, 100.0], Condition::FirstUseEver)
+            .position([1170.0, 10.0], Condition::FirstUseEver)
             .build(|| {
-                ui.text(format!("Total Layers: {}", layer_manager.layers().len()));
+                ui.text(format!(
+                    "{}: {}",
+                    self.i18n.t("label-total-layers"),
+                    layer_manager.layers().len()
+                ));
                 ui.separator();
 
                 // Collect layer IDs to avoid borrow issues
@@ -486,14 +525,14 @@ impl AppUI {
 
                         // Phase 1: Bypass, Solo, Lock toggles
                         let mut bypass = layer.bypass;
-                        if ui.checkbox("Bypass (B)", &mut bypass) {
+                        if ui.checkbox(self.i18n.t("check-bypass"), &mut bypass) {
                             layer.bypass = bypass;
                             self.actions.push(UIAction::ToggleLayerBypass(layer.id));
                         }
                         ui.same_line();
 
                         let mut solo = layer.solo;
-                        if ui.checkbox("Solo (S)", &mut solo) {
+                        if ui.checkbox(self.i18n.t("check-solo"), &mut solo) {
                             layer.solo = solo;
                             self.actions.push(UIAction::ToggleLayerSolo(layer.id));
                         }
@@ -519,9 +558,12 @@ impl AppUI {
                         let current_mode_idx = layer.blend_mode as usize;
                         let mut selected = current_mode_idx;
 
-                        if ui.combo("Blend Mode", &mut selected, &blend_modes, |item| {
-                            std::borrow::Cow::Borrowed(item)
-                        }) {
+                        if ui.combo(
+                            self.i18n.t("label-blend-mode"),
+                            &mut selected,
+                            &blend_modes,
+                            |item| std::borrow::Cow::Borrowed(item),
+                        ) {
                             layer.blend_mode = match selected {
                                 0 => BlendMode::Normal,
                                 1 => BlendMode::Add,
@@ -543,18 +585,18 @@ impl AppUI {
 
                         // Phase 1: Opacity slider (Video Fader)
                         let old_opacity = layer.opacity;
-                        ui.slider("Opacity (V)", 0.0, 1.0, &mut layer.opacity);
+                        ui.slider(self.i18n.t("label-opacity"), 0.0, 1.0, &mut layer.opacity);
                         if (layer.opacity - old_opacity).abs() > 0.001 {
                             self.actions
                                 .push(UIAction::SetLayerOpacity(layer.id, layer.opacity));
                         }
 
                         // Phase 1: Layer management buttons
-                        if ui.button("Duplicate") {
+                        if ui.button(self.i18n.t("btn-duplicate")) {
                             self.actions.push(UIAction::DuplicateLayer(layer.id));
                         }
                         ui.same_line();
-                        if ui.button("Remove") {
+                        if ui.button(self.i18n.t("btn-remove")) {
                             self.actions.push(UIAction::RemoveLayer(layer.id));
                         }
 
@@ -566,11 +608,11 @@ impl AppUI {
                 ui.separator();
 
                 // Layer management buttons
-                if ui.button("Add Layer") {
+                if ui.button(self.i18n.t("btn-add-layer")) {
                     self.actions.push(UIAction::AddLayer);
                 }
                 ui.same_line();
-                if ui.button("Eject All (X)") {
+                if ui.button(self.i18n.t("btn-eject-all")) {
                     self.actions.push(UIAction::EjectAllLayers);
                 }
             });
@@ -582,11 +624,15 @@ impl AppUI {
             return;
         }
 
-        ui.window("Paints")
+        ui.window(self.i18n.t("panel-paints"))
             .size([350.0, 400.0], Condition::FirstUseEver)
-            .position([10.0, 400.0], Condition::FirstUseEver)
+            .position([810.0, 470.0], Condition::FirstUseEver)
             .build(|| {
-                ui.text(format!("Total Paints: {}", paint_manager.paints().len()));
+                ui.text(format!(
+                    "{}: {}",
+                    self.i18n.t("label-total-paints"),
+                    paint_manager.paints().len()
+                ));
                 ui.separator();
 
                 // Paint list
@@ -604,19 +650,19 @@ impl AppUI {
                         ui.indent();
 
                         // Opacity slider
-                        ui.slider("Opacity", 0.0, 1.0, &mut paint.opacity);
+                        ui.slider(self.i18n.t("label-opacity"), 0.0, 1.0, &mut paint.opacity);
 
                         // Playback controls for video
                         if paint.paint_type == mapmap_core::PaintType::Video {
-                            ui.checkbox("Playing", &mut paint.is_playing);
+                            ui.checkbox(self.i18n.t("check-playing"), &mut paint.is_playing);
                             ui.same_line();
-                            ui.checkbox("Loop", &mut paint.loop_playback);
-                            ui.slider("Speed", 0.1, 2.0, &mut paint.rate);
+                            ui.checkbox(self.i18n.t("mode-loop"), &mut paint.loop_playback);
+                            ui.slider(self.i18n.t("label-speed"), 0.1, 2.0, &mut paint.rate);
                         }
 
                         // Color picker for color type
                         if paint.paint_type == mapmap_core::PaintType::Color {
-                            ui.color_edit4("Color", &mut paint.color);
+                            ui.color_edit4(self.i18n.t("label-color"), &mut paint.color);
                         }
 
                         ui.unindent();
@@ -627,7 +673,7 @@ impl AppUI {
                 ui.separator();
 
                 // Paint management buttons
-                if ui.button("Add Paint") {
+                if ui.button(self.i18n.t("btn-add-paint")) {
                     self.actions.push(UIAction::AddPaint);
                 }
             });
@@ -643,12 +689,13 @@ impl AppUI {
             return;
         }
 
-        ui.window("Mappings")
+        ui.window(self.i18n.t("panel-mappings"))
             .size([350.0, 450.0], Condition::FirstUseEver)
-            .position([380.0, 400.0], Condition::FirstUseEver)
+            .position([810.0, 10.0], Condition::FirstUseEver)
             .build(|| {
                 ui.text(format!(
-                    "Total Mappings: {}",
+                    "{}: {}",
+                    self.i18n.t("label-total-mappings"),
                     mapping_manager.mappings().len()
                 ));
                 ui.separator();
@@ -684,25 +731,26 @@ impl AppUI {
                         ui.indent();
 
                         // Solo and Lock toggles
-                        ui.checkbox("Solo", &mut mapping.solo);
+                        ui.checkbox(self.i18n.t("check-solo"), &mut mapping.solo);
                         ui.same_line();
                         ui.checkbox("Lock", &mut mapping.locked);
 
                         // Opacity slider
-                        ui.slider("Opacity", 0.0, 1.0, &mut mapping.opacity);
+                        ui.slider(self.i18n.t("label-opacity"), 0.0, 1.0, &mut mapping.opacity);
 
                         // Depth (Z-order)
-                        ui.slider("Depth", -10.0, 10.0, &mut mapping.depth);
+                        ui.slider(self.i18n.t("label-depth"), -10.0, 10.0, &mut mapping.depth);
 
                         // Mesh info
                         ui.text(format!(
-                            "Mesh: {:?} ({} vertices)",
+                            "{}: {:?} ({} vertices)",
+                            self.i18n.t("label-mesh"),
                             mapping.mesh.mesh_type,
                             mapping.mesh.vertex_count()
                         ));
 
                         // Remove button for this mapping
-                        if ui.button("Remove This") {
+                        if ui.button(self.i18n.t("btn-remove-this")) {
                             self.actions.push(UIAction::RemoveMapping(mapping.id));
                         }
 
@@ -714,7 +762,7 @@ impl AppUI {
                 ui.separator();
 
                 // Mapping management buttons
-                if ui.button("Add Quad Mapping") {
+                if ui.button(self.i18n.t("btn-add-quad")) {
                     self.actions.push(UIAction::AddMapping);
                 }
             });
@@ -732,34 +780,34 @@ impl AppUI {
             return;
         }
 
-        ui.window("Transform Controls")
+        ui.window(self.i18n.t("panel-transforms"))
             .size([360.0, 520.0], Condition::FirstUseEver)
-            .position([10.0, 150.0], Condition::FirstUseEver)
+            .position([10.0, 140.0], Condition::FirstUseEver)
             .build(|| {
-                ui.text("Phase 1: Transform System");
+                ui.text(self.i18n.t("header-transform-sys"));
                 ui.separator();
 
                 if let Some(selected_id) = self.selected_layer_id {
                     if let Some(layer) = layer_manager.get_layer_mut(selected_id) {
-                        ui.text(format!("Editing: {}", layer.name));
+                        ui.text(format!("{}: {}", self.i18n.t("label-editing"), layer.name));
                         ui.separator();
 
                         let transform = &mut layer.transform;
 
                         // Position controls
-                        ui.text("Position:");
+                        ui.text(format!("{}:", self.i18n.t("label-position")));
                         ui.slider("X", -1000.0, 1000.0, &mut transform.position.x);
                         ui.slider("Y", -1000.0, 1000.0, &mut transform.position.y);
 
                         ui.separator();
 
                         // Scale controls
-                        ui.text("Scale:");
+                        ui.text(format!("{}:", self.i18n.t("label-scale")));
                         ui.slider("Width", 0.1, 5.0, &mut transform.scale.x);
                         ui.slider("Height", 0.1, 5.0, &mut transform.scale.y);
 
                         // Uniform scale toggle
-                        if ui.button("Reset Scale (1:1)") {
+                        if ui.button(self.i18n.t("btn-reset-scale")) {
                             transform.scale.x = 1.0;
                             transform.scale.y = 1.0;
                         }
@@ -767,7 +815,7 @@ impl AppUI {
                         ui.separator();
 
                         // Rotation controls (in degrees for UI)
-                        ui.text("Rotation (degrees):");
+                        ui.text(format!("{}:", self.i18n.t("label-rotation")));
                         let mut rot_x_deg = transform.rotation.x.to_degrees();
                         let mut rot_y_deg = transform.rotation.y.to_degrees();
                         let mut rot_z_deg = transform.rotation.z.to_degrees();
@@ -780,51 +828,50 @@ impl AppUI {
                         transform.rotation.y = rot_y_deg.to_radians();
                         transform.rotation.z = rot_z_deg.to_radians();
 
-                        if ui.button("Reset Rotation") {
+                        if ui.button(self.i18n.t("btn-reset-rotation")) {
                             transform.rotation = glam::Vec3::ZERO;
                         }
 
                         ui.separator();
 
                         // Anchor point controls
-                        ui.text("Anchor Point (0-1):");
+                        ui.text(format!("{}:", self.i18n.t("label-anchor")));
                         ui.slider("Anchor X", 0.0, 1.0, &mut transform.anchor.x);
                         ui.slider("Anchor Y", 0.0, 1.0, &mut transform.anchor.y);
 
-                        if ui.button("Center Anchor (0.5, 0.5)") {
+                        if ui.button(self.i18n.t("btn-center-anchor")) {
                             transform.anchor = glam::Vec2::splat(0.5);
                         }
 
                         ui.separator();
 
                         // Resize mode presets (Phase 1, Month 6)
-                        ui.text("Resize Presets:");
-                        if ui.button("Fill (Cover)") {
+                        ui.text(format!("{}:", self.i18n.t("header-resize-presets")));
+                        if ui.button(self.i18n.t("btn-resize-fill")) {
                             self.actions
                                 .push(UIAction::ApplyResizeMode(selected_id, ResizeMode::Fill));
                         }
                         ui.same_line();
-                        if ui.button("Fit (Contain)") {
+                        if ui.button(self.i18n.t("btn-resize-fit")) {
                             self.actions
                                 .push(UIAction::ApplyResizeMode(selected_id, ResizeMode::Fit));
                         }
 
-                        if ui.button("Stretch (Distort)") {
+                        if ui.button(self.i18n.t("btn-resize-stretch")) {
                             self.actions
                                 .push(UIAction::ApplyResizeMode(selected_id, ResizeMode::Stretch));
                         }
                         ui.same_line();
-                        if ui.button("Original (1:1)") {
+                        if ui.button(self.i18n.t("btn-resize-original")) {
                             self.actions
                                 .push(UIAction::ApplyResizeMode(selected_id, ResizeMode::Original));
                         }
                     } else {
-                        ui.text("Selected layer not found.");
+                        ui.text(self.i18n.t("msg-no-layer-selected")); // Reusing msg
                     }
                 } else {
-                    ui.text("No layer selected.");
-                    ui.text("Click a layer name in the");
-                    ui.text("Layers panel to select it.");
+                    ui.text(self.i18n.t("msg-no-layer-selected"));
+                    ui.text(self.i18n.t("msg-select-layer-tip"));
                 }
             });
     }
@@ -839,17 +886,17 @@ impl AppUI {
             return;
         }
 
-        ui.window("Master Controls")
+        ui.window(self.i18n.t("panel-master"))
             .size([340.0, 280.0], Condition::FirstUseEver)
-            .position([10.0, 680.0], Condition::FirstUseEver)
+            .position([10.0, 670.0], Condition::FirstUseEver)
             .build(|| {
-                ui.text("Phase 1: Master Controls");
+                ui.text(self.i18n.t("header-master"));
                 ui.separator();
 
                 let composition = &mut layer_manager.composition;
 
                 // Composition name (Phase 1, Month 5)
-                ui.text("Composition:");
+                ui.text(format!("{}:", self.i18n.t("label-composition")));
                 ui.text_wrapped(&composition.name);
 
                 // Note: ImGui text input requires mutable String buffer
@@ -859,7 +906,7 @@ impl AppUI {
                 // Master Opacity (Phase 1, Month 4)
                 let old_master_opacity = composition.master_opacity;
                 ui.slider(
-                    "Master Opacity (M)",
+                    self.i18n.t("label-master-opacity"),
                     0.0,
                     1.0,
                     &mut composition.master_opacity,
@@ -871,7 +918,12 @@ impl AppUI {
 
                 // Master Speed (Phase 1, Month 5)
                 let old_master_speed = composition.master_speed;
-                ui.slider("Master Speed (S)", 0.1, 10.0, &mut composition.master_speed);
+                ui.slider(
+                    self.i18n.t("label-master-speed"),
+                    0.1,
+                    10.0,
+                    &mut composition.master_speed,
+                );
                 if (composition.master_speed - old_master_speed).abs() > 0.001 {
                     self.actions
                         .push(UIAction::SetMasterSpeed(composition.master_speed));
@@ -879,15 +931,21 @@ impl AppUI {
 
                 ui.separator();
                 ui.text(format!(
-                    "Size: {}x{}",
-                    composition.size.0, composition.size.1
+                    "{}: {}x{}",
+                    self.i18n.t("label-size"),
+                    composition.size.0,
+                    composition.size.1
                 ));
-                ui.text(format!("Frame Rate: {:.1} fps", composition.frame_rate));
+                ui.text(format!(
+                    "{}: {:.1} fps",
+                    self.i18n.t("label-frame-rate"),
+                    composition.frame_rate
+                ));
 
                 ui.separator();
-                ui.text("Effective Multipliers:");
-                ui.text("All layer opacity × Master Opacity");
-                ui.text("All playback speed × Master Speed");
+                ui.text(self.i18n.t("label-effective-multipliers"));
+                ui.text(self.i18n.t("text-mult-opacity"));
+                ui.text(self.i18n.t("text-mult-speed"));
             });
     }
 
@@ -901,20 +959,29 @@ impl AppUI {
             return;
         }
 
-        ui.window("Outputs")
+        ui.window(self.i18n.t("panel-outputs"))
             .size([420.0, 500.0], Condition::FirstUseEver)
-            .position([10.0, 450.0], Condition::FirstUseEver)
+            .position([380.0, 400.0], Condition::FirstUseEver)
             .build(|| {
-                ui.text("Multi-Output Configuration");
+                ui.text(self.i18n.t("header-multi-output"));
                 ui.separator();
 
                 // Canvas size display
                 let canvas_size = output_manager.canvas_size();
-                ui.text(format!("Canvas: {}x{}", canvas_size.0, canvas_size.1));
+                ui.text(format!(
+                    "{}: {}x{}",
+                    self.i18n.t("label-canvas"),
+                    canvas_size.0,
+                    canvas_size.1
+                ));
                 ui.separator();
 
                 // Output list
-                ui.text(format!("Outputs: {}", output_manager.outputs().len()));
+                ui.text(format!(
+                    "{}: {}",
+                    self.i18n.t("panel-outputs"),
+                    output_manager.outputs().len()
+                ));
 
                 for output in output_manager.outputs() {
                     let _id = ui.push_id_usize(output.id as usize);
@@ -941,7 +1008,7 @@ impl AppUI {
                 ui.separator();
 
                 // Quick setup buttons
-                if ui.button("2x2 Projector Array") {
+                if ui.button(self.i18n.t("btn-projector-array")) {
                     self.actions.push(UIAction::CreateProjectorArray2x2(
                         (1920, 1080),
                         0.1, // 10% overlap
@@ -949,7 +1016,7 @@ impl AppUI {
                 }
 
                 ui.same_line();
-                if ui.button("Add Output") {
+                if ui.button(self.i18n.t("btn-add-output")) {
                     // Add a single output covering full canvas
                     self.actions.push(UIAction::AddOutput(
                         "New Output".to_string(),
@@ -965,7 +1032,7 @@ impl AppUI {
                     if let Some(output) =
                         output_manager.outputs().iter().find(|o| o.id == output_id)
                     {
-                        ui.text("Selected Output Settings");
+                        ui.text(self.i18n.t("header-selected-output"));
                         ui.separator();
 
                         ui.text(format!("Name: {}", output.name));
@@ -975,7 +1042,7 @@ impl AppUI {
                         ));
 
                         ui.separator();
-                        ui.text("Canvas Region:");
+                        ui.text(format!("{}:", self.i18n.t("label-canvas-region")));
                         ui.text(format!(
                             "  X: {:.2}, Y: {:.2}",
                             output.canvas_region.x, output.canvas_region.y
@@ -989,40 +1056,52 @@ impl AppUI {
 
                         // Edge blending status
                         let blend = &output.edge_blend;
-                        ui.text("Edge Blending:");
+                        ui.text(format!("{}:", self.i18n.t("panel-edge-blend")));
                         if blend.left.enabled {
-                            ui.text("  Left");
+                            ui.text(format!("  {}", self.i18n.t("check-left")));
                         }
                         if blend.right.enabled {
-                            ui.text("  Right");
+                            ui.text(format!("  {}", self.i18n.t("check-right")));
                         }
                         if blend.top.enabled {
-                            ui.text("  Top");
+                            ui.text(format!("  {}", self.i18n.t("check-top")));
                         }
                         if blend.bottom.enabled {
-                            ui.text("  Bottom");
+                            ui.text(format!("  {}", self.i18n.t("check-bottom")));
                         }
                         if !blend.left.enabled
                             && !blend.right.enabled
                             && !blend.top.enabled
                             && !blend.bottom.enabled
                         {
-                            ui.text_disabled("  (None)");
+                            ui.text_disabled(format!("  {}", self.i18n.t("label-none")));
                         }
 
                         ui.separator();
 
                         // Color calibration status
                         let cal = &output.color_calibration;
-                        ui.text("Color Calibration:");
+                        ui.text(format!("{}:", self.i18n.t("panel-color-cal")));
                         if cal.brightness != 0.0 {
-                            ui.text(format!("  Brightness: {:.2}", cal.brightness));
+                            ui.text(format!(
+                                "  {}: {:.2}",
+                                self.i18n.t("label-brightness"),
+                                cal.brightness
+                            ));
                         }
                         if cal.contrast != 1.0 {
-                            ui.text(format!("  Contrast: {:.2}", cal.contrast));
+                            ui.text(format!(
+                                "  {}: {:.2}",
+                                self.i18n.t("label-contrast"),
+                                cal.contrast
+                            ));
                         }
                         if cal.saturation != 1.0 {
-                            ui.text(format!("  Saturation: {:.2}", cal.saturation));
+                            ui.text(format!(
+                                "  {}: {:.2}",
+                                self.i18n.t("label-saturation"),
+                                cal.saturation
+                            ));
                         }
                         if cal.brightness == 0.0 && cal.contrast == 1.0 && cal.saturation == 1.0 {
                             ui.text_disabled("  (Defaults)");
@@ -1031,13 +1110,11 @@ impl AppUI {
                         ui.separator();
 
                         ui.text_colored([0.5, 0.8, 1.0, 1.0], "Tip:");
-                        ui.text_wrapped(
-                            "Edge Blending and Color Calibration panels open automatically!",
-                        );
+                        ui.text_wrapped(self.i18n.t("tip-panels-auto-open"));
 
                         ui.separator();
 
-                        if ui.button("Remove Output") {
+                        if ui.button(self.i18n.t("btn-remove-output")) {
                             self.actions.push(UIAction::RemoveOutput(output_id));
                             self.selected_output_id = None;
                         }
@@ -1045,8 +1122,8 @@ impl AppUI {
                 }
 
                 ui.separator();
-                ui.text_colored([0.0, 1.0, 0.0, 1.0], "Multi-window rendering: ACTIVE");
-                ui.text_disabled("Output windows are automatically created and synchronized");
+                ui.text_colored([0.0, 1.0, 0.0, 1.0], self.i18n.t("msg-multi-window-active"));
+                ui.text_disabled(self.i18n.t("msg-output-windows-tip"));
             });
     }
 
@@ -1074,9 +1151,9 @@ impl AppUI {
 
         let output = output.unwrap();
 
-        ui.window("Edge Blending")
+        ui.window(self.i18n.t("panel-edge-blend"))
             .size([380.0, 450.0], Condition::FirstUseEver)
-            .position([440.0, 450.0], Condition::FirstUseEver)
+            .position([1170.0, 620.0], Condition::FirstUseEver)
             .build(|| {
                 ui.text(format!("Output: {}", output.name));
                 ui.separator();
@@ -1084,55 +1161,95 @@ impl AppUI {
                 let blend = &mut output.edge_blend;
 
                 // Left edge
-                ui.checkbox("Left Edge", &mut blend.left.enabled);
+                ui.checkbox(self.i18n.t("check-left"), &mut blend.left.enabled);
                 if blend.left.enabled {
                     ui.indent();
-                    ui.slider("Width##left", 0.0, 0.5, &mut blend.left.width);
-                    ui.slider("Offset##left", -0.1, 0.1, &mut blend.left.offset);
+                    ui.slider(
+                        format!("{}##left", self.i18n.t("label-width")),
+                        0.0,
+                        0.5,
+                        &mut blend.left.width,
+                    );
+                    ui.slider(
+                        format!("{}##left", self.i18n.t("label-offset")),
+                        -0.1,
+                        0.1,
+                        &mut blend.left.offset,
+                    );
                     ui.unindent();
                 }
 
                 ui.separator();
 
                 // Right edge
-                ui.checkbox("Right Edge", &mut blend.right.enabled);
+                ui.checkbox(self.i18n.t("check-right"), &mut blend.right.enabled);
                 if blend.right.enabled {
                     ui.indent();
-                    ui.slider("Width##right", 0.0, 0.5, &mut blend.right.width);
-                    ui.slider("Offset##right", -0.1, 0.1, &mut blend.right.offset);
+                    ui.slider(
+                        format!("{}##right", self.i18n.t("label-width")),
+                        0.0,
+                        0.5,
+                        &mut blend.right.width,
+                    );
+                    ui.slider(
+                        format!("{}##right", self.i18n.t("label-offset")),
+                        -0.1,
+                        0.1,
+                        &mut blend.right.offset,
+                    );
                     ui.unindent();
                 }
 
                 ui.separator();
 
                 // Top edge
-                ui.checkbox("Top Edge", &mut blend.top.enabled);
+                ui.checkbox(self.i18n.t("check-top"), &mut blend.top.enabled);
                 if blend.top.enabled {
                     ui.indent();
-                    ui.slider("Width##top", 0.0, 0.5, &mut blend.top.width);
-                    ui.slider("Offset##top", -0.1, 0.1, &mut blend.top.offset);
+                    ui.slider(
+                        format!("{}##top", self.i18n.t("label-width")),
+                        0.0,
+                        0.5,
+                        &mut blend.top.width,
+                    );
+                    ui.slider(
+                        format!("{}##top", self.i18n.t("label-offset")),
+                        -0.1,
+                        0.1,
+                        &mut blend.top.offset,
+                    );
                     ui.unindent();
                 }
 
                 ui.separator();
 
                 // Bottom edge
-                ui.checkbox("Bottom Edge", &mut blend.bottom.enabled);
+                ui.checkbox(self.i18n.t("check-bottom"), &mut blend.bottom.enabled);
                 if blend.bottom.enabled {
                     ui.indent();
-                    ui.slider("Width##bottom", 0.0, 0.5, &mut blend.bottom.width);
-                    ui.slider("Offset##bottom", -0.1, 0.1, &mut blend.bottom.offset);
+                    ui.slider(
+                        format!("{}##bottom", self.i18n.t("label-width")),
+                        0.0,
+                        0.5,
+                        &mut blend.bottom.width,
+                    );
+                    ui.slider(
+                        format!("{}##bottom", self.i18n.t("label-offset")),
+                        -0.1,
+                        0.1,
+                        &mut blend.bottom.offset,
+                    );
                     ui.unindent();
                 }
 
                 ui.separator();
 
                 // Gamma control
-                ui.slider("Blend Gamma", 1.0, 3.0, &mut blend.gamma);
+                ui.slider(self.i18n.t("label-gamma"), 1.0, 3.0, &mut blend.gamma);
 
                 ui.separator();
 
-                if ui.button("Reset to Defaults") {
+                if ui.button(self.i18n.t("btn-reset-defaults")) {
                     *blend = mapmap_core::EdgeBlendConfig::default();
                 }
             });
@@ -1162,34 +1279,49 @@ impl AppUI {
 
         let output = output.unwrap();
 
-        ui.window("Color Calibration")
+        ui.window(self.i18n.t("panel-color-cal"))
             .size([380.0, 500.0], Condition::FirstUseEver)
-            .position([830.0, 450.0], Condition::FirstUseEver)
+            .position([1560.0, 10.0], Condition::FirstUseEver)
             .build(|| {
                 ui.text(format!("Output: {}", output.name));
                 ui.separator();
 
                 let cal = &mut output.color_calibration;
 
-                ui.slider("Brightness", -1.0, 1.0, &mut cal.brightness);
-                ui.slider("Contrast", 0.0, 2.0, &mut cal.contrast);
+                ui.slider(
+                    self.i18n.t("label-brightness"),
+                    -1.0,
+                    1.0,
+                    &mut cal.brightness,
+                );
+                ui.slider(self.i18n.t("label-contrast"), 0.0, 2.0, &mut cal.contrast);
 
                 ui.separator();
-                ui.text("Gamma (Per Channel)");
-                ui.slider("Red Gamma", 0.5, 3.0, &mut cal.gamma.x);
+                ui.text(self.i18n.t("label-gamma-channels"));
+                ui.slider("Red Gamma", 0.5, 3.0, &mut cal.gamma.x); // TODO: Add keys for these
                 ui.slider("Green Gamma", 0.5, 3.0, &mut cal.gamma.y);
                 ui.slider("Blue Gamma", 0.5, 3.0, &mut cal.gamma_b);
 
                 ui.separator();
-                ui.slider("Color Temperature", 2000.0, 10000.0, &mut cal.color_temp);
+                ui.slider(
+                    self.i18n.t("label-color-temp"),
+                    2000.0,
+                    10000.0,
+                    &mut cal.color_temp,
+                );
                 ui.text_disabled("(D65 = 6500K)");
 
                 ui.separator();
-                ui.slider("Saturation", 0.0, 2.0, &mut cal.saturation);
+                ui.slider(
+                    self.i18n.t("label-saturation"),
+                    0.0,
+                    2.0,
+                    &mut cal.saturation,
+                );
 
                 ui.separator();
 
-                if ui.button("Reset to Defaults") {
+                if ui.button(self.i18n.t("btn-reset-defaults")) {
                     *cal = mapmap_core::ColorCalibration::default();
                 }
             });
@@ -1201,47 +1333,62 @@ impl AppUI {
             return;
         }
 
-        ui.window("Oscillator Distortion")
+        ui.window(self.i18n.t("panel-oscillator"))
             .size([450.0, 750.0], Condition::FirstUseEver)
-            .position([870.0, 100.0], Condition::FirstUseEver)
+            .position([1560.0, 520.0], Condition::FirstUseEver)
             .build(|| {
                 // Master enable
-                ui.checkbox("Enable Effect", &mut config.enabled);
+                ui.checkbox(self.i18n.t("check-enable"), &mut config.enabled);
                 ui.separator();
 
                 // Preset buttons
-                ui.text("Quick Presets:");
-                if ui.button("Subtle") {
+                ui.text(format!("{}:", self.i18n.t("header-quick-presets")));
+                if ui.button(self.i18n.t("btn-subtle")) {
                     *config = mapmap_core::OscillatorConfig::preset_subtle();
                 }
                 ui.same_line();
-                if ui.button("Dramatic") {
+                if ui.button(self.i18n.t("btn-dramatic")) {
                     *config = mapmap_core::OscillatorConfig::preset_dramatic();
                 }
                 ui.same_line();
-                if ui.button("Rings") {
+                if ui.button(self.i18n.t("btn-rings")) {
                     *config = mapmap_core::OscillatorConfig::preset_rings();
                 }
                 ui.same_line();
-                if ui.button("Reset") {
+                if ui.button(self.i18n.t("btn-reset")) {
                     *config = mapmap_core::OscillatorConfig::default();
                 }
 
                 ui.separator();
 
                 // Distortion parameters
-                ui.text("Distortion Parameters");
-                ui.slider("Amount", 0.0, 1.0, &mut config.distortion_amount);
+                ui.text(self.i18n.t("header-distortion"));
+                ui.slider(
+                    self.i18n.t("label-amount"),
+                    0.0,
+                    1.0,
+                    &mut config.distortion_amount,
+                );
                 if ui.is_item_hovered() {
                     ui.tooltip_text("Intensity of the distortion effect");
                 }
 
-                ui.slider("Scale", 0.0, 0.1, &mut config.distortion_scale);
+                ui.slider(
+                    self.i18n.t("label-dist-scale"),
+                    0.0,
+                    0.1,
+                    &mut config.distortion_scale,
+                );
                 if ui.is_item_hovered() {
                     ui.tooltip_text("Spatial scale of distortion");
                 }
 
-                ui.slider("Speed", 0.0, 5.0, &mut config.distortion_speed);
+                ui.slider(
+                    self.i18n.t("label-dist-speed"),
+                    0.0,
+                    5.0,
+                    &mut config.distortion_speed,
+                );
                 if ui.is_item_hovered() {
                     ui.tooltip_text("Animation speed");
                 }
@@ -1249,8 +1396,13 @@ impl AppUI {
                 ui.separator();
 
                 // Visual overlay
-                ui.text("Visual Overlay");
-                ui.slider("Overlay Opacity", 0.0, 1.0, &mut config.overlay_opacity);
+                ui.text(self.i18n.t("header-visual-overlay"));
+                ui.slider(
+                    self.i18n.t("label-overlay-opacity"),
+                    0.0,
+                    1.0,
+                    &mut config.overlay_opacity,
+                );
 
                 // Color mode combo
                 let color_modes = ["Off", "Rainbow", "Black & White", "Complementary"];
@@ -1261,9 +1413,12 @@ impl AppUI {
                     mapmap_core::ColorMode::Complementary => 3,
                 };
 
-                if ui.combo("Color Mode", &mut color_idx, &color_modes, |item| {
-                    std::borrow::Cow::Borrowed(item)
-                }) {
+                if ui.combo(
+                    self.i18n.t("label-color-mode"),
+                    &mut color_idx,
+                    &color_modes,
+                    |item| std::borrow::Cow::Borrowed(item),
+                ) {
                     config.color_mode = match color_idx {
                         0 => mapmap_core::ColorMode::Off,
                         1 => mapmap_core::ColorMode::Rainbow,
@@ -1276,19 +1431,22 @@ impl AppUI {
                 ui.separator();
 
                 // Simulation parameters
-                ui.text("Simulation Parameters");
+                ui.text(self.i18n.t("header-simulation"));
 
                 // Resolution combo
-                let res_names = ["Low (128×128)", "Medium (256×256)", "High (512×512)"];
+                let res_names = ["Low (128x128)", "Medium (256x256)", "High (512x512)"];
                 let mut res_idx = match config.simulation_resolution {
                     mapmap_core::SimulationResolution::Low => 0,
                     mapmap_core::SimulationResolution::Medium => 1,
                     mapmap_core::SimulationResolution::High => 2,
                 };
 
-                if ui.combo("Resolution", &mut res_idx, &res_names, |item| {
-                    std::borrow::Cow::Borrowed(item)
-                }) {
+                if ui.combo(
+                    self.i18n.t("label-resolution"),
+                    &mut res_idx,
+                    &res_names,
+                    |item| std::borrow::Cow::Borrowed(item),
+                ) {
                     config.simulation_resolution = match res_idx {
                         0 => mapmap_core::SimulationResolution::Low,
                         1 => mapmap_core::SimulationResolution::Medium,
@@ -1300,18 +1458,38 @@ impl AppUI {
                     ui.tooltip_text("Higher resolution = more detail but slower");
                 }
 
-                ui.slider("Kernel Radius", 1.0, 64.0, &mut config.kernel_radius);
+                ui.slider(
+                    self.i18n.t("label-kernel-radius"),
+                    1.0,
+                    64.0,
+                    &mut config.kernel_radius,
+                );
                 if ui.is_item_hovered() {
                     ui.tooltip_text("Coupling interaction distance");
                 }
 
-                ui.slider("Noise Amount", 0.0, 1.0, &mut config.noise_amount);
+                ui.slider(
+                    self.i18n.t("label-noise-amount"),
+                    0.0,
+                    1.0,
+                    &mut config.noise_amount,
+                );
                 if ui.is_item_hovered() {
                     ui.tooltip_text("Random variation in oscillation");
                 }
 
-                ui.slider("Frequency Min (Hz)", 0.0, 10.0, &mut config.frequency_min);
-                ui.slider("Frequency Max (Hz)", 0.0, 10.0, &mut config.frequency_max);
+                ui.slider(
+                    self.i18n.t("label-freq-min"),
+                    0.0,
+                    10.0,
+                    &mut config.frequency_min,
+                );
+                ui.slider(
+                    self.i18n.t("label-freq-max"),
+                    0.0,
+                    10.0,
+                    &mut config.frequency_max,
+                );
 
                 ui.separator();
 
@@ -1322,9 +1500,12 @@ impl AppUI {
                     mapmap_core::CoordinateMode::LogPolar => 1,
                 };
 
-                if ui.combo("Coordinate Mode", &mut coord_idx, &coord_modes, |item| {
-                    std::borrow::Cow::Borrowed(item)
-                }) {
+                if ui.combo(
+                    self.i18n.t("label-coordinate-mode"),
+                    &mut coord_idx,
+                    &coord_modes,
+                    |item| std::borrow::Cow::Borrowed(item),
+                ) {
                     config.coordinate_mode = match coord_idx {
                         0 => mapmap_core::CoordinateMode::Cartesian,
                         1 => mapmap_core::CoordinateMode::LogPolar,
@@ -1345,9 +1526,12 @@ impl AppUI {
                     mapmap_core::PhaseInitMode::PlaneDiagonal => 4,
                 };
 
-                if ui.combo("Phase Init", &mut phase_idx, &phase_modes, |item| {
-                    std::borrow::Cow::Borrowed(item)
-                }) {
+                if ui.combo(
+                    self.i18n.t("label-phase-init"),
+                    &mut phase_idx,
+                    &phase_modes,
+                    |item| std::borrow::Cow::Borrowed(item),
+                ) {
                     config.phase_init_mode = match phase_idx {
                         0 => mapmap_core::PhaseInitMode::Random,
                         1 => mapmap_core::PhaseInitMode::Uniform,
@@ -1364,7 +1548,7 @@ impl AppUI {
                 ui.separator();
 
                 // Coupling rings
-                if ui.collapsing_header("Coupling Rings (Advanced)", TreeNodeFlags::empty()) {
+                if ui.collapsing_header(self.i18n.t("header-coupling"), TreeNodeFlags::empty()) {
                     for i in 0..4 {
                         let _id = ui.push_id_usize(i);
 
@@ -1376,26 +1560,41 @@ impl AppUI {
                             .tree_node_config(format!("Ring {}", i + 1))
                             .default_open(is_active)
                             .build(|| {
-                                ui.slider("Distance", 0.0, 1.0, &mut config.rings[i].distance);
+                                ui.slider(
+                                    format!("{}##ring", self.i18n.t("label-dist-scale")),
+                                    0.0,
+                                    1.0,
+                                    &mut config.rings[i].distance,
+                                );
                                 if ui.is_item_hovered() {
                                     ui.tooltip_text("Distance from center (0-1)");
                                 }
 
-                                ui.slider("Width", 0.0, 1.0, &mut config.rings[i].width);
+                                ui.slider(
+                                    format!("{}##ring", self.i18n.t("label-width")),
+                                    0.0,
+                                    1.0,
+                                    &mut config.rings[i].width,
+                                );
                                 if ui.is_item_hovered() {
                                     ui.tooltip_text("Ring width (0-1)");
                                 }
 
-                                ui.slider("Coupling", -5.0, 5.0, &mut config.rings[i].coupling);
+                                ui.slider(
+                                    self.i18n.t("label-diff-coupling"),
+                                    -5.0,
+                                    5.0,
+                                    &mut config.rings[i].coupling,
+                                );
                                 if ui.is_item_hovered() {
                                     ui.tooltip_text("Negative = anti-sync, Positive = sync");
                                 }
 
-                                if ui.button("Reset Ring") {
+                                if ui.button(self.i18n.t("btn-reset-ring")) {
                                     config.rings[i] = mapmap_core::RingParams::default();
                                 }
                                 ui.same_line();
-                                if ui.button("Clear Ring") {
+                                if ui.button(self.i18n.t("btn-clear-ring")) {
                                     config.rings[i] = mapmap_core::RingParams {
                                         distance: 0.0,
                                         width: 0.0,
@@ -1419,10 +1618,10 @@ impl AppUI {
             return;
         }
 
-        ui.window("Audio Analysis")
+        ui.window(self.i18n.t("panel-audio"))
             .size([380.0, 450.0], Condition::FirstUseEver)
             .build(|| {
-                ui.text("Audio Input");
+                ui.text(self.i18n.t("header-audio-input"));
                 ui.separator();
 
                 let mut selected_idx = self
@@ -1431,9 +1630,12 @@ impl AppUI {
                     .position(|d| d == &self.selected_audio_device)
                     .unwrap_or(0);
 
-                if ui.combo("Device", &mut selected_idx, &self.audio_devices, |item| {
-                    std::borrow::Cow::Borrowed(item)
-                }) {
+                if ui.combo(
+                    self.i18n.t("label-device"),
+                    &mut selected_idx,
+                    &self.audio_devices,
+                    |item| std::borrow::Cow::Borrowed(item),
+                ) {
                     self.selected_audio_device = self.audio_devices[selected_idx].clone();
                     self.actions.push(UIAction::SelectAudioDevice(
                         self.selected_audio_device.clone(),

@@ -45,9 +45,16 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            // Set defaults to satisfy linter
+            core.setOutput('has_pr', 'false');
+            core.setOutput('has_issue', 'false');
+            core.setOutput('issue_number', '');
+            core.setOutput('pr_number', '');
+            core.setOutput('issue_title', '');
+            core.setOutput('issue_already_closed', 'false');
+
             // Check conditions internally to satisfy linter
             if (process.env.JULES_AUTOMATION_ENABLED !== 'true') {
-              core.setOutput('has_pr', 'false');
               return;
             }
 
@@ -233,6 +240,9 @@ jobs:
         id: update-roadmap
         continue-on-error: true
         run: |
+          # Set default for linter
+          echo "roadmap_updated=false" >> $GITHUB_OUTPUT
+
           # Internal check for conditions
           if [ "${{ env.JULES_AUTOMATION_ENABLED }}" != "true" ] || [ "${{ steps.get-details.outputs.has_issue }}" != "true" ]; then
             echo "Skipping roadmap update"
@@ -442,9 +452,11 @@ jobs:
         uses: actions/github-script@v7
         with:
           script: |
+            // Set default to satisfy linter
+            core.setOutput('triggered', 'false');
+
             if (process.env.JULES_AUTOMATION_ENABLED !== 'true') {
               console.log('Skipping next Jules session trigger');
-              core.setOutput('triggered', 'false');
               return;
             }
 

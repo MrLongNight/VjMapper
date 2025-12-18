@@ -48,6 +48,7 @@ jobs:
           // Check conditions internally to satisfy linter
           if (context.eventName !== 'workflow_run' || process.env.JULES_AUTOMATION_ENABLED !== 'true') {
             core.setOutput('has_pr', 'false');
+            core.setOutput('pr_number', '');
             return;
           }
 
