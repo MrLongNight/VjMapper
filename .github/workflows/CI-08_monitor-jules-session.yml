@@ -118,9 +118,9 @@ jobs:
               
               if (actualIssues.length === 0) {
                 core.info('');
-                core.info('═══════════════════════════════════════════════════════════');
+                core.info('═══════════════════════════════════════════════════════════════');
                 core.info('✅ ALL DONE! No more open jules-task issues.');
-                core.info('═══════════════════════════════════════════════════════════');
+                core.info('═══════════════════════════════════════════════════════════════');
                 return;
               }
               
@@ -157,9 +157,10 @@ jobs:
                 // Find session ID from comments
                 let sessionId = null;
                 for (const comment of comments) {
-                  let match = comment.body.match(/sessions\/([a-zA-Z0-9_-]+)/);
+                  // Updated regex to match both 'session/' and 'sessions/' in URLs or text
+                  let match = comment.body.match(/https?:\/\/[^\s]*?session[s]?\/([a-zA-Z0-9_-]+)/i);
                   if (!match) {
-                    match = comment.body.match(/session[:\s]+([a-zA-Z0-9_-]{10,})/i);
+                    match = comment.body.match(/session[s]?[:\s]+([a-zA-Z0-9_-]{10,})/i);
                   }
                   if (match) {
                     sessionId = match[1];
