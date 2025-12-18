@@ -29,6 +29,10 @@ jobs:
   auto-merge:
     name: Auto-Merge Jules PR
     runs-on: ubuntu-latest
+    env:
+      JULES_AUTOMATION_ENABLED: ${{ vars['JULES_AUTOMATION_ENABLED'] || 'true' }}
+      FIND_PR_NUMBER: ''
+      HAS_PR: 'false'
     if: | 
       (github.event.pull_request &&
        (contains(github.event.pull_request.labels.*.name, 'jules-pr') || 
@@ -66,10 +70,13 @@ jobs:
           );
           
           if (pr) {
+            core.exportVariable('FIND_PR_NUMBER', pr.number.toString());
+            core.exportVariable('HAS_PR', 'true');
             core.setOutput('pr_number', pr.number);
             core.setOutput('has_pr', 'true');
           } else {
-            core.setOutput('has_pr', 'false');
+          } else {
+            core.exportVariable('HAS_PR', 'false');
           }
 
     - name: Check for check failures and comment if needed
@@ -83,7 +90,7 @@ jobs:
           }
 
           // Determine PR number
-          let prNumber = '${{ github.event.pull_request.number }}' || '${{ steps['find-pr'].outputs['pr_number'] || '' }}';
+          let prNumber = context.payload.pull_request?.number || process.env.FIND_PR_NUMBER;
           if (!prNumber && context.payload.issue) {
             prNumber = context.payload.issue.number;
           }
@@ -160,12 +167,13 @@ jobs:
           }
 
     - name: Auto-merge Jules PR if all checks pass
+      id: auto-merge
       uses: actions/github-script@v7
       if: env.JULES_AUTOMATION_ENABLED == 'true'
       with:
         script: |
           // Determine PR number
-          let prNumber = '${{ github.event.pull_request.number }}' || '${{ steps['find-pr'].outputs['pr_number'] || '' }}';
+          let prNumber = context.payload.pull_request?.number || process.env.FIND_PR_NUMBER;
           if (!prNumber && context.payload.issue) {
             prNumber = context.payload.issue.number;
           }

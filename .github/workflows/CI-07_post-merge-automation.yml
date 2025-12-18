@@ -26,12 +26,23 @@ jobs:
   post-merge-actions:
     name: Post-Merge Actions
     runs-on: ubuntu-latest
+    env:
+      JULES_AUTOMATION_ENABLED: ${{ vars['JULES_AUTOMATION_ENABLED'] || 'true' }}
+      FIND_PR_NUMBER: ''
+      HAS_PR: 'false'
+      HAS_ISSUE: 'false'
+      ISSUE_NUMBER: ''
+      ISSUE_TITLE: ''
+      PR_NUMBER: ''
+      ISSUE_ALREADY_CLOSED: 'false'
+      ROADMAP_UPDATED: 'false'
+      ROADMAP_SKIP_REASON: ''
+      TRIGGERED: 'false'
     if: |
-      (github.event.pull_request.merged == true && 
-       (contains(github.event.pull_request.labels.*.name, 'jules-pr') || 
+      (github.event.pull_request.merged == true &&
+       (contains(github.event.pull_request.labels.*.name, 'jules-pr') ||
         contains(github.event.pull_request.body, 'Created by Jules'))) ||
       github.event_name == 'workflow_dispatch'
-    
     
     steps:
       - name: Checkout repository
@@ -64,6 +75,7 @@ jobs:
             if (!prNumber) {
               core.info('No PR to process');
               core.setOutput('has_pr', 'false');
+              core.exportVariable('HAS_PR', 'false');
               return;
             }
             
@@ -74,7 +86,9 @@ jobs:
             });
             
             core.setOutput('has_pr', 'true');
+            core.exportVariable('HAS_PR', 'true');
             core.setOutput('pr_number', prNumber);
+            core.exportVariable('PR_NUMBER', prNumber);
             core.setOutput('pr_title', pr.title);
             core.setOutput('pr_body', pr.body || '');
             
@@ -163,6 +177,8 @@ jobs:
             }
             
             if (issueNum) {
+              core.exportVariable('HAS_ISSUE', 'true');
+              core.exportVariable('ISSUE_NUMBER', issueNum.toString());
               core.setOutput('issue_number', issueNum);
               core.setOutput('has_issue', 'true');
               
@@ -173,23 +189,28 @@ jobs:
                   repo: context.repo.repo,
                   issue_number: issueNum
                 });
+                core.exportVariable('ISSUE_TITLE', issue.title);
                 core.setOutput('issue_title', issue.title);
                 core.setOutput('issue_body', issue.body || '');
                 
                 // Check if issue is closed
                 if (issue.state === 'closed') {
+                  core.exportVariable('ISSUE_ALREADY_CLOSED', 'true');
                   core.setOutput('issue_already_closed', 'true');
                   core.info(`ℹ️ Issue #${issueNum} is already closed`);
                 } else {
+                  core.exportVariable('ISSUE_ALREADY_CLOSED', 'false');
                   core.setOutput('issue_already_closed', 'false');
                   core.info(`ℹ️ Issue #${issueNum} is open and will be closed`);
                 }
               } catch (error) {
                 core.warning(`Could not fetch issue #${issueNum}: ${error.message}`);
+                core.exportVariable('HAS_ISSUE', 'false');
                 core.setOutput('has_issue', 'false');
               }
             } else {
               core.warning('⚠️ Could not find related issue number using any strategy');
+              core.exportVariable('HAS_ISSUE', 'false');
               core.setOutput('has_issue', 'false');
               
               // Create a warning comment on the PR
@@ -211,14 +232,14 @@ jobs:
         with:
           script: |
             if (process.env.JULES_AUTOMATION_ENABLED !== 'true' || 
-                '${{ steps['get-details'].outputs['has_issue'] || 'false' }}' !== 'true' || 
-                '${{ steps['get-details'].outputs['issue_already_closed'] || 'false' }}' !== 'false') {
+                process.env.HAS_ISSUE !== 'true' || 
+                process.env.ISSUE_ALREADY_CLOSED !== 'false') {
               core.info('Skipping issue close');
               return;
             }
 
-            const issueNum = parseInt('${{ steps['get-details'].outputs['issue_number'] || '' }}');
-            const prNumber = parseInt('${{ steps['get-details'].outputs['pr_number'] || '' }}');
+            const issueNum = parseInt(process.env.ISSUE_NUMBER);
+            const prNumber = parseInt(process.env.PR_NUMBER);
             
             await github.rest.issues.update({
               owner: context.repo.owner,
@@ -244,16 +265,16 @@ jobs:
           echo "roadmap_updated=false" >> $GITHUB_OUTPUT
 
           # Internal check for conditions
-          if [ "${{ env.JULES_AUTOMATION_ENABLED }}" != "true" ] || [ "${{ steps['get-details'].outputs['has_issue'] || 'false' }}" != "true" ]; then
+          if [ "${{ env.JULES_AUTOMATION_ENABLED }}" != "true" ] || [ "${{ env.HAS_ISSUE }}" != "true" ]; then
             echo "Skipping roadmap update"
             exit 0
           fi
 
           set +e  # Don't exit on errors - we want to handle them gracefully
           
-          ISSUE_NUM="${{ steps['get-details'].outputs['issue_number'] || '' }}"
-          ISSUE_TITLE="${{ steps['get-details'].outputs['issue_title'] || '' }}"
-          PR_NUM="${{ steps['get-details'].outputs['pr_number'] || '' }}"
+          ISSUE_NUM="${{ env.ISSUE_NUMBER }}"
+          ISSUE_TITLE="${{ env.ISSUE_TITLE }}"
+          PR_NUM="${{ env.PR_NUMBER }}"
           
           echo "📝 Attempting to update ROADMAP.md for issue #${ISSUE_NUM}"
           
@@ -261,6 +282,8 @@ jobs:
             echo "⚠️ ROADMAP.md not found - skipping roadmap update"
             echo "roadmap_updated=false" >> $GITHUB_OUTPUT
             echo "roadmap_skip_reason=file_not_found" >> $GITHUB_OUTPUT
+            core.exportVariable('ROADMAP_UPDATED', 'false');
+            core.exportVariable('ROADMAP_SKIP_REASON', 'file_not_found');
             exit 0
           fi
           
@@ -336,10 +359,13 @@ jobs:
           if diff -q ROADMAP.md ROADMAP.md.backup > /dev/null; then
             echo "ℹ️ No changes made to ROADMAP.md"
             echo "roadmap_updated=false" >> $GITHUB_OUTPUT
+            core.exportVariable('ROADMAP_UPDATED', 'false');
             echo "roadmap_skip_reason=no_changes" >> $GITHUB_OUTPUT
+            core.exportVariable('ROADMAP_SKIP_REASON', 'no_changes');
           else
             echo "✅ ROADMAP.md updated successfully"
             echo "roadmap_updated=true" >> $GITHUB_OUTPUT
+            core.exportVariable('ROADMAP_UPDATED', 'true');
           fi
           
           # Cleanup backup
@@ -351,7 +377,7 @@ jobs:
         continue-on-error: true
         run: |
           # Internal check for conditions
-          if [ "${{ env.JULES_AUTOMATION_ENABLED }}" != "true" ] || [ "${{ steps['update-roadmap'].outputs['roadmap_updated'] || 'false' }}" != "true" ]; then
+          if [ "${{ env.JULES_AUTOMATION_ENABLED }}" != "true" ] || [ "${{ env.ROADMAP_UPDATED }}" != "true" ]; then
              echo "Skipping commit"
              exit 0
           fi
@@ -365,21 +391,21 @@ jobs:
             echo "📝 Committing ROADMAP.md changes..."
             git add ROADMAP.md
             
-            if git commit -m "docs: Update ROADMAP.md - completed issue #${{ steps['get-details'].outputs['issue_number'] || '' }}"; then
+            if git commit -m "docs: Update ROADMAP.md - completed issue #${{ env.ISSUE_NUMBER }}"; then
               echo "✅ Changes committed"
               
               # Try to push with retry logic
               MAX_RETRIES=3
               RETRY_COUNT=0
               
-              while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+              while [ "${RETRY_COUNT}" -lt "${MAX_RETRIES}" ]; do
                 if git push; then
                   echo "✅ ROADMAP.md committed and pushed successfully"
                   exit 0
                 else
                   RETRY_COUNT=$((RETRY_COUNT + 1))
-                  if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
-                    echo "⚠️ Push failed, retrying ($RETRY_COUNT/$MAX_RETRIES)..."
+                  if [ "${RETRY_COUNT}" -lt "${MAX_RETRIES}" ]; then
+                    echo "⚠️ Push failed, retrying (${RETRY_COUNT}/${MAX_RETRIES})..."
                     sleep 2
                     # Use the default branch from the repository
                     BASE_BRANCH="${{ github.event.repository.default_branch || 'main' }}"
@@ -401,6 +427,7 @@ jobs:
 
       - name: Add summary comment to PR
         if: always()
+        id: summary-comment
         uses: actions/github-script@v7
         with:
           script: |
@@ -408,11 +435,11 @@ jobs:
               return;
             }
             
-            const prNumber = parseInt('${{ steps['get-details'].outputs['pr_number'] || '' }}');
-            const hasIssue = '${{ steps['get-details'].outputs['has_issue'] || 'false' }}' === 'true';
-            const issueNumber = '${{ steps['get-details'].outputs['issue_number'] || '' }}';
-            const roadmapUpdated = '${{ steps['update-roadmap'].outputs['roadmap_updated'] || 'false' }}' === 'true';
-            const roadmapSkipReason = '${{ steps['update-roadmap'].outputs['roadmap_skip_reason'] || '' }}';
+            const prNumber = parseInt(process.env.PR_NUMBER);
+            const hasIssue = process.env.HAS_ISSUE === 'true';
+            const issueNumber = process.env.ISSUE_NUMBER;
+            const roadmapUpdated = process.env.ROADMAP_UPDATED === 'true';
+            const roadmapSkipReason = process.env.ROADMAP_SKIP_REASON;
             
             if (!prNumber) return;
             
@@ -454,6 +481,7 @@ jobs:
           script: |
             // Set default to satisfy linter
             core.setOutput('triggered', 'false');
+            core.exportVariable('TRIGGERED', 'false');
 
             if (process.env.JULES_AUTOMATION_ENABLED !== 'true') {
               console.log('Skipping next Jules session trigger');
@@ -490,9 +518,9 @@ jobs:
           echo "📝 CI-07: Post-Merge Automation completed"
           echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
           echo ""
-          echo "PR Number: ${{ steps['get-details'].outputs['pr_number'] || '' }}"
-          echo "Issue Number: ${{ steps['get-details'].outputs['issue_number'] || '' }}"
-          echo "Issue Closed: ${{ steps['close-issue'].conclusion }}"
-          echo "ROADMAP Updated: ${{ steps['update-roadmap'].outputs['roadmap_updated'] || 'false' }}"
-          echo "Next Session Triggered: ${{ steps['trigger-next'].outputs['triggered'] || 'false' }}"
+          echo "PR Number: ${{ env.PR_NUMBER }}"
+          echo "Issue Number: ${{ env.ISSUE_NUMBER }}"
+          echo "Issue Closed: ${{ steps.close-issue.conclusion }}"
+          echo "ROADMAP Updated: ${{ env.ROADMAP_UPDATED }}"
+          echo "Next Session Triggered: ${{ env.TRIGGERED }}"
           echo ""
