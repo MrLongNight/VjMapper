@@ -17,7 +17,7 @@ pub enum McpAction {
     /// Load a project.
     LoadProject(PathBuf),
     /// Add a new layer.
-    AddLayer,
+    AddLayer(String),
     /// Remove a layer by ID.
     RemoveLayer(u64),
     /// Trigger a cue by ID.

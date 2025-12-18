@@ -141,7 +141,9 @@ impl McpServer {
                         description: Some("Create a new layer".to_string()),
                         input_schema: serde_json::json!({
                             "type": "object",
-                            "properties": {},
+                            "properties": {
+                                "name": { "type": "string", "description": "Optional name for the new layer" }
+                            },
                         }),
                     },
                     Tool {
@@ -397,8 +399,13 @@ impl McpServer {
                     "media_pause" => self.send_osc_msg("/mapmap/playback/pause", vec![], id),
                     "media_stop" => self.send_osc_msg("/mapmap/playback/stop", vec![], id),
                     "layer_create" => {
+                        let name = args
+                            .get("name")
+                            .and_then(|v| v.as_str())
+                            .unwrap_or("New Layer");
+
                         if let Some(sender) = &self.action_sender {
-                            let _ = sender.send(McpAction::AddLayer);
+                            let _ = sender.send(McpAction::AddLayer(name.to_string()));
                             Some(success_response(
                                 id,
                                 serde_json::json!(CallToolResult {

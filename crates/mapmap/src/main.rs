@@ -352,9 +352,9 @@ impl App {
                     info!("MCP: Loading project from {:?}", path);
                     self.load_project_file(&path);
                 }
-                McpAction::AddLayer => {
-                    info!("MCP: Adding layer");
-                    self.state.layer_manager.create_layer("New Layer");
+                McpAction::AddLayer(name) => {
+                    info!("MCP: Adding layer '{}'", name);
+                    self.state.layer_manager.create_layer(name);
                     self.state.dirty = true;
                 }
                 McpAction::RemoveLayer(id) => {
@@ -364,7 +364,8 @@ impl App {
                 }
                 McpAction::TriggerCue(id) => {
                     info!("MCP: Triggering cue {}", id);
-                    self.control_manager.execute_action(Action::GotoCue(id));
+                    self.control_manager
+                        .execute_action(Action::GotoCue(id as u32));
                 }
                 McpAction::NextCue => {
                     info!("MCP: Next cue");
