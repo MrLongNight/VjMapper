@@ -367,7 +367,6 @@ impl AppUI {
                 let mut mode_idx = match self.loop_mode {
                     mapmap_media::LoopMode::Loop => 0,
                     mapmap_media::LoopMode::PlayOnce => 1,
-                    _ => 0, // Default to Loop
                 };
 
                 if ui.combo(
@@ -500,12 +499,12 @@ impl AppUI {
             return;
         }
 
-        ui.window(self.i18n.t("layers-title"))
+        ui.window(self.i18n.t("panel-layers"))
             .size([380.0, 600.0], Condition::FirstUseEver)
-            .position([1170.0, 10.0], Condition::FirstUseEver)
+            .position([1530.0, 10.0], Condition::FirstUseEver)
             .build(|| {
                 ui.text(self.i18n.t_args(
-                    "layers-total",
+                    "label-total-layers",
                     &[("count", &layer_manager.layers().len().to_string())],
                 ));
                 ui.separator();
@@ -535,14 +534,14 @@ impl AppUI {
 
                         // Phase 1: Bypass, Solo, Lock toggles
                         let mut bypass = layer.bypass;
-                        if ui.checkbox(self.i18n.t("layers-bypass"), &mut bypass) {
+                        if ui.checkbox(self.i18n.t("check-bypass"), &mut bypass) {
                             layer.bypass = bypass;
                             self.actions.push(UIAction::ToggleLayerBypass(layer.id));
                         }
                         ui.same_line();
 
                         let mut solo = layer.solo;
-                        if ui.checkbox(self.i18n.t("layers-solo"), &mut solo) {
+                        if ui.checkbox(self.i18n.t("check-solo"), &mut solo) {
                             layer.solo = solo;
                             self.actions.push(UIAction::ToggleLayerSolo(layer.id));
                         }
@@ -569,7 +568,7 @@ impl AppUI {
                         let mut selected = current_mode_idx;
 
                         if ui.combo(
-                            self.i18n.t("layers-blend-mode"),
+                            self.i18n.t("label-mode"),
                             &mut selected,
                             &blend_modes,
                             |item| std::borrow::Cow::Borrowed(item),
@@ -595,18 +594,23 @@ impl AppUI {
 
                         // Phase 1: Opacity slider (Video Fader)
                         let old_opacity = layer.opacity;
-                        ui.slider(self.i18n.t("layers-opacity"), 0.0, 1.0, &mut layer.opacity);
+                        ui.slider(
+                            self.i18n.t("label-master-opacity"),
+                            0.0,
+                            1.0,
+                            &mut layer.opacity,
+                        );
                         if (layer.opacity - old_opacity).abs() > 0.001 {
                             self.actions
                                 .push(UIAction::SetLayerOpacity(layer.id, layer.opacity));
                         }
 
                         // Phase 1: Layer management buttons
-                        if ui.button(self.i18n.t("layers-duplicate")) {
+                        if ui.button(self.i18n.t("btn-duplicate")) {
                             self.actions.push(UIAction::DuplicateLayer(layer.id));
                         }
                         ui.same_line();
-                        if ui.button(self.i18n.t("layers-remove")) {
+                        if ui.button(self.i18n.t("btn-remove")) {
                             self.actions.push(UIAction::RemoveLayer(layer.id));
                         }
 
@@ -618,11 +622,11 @@ impl AppUI {
                 ui.separator();
 
                 // Layer management buttons
-                if ui.button(self.i18n.t("layers-add")) {
+                if ui.button(self.i18n.t("btn-add-layer")) {
                     self.actions.push(UIAction::AddLayer);
                 }
                 ui.same_line();
-                if ui.button(self.i18n.t("layers-eject-all")) {
+                if ui.button(self.i18n.t("btn-eject-all")) {
                     self.actions.push(UIAction::EjectAllLayers);
                 }
             });
@@ -634,12 +638,12 @@ impl AppUI {
             return;
         }
 
-        ui.window(self.i18n.t("paints-title"))
+        ui.window(self.i18n.t("panel-paints"))
             .size([350.0, 400.0], Condition::FirstUseEver)
-            .position([810.0, 470.0], Condition::FirstUseEver)
+            .position([1170.0, 470.0], Condition::FirstUseEver)
             .build(|| {
                 ui.text(self.i18n.t_args(
-                    "paints-total",
+                    "label-total-paints",
                     &[("count", &paint_manager.paints().len().to_string())],
                 ));
                 ui.separator();
@@ -659,14 +663,19 @@ impl AppUI {
                         ui.indent();
 
                         // Opacity slider
-                        ui.slider(self.i18n.t("paint-opacity"), 0.0, 1.0, &mut paint.opacity);
+                        ui.slider(
+                            self.i18n.t("label-master-opacity"),
+                            0.0,
+                            1.0,
+                            &mut paint.opacity,
+                        );
 
                         // Playback controls for video
                         if paint.paint_type == mapmap_core::PaintType::Video {
-                            ui.checkbox(self.i18n.t("paints-playing"), &mut paint.is_playing);
+                            ui.checkbox(self.i18n.t("check-playing"), &mut paint.is_playing);
                             ui.same_line();
-                            ui.checkbox(self.i18n.t("paints-loop"), &mut paint.loop_playback);
-                            ui.slider(self.i18n.t("paints-speed"), 0.1, 2.0, &mut paint.rate);
+                            ui.checkbox(self.i18n.t("mode-loop"), &mut paint.loop_playback);
+                            ui.slider(self.i18n.t("label-speed"), 0.1, 2.0, &mut paint.rate);
                         }
 
                         // Color picker for color type
@@ -698,12 +707,12 @@ impl AppUI {
             return;
         }
 
-        ui.window(self.i18n.t("mappings-title"))
+        ui.window(self.i18n.t("panel-mappings"))
             .size([350.0, 450.0], Condition::FirstUseEver)
-            .position([810.0, 10.0], Condition::FirstUseEver)
+            .position([1170.0, 10.0], Condition::FirstUseEver)
             .build(|| {
                 ui.text(self.i18n.t_args(
-                    "mappings-total",
+                    "label-total-mappings",
                     &[("count", &mapping_manager.mappings().len().to_string())],
                 ));
                 ui.separator();
@@ -739,13 +748,13 @@ impl AppUI {
                         ui.indent();
 
                         // Solo and Lock toggles
-                        ui.checkbox(self.i18n.t("mappings-solo"), &mut mapping.solo);
+                        ui.checkbox(self.i18n.t("check-solo"), &mut mapping.solo);
                         ui.same_line();
-                        ui.checkbox(self.i18n.t("mappings-lock"), &mut mapping.locked);
+                        ui.checkbox(self.i18n.t("check-lock"), &mut mapping.locked);
 
                         // Opacity slider
                         ui.slider(
-                            self.i18n.t("mappings-opacity"),
+                            self.i18n.t("label-master-opacity"),
                             0.0,
                             1.0,
                             &mut mapping.opacity,
@@ -753,7 +762,7 @@ impl AppUI {
 
                         // Depth (Z-order)
                         ui.slider(
-                            self.i18n.t("mappings-depth"),
+                            self.i18n.t("label-frame-time"),
                             -10.0,
                             10.0,
                             &mut mapping.depth,
@@ -761,7 +770,7 @@ impl AppUI {
 
                         // Mesh info
                         ui.text(self.i18n.t_args(
-                            "mappings-mesh",
+                            "label-mesh",
                             &[
                                 ("type", &format!("{:?}", mapping.mesh.mesh_type)),
                                 ("count", &mapping.mesh.vertex_count().to_string()),
@@ -799,11 +808,11 @@ impl AppUI {
             return;
         }
 
-        ui.window(self.i18n.t("transform-title"))
+        ui.window(self.i18n.t("panel-transforms"))
             .size([360.0, 520.0], Condition::FirstUseEver)
             .position([10.0, 140.0], Condition::FirstUseEver)
             .build(|| {
-                ui.text(self.i18n.t("transform-phase1"));
+                ui.text(self.i18n.t("header-transform-sys"));
                 ui.separator();
 
                 if let Some(selected_id) = self.selected_layer_id {
@@ -1672,6 +1681,7 @@ impl AppUI {
 
         ui.window(self.i18n.t("panel-audio"))
             .size([380.0, 450.0], Condition::FirstUseEver)
+            .position([810.0, 10.0], Condition::FirstUseEver)
             .build(|| {
                 ui.text(self.i18n.t("header-audio-input"));
                 ui.separator();

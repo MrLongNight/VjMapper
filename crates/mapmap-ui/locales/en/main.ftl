@@ -316,3 +316,18 @@ panel-audio = Audio Analysis
 header-audio-input = Audio Input
 label-device = Device
 audio-spectrum = Frequency Spectrum
+
+# OSC Panel
+panel-osc-title = OSC Control
+header-osc-server = OSC Server
+status-running = Running
+status-stopped = Stopped
+label-status = Status
+label-port = Port
+btn-start-server = Start Server
+header-feedback-clients = Feedback Clients
+btn-remove = Remove
+label-add-client = Add Client
+btn-add = Add
+header-address-mappings = Address Mappings
+text-osc-edit-tip = (Edit osc_mappings.json for now)
