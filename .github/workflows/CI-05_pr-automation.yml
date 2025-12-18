@@ -83,7 +83,7 @@ jobs:
           }
 
           // Determine PR number
-          let prNumber = '${{ github.event.pull_request.number }}' || '${{ steps['find-pr'].outputs['pr_number'] }}';
+          let prNumber = '${{ github.event.pull_request.number }}' || '${{ steps['find-pr'].outputs['pr_number'] || '' }}';
           if (!prNumber && context.payload.issue) {
             prNumber = context.payload.issue.number;
           }
@@ -165,7 +165,7 @@ jobs:
       with:
         script: |
           // Determine PR number
-          let prNumber = '${{ github.event.pull_request.number }}' || '${{ steps['find-pr'].outputs['pr_number'] }}';
+          let prNumber = '${{ github.event.pull_request.number }}' || '${{ steps['find-pr'].outputs['pr_number'] || '' }}';
           if (!prNumber && context.payload.issue) {
             prNumber = context.payload.issue.number;
           }

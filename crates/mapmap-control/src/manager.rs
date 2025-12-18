@@ -369,4 +369,28 @@ mod tests {
 
         assert!(called.load(Ordering::SeqCst));
     }
+    #[test]
+    fn test_cue_execution() {
+        let mut manager = ControlManager::new();
+
+        // Add some dummy cues to test navigation
+        manager
+            .cue_list
+            .add_cue(crate::cue::Cue::new(1, "Cue 1".to_string()));
+        manager
+            .cue_list
+            .add_cue(crate::cue::Cue::new(2, "Cue 2".to_string()));
+
+        // Test Goto 1
+        manager.execute_action(Action::GotoCue(1));
+        assert_eq!(manager.cue_list.current_cue(), Some(1));
+
+        // Test Next
+        manager.execute_action(Action::NextCue);
+        assert_eq!(manager.cue_list.current_cue(), Some(2));
+
+        // Test Prev
+        manager.execute_action(Action::PrevCue);
+        assert_eq!(manager.cue_list.current_cue(), Some(1));
+    }
 }

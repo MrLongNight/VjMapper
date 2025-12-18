@@ -264,6 +264,9 @@ btn-remove-output = Remove Output
 msg-multi-window-active = Multi-window rendering: ACTIVE
 msg-output-windows-tip = Output windows are automatically created and synchronized
 label-saturation = Saturation
+label-freq-spectrum = Frequency Spectrum
+label-output = Output: { $name }
+label-device = Device
 
 # Edge Blend (Harmonized with User edits)
 panel-edge-blend = Edge Blending
@@ -281,6 +284,9 @@ panel-color-cal = Color Calibration
 label-brightness = Brightness
 label-contrast = Contrast
 label-gamma-channels = Gamma (Per Channel)
+label-gamma-red = Red Gamma
+label-gamma-green = Green Gamma
+label-gamma-blue = Blue Gamma
 label-color-temp = Color Temperature
 
 # Oscillator (Harmonized with User edits)

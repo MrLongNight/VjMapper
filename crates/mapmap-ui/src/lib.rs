@@ -139,29 +139,7 @@ impl ImGuiContext {
         imgui.io_mut().font_global_scale = 1.0;
 
         // Apply professional dark theme (matching egui style)
-        let style = imgui.style_mut();
-        style.window_rounding = 2.0;
-        style.frame_rounding = 2.0;
-        style.grab_rounding = 2.0;
-        style.popup_rounding = 2.0;
-        style.scrollbar_rounding = 2.0;
-        style.colors[imgui::StyleColor::Text as usize] = [0.86, 0.86, 0.86, 1.00];
-        style.colors[imgui::StyleColor::WindowBg as usize] = [0.10, 0.10, 0.10, 1.00];
-        style.colors[imgui::StyleColor::Border as usize] = [0.20, 0.20, 0.20, 1.00];
-        style.colors[imgui::StyleColor::FrameBg as usize] = [0.16, 0.16, 0.16, 1.00];
-        style.colors[imgui::StyleColor::FrameBgHovered as usize] = [0.20, 0.20, 0.20, 1.00];
-        style.colors[imgui::StyleColor::FrameBgActive as usize] = [0.24, 0.47, 0.78, 1.00];
-        style.colors[imgui::StyleColor::TitleBg as usize] = [0.12, 0.12, 0.12, 1.00];
-        style.colors[imgui::StyleColor::TitleBgActive as usize] = [0.16, 0.16, 0.16, 1.00];
-        style.colors[imgui::StyleColor::CheckMark as usize] = [0.24, 0.47, 0.78, 1.00];
-        style.colors[imgui::StyleColor::SliderGrab as usize] = [0.24, 0.47, 0.78, 1.00];
-        style.colors[imgui::StyleColor::SliderGrabActive as usize] = [0.28, 0.52, 0.85, 1.00];
-        style.colors[imgui::StyleColor::Button as usize] = [0.16, 0.16, 0.16, 1.00];
-        style.colors[imgui::StyleColor::ButtonHovered as usize] = [0.20, 0.20, 0.20, 1.00];
-        style.colors[imgui::StyleColor::ButtonActive as usize] = [0.24, 0.47, 0.78, 1.00];
-        style.colors[imgui::StyleColor::Header as usize] = [0.16, 0.16, 0.16, 1.00];
-        style.colors[imgui::StyleColor::HeaderHovered as usize] = [0.20, 0.20, 0.20, 1.00];
-        style.colors[imgui::StyleColor::HeaderActive as usize] = [0.24, 0.47, 0.78, 1.00];
+        theme::apply_imgui_theme(&mut imgui);
 
         // Create renderer
         let renderer_config = RendererConfig {
@@ -1019,9 +997,9 @@ impl AppUI {
 
         ui.window(self.i18n.t("panel-outputs"))
             .size([420.0, 500.0], Condition::FirstUseEver)
-            .position([380.0, 400.0], Condition::FirstUseEver)
+            .position([380.0, 380.0], Condition::FirstUseEver)
             .build(|| {
-                ui.text(self.i18n.t("header-multi-output"));
+                ui.text(self.i18n.t("header-outputs"));
                 ui.separator();
 
                 // Canvas size display
@@ -1216,7 +1194,7 @@ impl AppUI {
             .size([380.0, 450.0], Condition::FirstUseEver)
             .position([1170.0, 620.0], Condition::FirstUseEver)
             .build(|| {
-                ui.text(format!("Output: {}", output.name));
+                ui.text(self.i18n.t_args("label-output", &[("name", &output.name)]));
                 ui.separator();
 
                 let blend = &mut output.edge_blend;
@@ -1344,7 +1322,7 @@ impl AppUI {
             .size([380.0, 500.0], Condition::FirstUseEver)
             .position([1560.0, 10.0], Condition::FirstUseEver)
             .build(|| {
-                ui.text(format!("Output: {}", output.name));
+                ui.text(self.i18n.t_args("label-output", &[("name", &output.name)]));
                 ui.separator();
 
                 let cal = &mut output.color_calibration;
@@ -1359,9 +1337,9 @@ impl AppUI {
 
                 ui.separator();
                 ui.text(self.i18n.t("label-gamma-channels"));
-                ui.slider("Red Gamma", 0.5, 3.0, &mut cal.gamma.x); // TODO: Add keys for these
-                ui.slider("Green Gamma", 0.5, 3.0, &mut cal.gamma.y);
-                ui.slider("Blue Gamma", 0.5, 3.0, &mut cal.gamma_b);
+                ui.slider(self.i18n.t("label-gamma-red"), 0.5, 3.0, &mut cal.gamma.x);
+                ui.slider(self.i18n.t("label-gamma-green"), 0.5, 3.0, &mut cal.gamma.y);
+                ui.slider(self.i18n.t("label-gamma-blue"), 0.5, 3.0, &mut cal.gamma_b);
 
                 ui.separator();
                 ui.slider(
@@ -1713,7 +1691,7 @@ impl AppUI {
                 ui.separator();
 
                 // FFT Visualization
-                ui.text("Frequency Spectrum");
+                ui.text(self.i18n.t("label-freq-spectrum"));
                 let fft_magnitudes = &analysis.fft_magnitudes;
                 let draw_list = ui.get_window_draw_list();
                 let pos = ui.cursor_screen_pos();
