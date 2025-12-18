@@ -32,8 +32,10 @@ jobs:
       VCPKG_ROOT: C:\vcpkg
       VCPKG_DEFAULT_TRIPLET: x64-windows
     steps:
-      - name: Enable long paths for Git
-        run: git config --system core.longpaths true
+      - name: Configure Git
+        run: |
+          git config --global core.longpaths true
+          git config --global --add safe.directory "*"
       
       - uses: actions/checkout@v4
         with:
@@ -41,8 +43,10 @@ jobs:
 
       - name: Setup vcpkg and FFmpeg
         run: |
-          git clone https://github.com/microsoft/vcpkg.git C:\vcpkg
-          C:\vcpkg\bootstrap-vcpkg.bat
+          if (!(Test-Path "C:\vcpkg")) {
+            git clone https://github.com/microsoft/vcpkg.git C:\vcpkg
+            .\C:\vcpkg\bootstrap-vcpkg.bat
+          }
           C:\vcpkg\vcpkg.exe install ffmpeg[core,avcodec,avformat,swscale,swresample]:x64-windows
           echo "VCPKG_ROOT=C:\vcpkg" >> $env:GITHUB_ENV
       
@@ -54,7 +58,6 @@ jobs:
       
       - name: Check if binary exists and package
         run: |
-          # Binary name is MapFlow (from Cargo.toml [[bin]] section)
           if (!(Test-Path "target\release\MapFlow.exe")) {
             Write-Host "Build fehlgeschlagen: MapFlow.exe fehlt!"
             Write-Host "Verfuegbare Dateien in target\release:"
@@ -63,7 +66,6 @@ jobs:
           }
           mkdir dist
           copy target\release\MapFlow.exe dist\MapFlow.exe
-          # Kopiere FFmpeg DLLs
           $vcpkgBin = "C:\vcpkg\installed\x64-windows\bin"
           if (Test-Path $vcpkgBin) {
             Get-ChildItem "$vcpkgBin\*.dll" | Copy-Item -Destination dist\
@@ -85,8 +87,10 @@ jobs:
       VCPKG_ROOT: C:\vcpkg
       VCPKG_DEFAULT_TRIPLET: x64-windows
     steps:
-      - name: Enable long paths for Git
-        run: git config --system core.longpaths true
+      - name: Configure Git
+        run: |
+          git config --global core.longpaths true
+          git config --global --add safe.directory "*"
 
       - uses: actions/checkout@v4
         with:
@@ -94,8 +98,10 @@ jobs:
       
       - name: Setup vcpkg and FFmpeg
         run: |
-          git clone https://github.com/microsoft/vcpkg.git C:\vcpkg
-          C:\vcpkg\bootstrap-vcpkg.bat
+          if (!(Test-Path "C:\vcpkg")) {
+            git clone https://github.com/microsoft/vcpkg.git C:\vcpkg
+            .\C:\vcpkg\bootstrap-vcpkg.bat
+          }
           C:\vcpkg\vcpkg.exe install ffmpeg[core,avcodec,avformat,swscale,swresample]:x64-windows
           echo "VCPKG_ROOT=C:\vcpkg" >> $env:GITHUB_ENV
       
@@ -113,7 +119,6 @@ jobs:
             Get-ChildItem "target\release\*.exe" -ErrorAction SilentlyContinue
             exit 1
           }
-          # Kopiere FFmpeg DLLs nach target/release
           $vcpkgBin = "C:\vcpkg\installed\x64-windows\bin"
           if (Test-Path $vcpkgBin) {
             Get-ChildItem "$vcpkgBin\*.dll" | Copy-Item -Destination target\release\
@@ -140,37 +145,30 @@ jobs:
     name: Linux Release (tar.gz)
     runs-on: ubuntu-24.04
     steps:
+      - name: Configure Git
+        run: git config --global --add safe.directory "*"
       - uses: actions/checkout@v4
       
-      - name: Install all FFmpeg Dev dependencies and system libs
+      - name: Free Disk Space
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: false
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          swap-storage: true
+
+      - name: Install system dependencies
         run: |
           sudo apt-get update -y
           sudo apt-get install -y \
-            build-essential \
-            pkg-config \
-            libfontconfig1-dev \
-            libfreetype6-dev \
-            libxcb1-dev \
-            libxcb-render0-dev \
-            libxcb-shape0-dev \
-            libxcb-xfixes0-dev \
-            libx11-dev \
-            libavcodec-dev \
-            libavformat-dev \
-            libavutil-dev \
-            libswscale-dev \
-            libavdevice-dev \
-            libavfilter-dev \
-            libswresample-dev \
-            ffmpeg \
-            libasound2-dev \
-            clang \
-            llvm
-          echo '--- Prüfe wichtige Bibliotheken ---'
-          pkg-config --exists fontconfig && echo "✓ Fontconfig gefunden" || (echo "✗ Fontconfig fehlt"; exit 1)
-          pkg-config --exists freetype2 && echo "✓ Freetype gefunden" || (echo "✗ Freetype fehlt"; exit 1)
-          pkg-config --exists alsa && echo "✓ ALSA gefunden" || (echo "✗ ALSA fehlt"; exit 1)
-          pkg-config --exists libavutil && echo "✓ libavutil gefunden" || (echo "✗ libavutil fehlt"; exit 1)
+            build-essential pkg-config \
+            libfontconfig1-dev libfreetype6-dev \
+            libxcb1-dev libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev \
+            libx11-dev libavcodec-dev libavformat-dev libavutil-dev \
+            libswscale-dev libavdevice-dev libavfilter-dev libswresample-dev \
+            ffmpeg libasound2-dev clang llvm
       
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -180,10 +178,8 @@ jobs:
       
       - name: Check if binary exists
         run: |
-          # Binary name is MapFlow (from Cargo.toml [[bin]] section)
           if [ ! -f target/release/MapFlow ]; then
             echo "Build fehlgeschlagen: MapFlow-Binary fehlt!"
-            echo "Verfuegbare Dateien in target/release:"
             ls -la target/release/ || true
             exit 1
           fi
@@ -206,6 +202,8 @@ jobs:
     runs-on: ubuntu-latest
     if: startsWith(github.ref, 'refs/tags/') || github.event_name == 'workflow_dispatch'
     steps:
+      - name: Configure Git
+        run: git config --global --add safe.directory "*"
       - name: Download all workflow artifacts
         uses: actions/download-artifact@v4
         with:

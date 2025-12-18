@@ -7,8 +7,21 @@ menu-file-load-project = Projekt laden
 menu-file-open-recent = Zuletzt geöffnet
 menu-file-exit = Beenden
 menu-view = Ansicht
+check-show-osc = OSC-Panel anzeigen
+check-show-controls = Steuerung anzeigen
+check-show-layers = Ebenen anzeigen
+check-show-paints = Paints anzeigen
+check-show-mappings = Mappings anzeigen
+check-show-transforms = Transformationen anzeigen
+check-show-master = Master-Regler anzeigen
+check-show-oscillator = Oszillator anzeigen
+check-show-audio = Audio anzeigen
+check-show-stats = Statistik anzeigen
+btn-fullscreen = Vollbild umschalten
 menu-help = Hilfe
 menu-help-about = Über
+menu-help-lang-en = Englisch
+menu-help-lang-de = Deutsch
 
 dashboard-layout-grid = Raster
 dashboard-layout-freeform = Freiform
@@ -149,20 +162,20 @@ curve-editor-editing = Bearbeite
 curve-editor-select-track = Wählen Sie eine Spur zum Bearbeiten
 
 # Playback
-playback-title = Wiedergabe-Steuerung
-playback-video = Video-Wiedergabe
-playback-play = Abspielen
-playback-pause = Pause
-playback-stop = Stopp
-playback-speed = Geschwindigkeit
-playback-mode = Modus:
-playback-loop = Schleife
-playback-play-once = Einmal abspielen
+panel-playback = Wiedergabe-Steuerung
+header-video-playback = Video-Wiedergabe
+btn-play = Abspielen
+btn-pause = Pause
+btn-stop = Stopp
+label-speed = Geschwindigkeit
+label-mode = Modus:
+mode-loop = Schleife
+mode-play-once = Einmal abspielen
 
 # Performance
-perf-title = Leistung
-perf-fps = FPS: { $val }
-perf-frametime = Frame-Zeit: { $val } ms
+panel-performance = Leistung
+label-fps = FPS
+label-frame-time = Frame-Zeit
 perf-demo = MapMap Phase 0 Demo
 
 # Layers
@@ -184,7 +197,8 @@ paints-playing = Wiedergabe
 paints-loop = Schleife
 paints-speed = Geschwindigkeit
 paints-color = Farbe
-paints-add = Paint hinzufügen
+btn-add-paint = Paint hinzufügen
+paint-opacity = Deckkraft
 
 # Mappings
 mappings-title = Mappings
@@ -194,124 +208,64 @@ mappings-lock = Sperren
 mappings-opacity = Deckkraft
 mappings-depth = Tiefe
 mappings-mesh = Mesh: { $type } ({ $count } Vertices)
-mappings-remove-this = Entfernen
-mappings-add-quad = Quad-Mapping hinzufügen
+btn-remove-this = Entfernen
+btn-add-quad = Quad-Mapping hinzufügen
 
 # Transform
 transform-title = Transformations-Steuerung
 transform-phase1 = Phase 1: Transformations-System
-transform-editing = Bearbeite: { $name }
+label-editing = Bearbeite
 transform-position = Position:
+transform-position-x = X
+transform-position-y = Y
 transform-scale = Skalierung:
 transform-width = Breite
 transform-height = Höhe
-transform-reset-scale = Skalierung zurücksetzen (1:1)
+btn-reset-scale = Skalierung zurücksetzen (1:1)
 transform-rotation = Rotation (Grad):
-transform-reset-rotation = Rotation zurücksetzen
-transform-anchor = Ankerpunkt (0-1):
-transform-center = Anker zentrieren (0.5, 0.5)
+btn-reset-rotation = Rotation zurücksetzen
+label-anchor = Ankerpunkt (0-1)
+transform-anchor-x = Anker X
+transform-anchor-y = Anker Y
+btn-center-anchor = Anker zentrieren (0.5, 0.5)
 transform-presets = Größe-Presets:
 transform-fill = Füllen (Cover)
-transform-fit = Einpassen (Contain)
-transform-stretch = Strecken (Distort)
-transform-original = Original (1:1)
+btn-resize-fit = Einpassen (Contain)
+btn-resize-stretch = Strecken (Distort)
+btn-resize-original = Original (1:1)
 transform-no-selection = Ausgewählte Ebene nicht gefunden.
 transform-no-layer = Keine Ebene ausgewählt.
 transform-select-tip = Klicken Sie auf einen Ebenennamen im\nEbenen-Panel, um ihn auszuwählen.
 
 # Master
-master-title = Master-Steuerung
-master-phase1 = Phase 1: Master-Steuerung
-master-composition = Komposition:
-master-opacity = Master-Deckkraft (M)
-master-speed = Master-Geschwindigkeit (S)
-master-size = Größe: { $w }x{ $h }
-master-framerate = Bildrate: { $fps } fps
-master-multipliers = Effektive Multiplikatoren:
-master-help-opacity = Alle Ebenen-Deckkraft × Master-Deckkraft
-master-help-speed = Alle Wiedergabe-Geschw. × Master-Geschw.
+panel-master = Master-Steuerung
+header-master = Phase 1: Master-Steuerung
+label-composition = Komposition
+label-master-opacity = Master-Deckkraft (M)
+label-master-speed = Master-Geschwindigkeit (S)
+label-size = Größe
+label-frame-rate = Bildrate
+label-effective-multipliers = Effektive Multiplikatoren:
+text-mult-opacity = Alle Ebenen-Deckkraft × Master-Deckkraft
+text-mult-speed = Alle Wiedergabe-Geschw. × Master-Geschw.
 
 # Output
-output-title = Ausgaben
-output-config-title = Multi-Output Konfiguration
-output-canvas = Arbeitsfläche: { $w }x{ $h }
-output-total = Ausgaben: { $count }
-output-quick-2x2 = 2x2 Projektor-Array
-output-add = Ausgang hinzufügen
-output-selected = Ausgewählte Ausgangs-Einstellungen
-output-name = Name: { $name }
-output-res = Auflösung: { $w }x{ $h }
-output-region = Arbeitsbereich:
-output-blend-status = Kantenüberblendung:
-output-calib-status = Farbkalibrierung:
-output-tip = Tipp:
-output-tip-text = Kantenüberblendung und Farbkalibrierung öffnen sich automatisch!
-output-remove = Ausgang entfernen
-output-multi-active = Multi-Fenster-Rendering: AKTIV
-output-multi-help = Ausgabefenster werden automatisch erstellt und synchronisiert
+panel-outputs = Ausgaben
+header-multi-output = Multi-Output Konfiguration
+label-canvas = Arbeitsfläche
+btn-projector-array = 2x2 Projektor-Array
+btn-add-output = Ausgang hinzufügen
+header-selected-output = Ausgewählte Ausgangs-Einstellungen
+label-canvas-region = Arbeitsbereich
+label-none = Keine
+output-tip = Tipp
+tip-panels-auto-open = Kantenüberblendung und Farbkalibrierung öffnen sich automatisch!
+btn-remove-output = Ausgang entfernen
+msg-multi-window-active = Multi-Fenster-Rendering: AKTIV
+msg-output-windows-tip = Ausgabefenster werden automatisch erstellt und synchronisiert
+label-saturation = Sättigung
 
-# Edge Blend
-blend-title = Kantenüberblendung
-blend-output = Ausgang: { $name }
-blend-left = Linke Kante
-blend-right = Rechte Kante
-blend-top = Obere Kante
-blend-bottom = Untere Kante
-blend-gamma = Blend Gamma
-blend-reset = Auf Standards zurücksetzen
-blend-width = Breite
-blend-offset = Versatz
-
-# Color Calibration
-calib-title = Farbkalibrierung
-calib-brightness = Helligkeit
-calib-contrast = Kontrast
-calib-gamma = Gamma (Pro Kanal)
-calib-red = Rot Gamma
-calib-green = Grün Gamma
-calib-blue = Blau Gamma
-calib-temp = Farbtemperatur
-calib-sat = Sättigung
-calib-reset = Auf Standards zurücksetzen
-
-# Oscillator
-osc-title = Oszillator-Verzerrung
-osc-enable = Effekt aktivieren
-osc-presets = Schnell-Vorlagen:
-osc-subtle = Dezent
-osc-dramatic = Dramatisch
-osc-rings = Ringe
-osc-reset = Zurücksetzen
-osc-dist-params = Verzerrungs-Parameter
-osc-amount = Stärke
-osc-scale = Skalierung
-osc-speed = Geschwindigkeit
-osc-visual = Visuelle Überlagerung
-osc-overlay-opacity = Überlagerungs-Deckkraft
-osc-color-mode = Farbmodus
-osc-sim-params = Simulations-Parameter
-osc-res = Auflösung
-osc-radius = Kernel-Radius
-osc-noise = Rauschen
-osc-freq-min = Frequenz Min (Hz)
-osc-freq-max = Frequenz Max (Hz)
-osc-coord-mode = Koordinaten-Modus
-osc-phase-init = Phasen-Init
-osc-coupling = Kopplungs-Ringe (Erweitert)
-osc-ring = Ring { $id }
-osc-ring-dist = Abstand
-osc-ring-width = Breite
-osc-ring-coup = Kopplung
-osc-ring-reset = Ring zurücksetzen
-osc-ring-clear = Ring leeren
-
-# Audio
-audio-title = Audio-Analyse
-audio-input = Audio-Eingang
-audio-device = Gerät
-audio-spectrum = Frequenzspektrum
-
-# Aliases and Missing Keys for New UI Code
+# Edge Blend (Harmonized with User edits)
 panel-edge-blend = Kantenüberblendung
 check-left = Linke Kante
 check-right = Rechte Kante
@@ -319,14 +273,17 @@ check-top = Obere Kante
 check-bottom = Untere Kante
 label-width = Breite
 label-offset = Versatz
-label-gamma = Gamma
+label-gamma = Blend Gamma
 btn-reset-defaults = Auf Standards zurücksetzen
+
+# Color Calibration (Harmonized with User edits)
 panel-color-cal = Farbkalibrierung
 label-brightness = Helligkeit
 label-contrast = Kontrast
 label-gamma-channels = Gamma (Pro Kanal)
 label-color-temp = Farbtemperatur
-label-saturation = Sättigung
+
+# Oscillator (Harmonized with User edits)
 panel-oscillator = Oszillator-Verzerrung
 check-enable = Effekt aktivieren
 header-quick-presets = Schnell-Vorlagen
@@ -353,6 +310,9 @@ header-coupling = Kopplungs-Ringe (Erweitert)
 label-diff-coupling = Kopplung
 btn-reset-ring = Ring zurücksetzen
 btn-clear-ring = Ring leeren
+
+# Audio (Harmonized with User edits)
 panel-audio = Audio-Analyse
 header-audio-input = Audio-Eingang
 label-device = Gerät
+audio-spectrum = Frequenzspektrum

@@ -32,6 +32,8 @@ jobs:
       contents: read
     
     steps:
+    - name: Configure Git
+      run: git config --global --add safe.directory "*"
     - uses: actions/checkout@v4
 
     - name: Install Rust (stable)
@@ -62,6 +64,8 @@ jobs:
       contents: read
         
     steps:
+    - name: Configure Git
+      run: git config --global --add safe.directory "*"
     - name: Free Disk Space (Ubuntu)
       uses: jlumbroso/free-disk-space@main
       with:
@@ -151,6 +155,8 @@ jobs:
       checks: write
     
     steps:
+    - name: Configure Git
+      run: git config --global --add safe.directory "*"
     - uses: actions/checkout@v4
 
     - name: Install Rust toolchain (security)

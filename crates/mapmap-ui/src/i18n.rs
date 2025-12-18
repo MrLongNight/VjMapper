@@ -84,16 +84,28 @@ impl LocaleManager {
     }
 
     pub fn t(&self, key: &str) -> String {
+        self.format_pattern(key, None)
+    }
+
+    pub fn t_args(&self, key: &str, args: &[(&str, &str)]) -> String {
+        let mut f_args = fluent::FluentArgs::new();
+        for (k, v) in args {
+            f_args.set(*k, *v);
+        }
+        self.format_pattern(key, Some(&f_args))
+    }
+
+    fn format_pattern(&self, key: &str, args: Option<&fluent::FluentArgs>) -> String {
         let pattern = match self.bundle.get_message(key) {
             Some(msg) => match msg.value() {
                 Some(pattern) => pattern,
                 None => return key.to_string(),
             },
-            None => return key.to_string(), // Return key if missing
+            None => return key.to_string(),
         };
 
         let mut errors = vec![];
-        let value = self.bundle.format_pattern(pattern, None, &mut errors);
+        let value = self.bundle.format_pattern(pattern, args, &mut errors);
         value.to_string()
     }
 }

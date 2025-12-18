@@ -367,11 +367,15 @@ impl AppUI {
                 let mut mode_idx = match self.loop_mode {
                     mapmap_media::LoopMode::Loop => 0,
                     mapmap_media::LoopMode::PlayOnce => 1,
+                    _ => 0, // Default to Loop
                 };
 
-                if ui.combo("##mode", &mut mode_idx, &mode_names, |item| {
-                    std::borrow::Cow::Borrowed(item)
-                }) {
+                if ui.combo(
+                    self.i18n.t("label-mode"),
+                    &mut mode_idx,
+                    &mode_names,
+                    |item| std::borrow::Cow::Borrowed(item),
+                ) {
                     let new_mode = match mode_idx {
                         0 => mapmap_media::LoopMode::Loop,
                         1 => mapmap_media::LoopMode::PlayOnce,
@@ -399,8 +403,6 @@ impl AppUI {
                     self.i18n.t("label-frame-time"),
                     frame_time_ms
                 ));
-                ui.separator();
-                ui.text(self.i18n.t("demo-text"));
             });
     }
 
@@ -443,22 +445,31 @@ impl AppUI {
             });
 
             ui.menu(self.i18n.t("menu-view"), || {
-                ui.checkbox("Show OSC Panel", &mut self.show_osc_panel);
-                ui.checkbox("Show Controls", &mut self.show_controls);
-                ui.checkbox("Show Layers", &mut self.show_layers);
-                ui.checkbox("Show Paints", &mut self.show_paints);
-                ui.checkbox("Show Mappings", &mut self.show_mappings);
-                ui.checkbox("Show Transforms", &mut self.show_transforms);
-                ui.checkbox("Show Master Controls", &mut self.show_master_controls);
-                ui.checkbox("Show Oscillator", &mut self.show_oscillator);
+                ui.checkbox(self.i18n.t("check-show-osc"), &mut self.show_osc_panel);
+                ui.checkbox(self.i18n.t("check-show-controls"), &mut self.show_controls);
+                ui.checkbox(self.i18n.t("check-show-layers"), &mut self.show_layers);
+                ui.checkbox(self.i18n.t("check-show-paints"), &mut self.show_paints);
+                ui.checkbox(self.i18n.t("check-show-mappings"), &mut self.show_mappings);
+                ui.checkbox(
+                    self.i18n.t("check-show-transforms"),
+                    &mut self.show_transforms,
+                );
+                ui.checkbox(
+                    self.i18n.t("check-show-master"),
+                    &mut self.show_master_controls,
+                );
+                ui.checkbox(
+                    self.i18n.t("check-show-oscillator"),
+                    &mut self.show_oscillator,
+                );
                 ui.checkbox(
                     self.i18n.t("panel-effect-chain"),
                     &mut self.effect_chain_panel.visible,
                 );
-                ui.checkbox("Show Audio", &mut self.show_audio);
-                ui.checkbox("Show Stats", &mut self.show_stats);
+                ui.checkbox(self.i18n.t("check-show-audio"), &mut self.show_audio);
+                ui.checkbox(self.i18n.t("check-show-stats"), &mut self.show_stats);
                 ui.separator();
-                if ui.menu_item("Toggle Fullscreen") {
+                if ui.menu_item(self.i18n.t("btn-fullscreen")) {
                     self.actions.push(UIAction::ToggleFullscreen);
                 }
             });
@@ -471,10 +482,10 @@ impl AppUI {
                 ui.separator();
 
                 // Language Selection
-                if ui.menu_item("English") {
+                if ui.menu_item(self.i18n.t("menu-help-lang-en")) {
                     self.actions.push(UIAction::SetLanguage("en".to_string()));
                 }
-                if ui.menu_item("Deutsch") {
+                if ui.menu_item(self.i18n.t("menu-help-lang-de")) {
                     self.actions.push(UIAction::SetLanguage("de".to_string()));
                 }
             });
@@ -489,14 +500,13 @@ impl AppUI {
             return;
         }
 
-        ui.window(self.i18n.t("panel-layers"))
+        ui.window(self.i18n.t("layers-title"))
             .size([380.0, 600.0], Condition::FirstUseEver)
             .position([1170.0, 10.0], Condition::FirstUseEver)
             .build(|| {
-                ui.text(format!(
-                    "{}: {}",
-                    self.i18n.t("label-total-layers"),
-                    layer_manager.layers().len()
+                ui.text(self.i18n.t_args(
+                    "layers-total",
+                    &[("count", &layer_manager.layers().len().to_string())],
                 ));
                 ui.separator();
 
@@ -525,14 +535,14 @@ impl AppUI {
 
                         // Phase 1: Bypass, Solo, Lock toggles
                         let mut bypass = layer.bypass;
-                        if ui.checkbox(self.i18n.t("check-bypass"), &mut bypass) {
+                        if ui.checkbox(self.i18n.t("layers-bypass"), &mut bypass) {
                             layer.bypass = bypass;
                             self.actions.push(UIAction::ToggleLayerBypass(layer.id));
                         }
                         ui.same_line();
 
                         let mut solo = layer.solo;
-                        if ui.checkbox(self.i18n.t("check-solo"), &mut solo) {
+                        if ui.checkbox(self.i18n.t("layers-solo"), &mut solo) {
                             layer.solo = solo;
                             self.actions.push(UIAction::ToggleLayerSolo(layer.id));
                         }
@@ -559,7 +569,7 @@ impl AppUI {
                         let mut selected = current_mode_idx;
 
                         if ui.combo(
-                            self.i18n.t("label-blend-mode"),
+                            self.i18n.t("layers-blend-mode"),
                             &mut selected,
                             &blend_modes,
                             |item| std::borrow::Cow::Borrowed(item),
@@ -585,18 +595,18 @@ impl AppUI {
 
                         // Phase 1: Opacity slider (Video Fader)
                         let old_opacity = layer.opacity;
-                        ui.slider(self.i18n.t("label-opacity"), 0.0, 1.0, &mut layer.opacity);
+                        ui.slider(self.i18n.t("layers-opacity"), 0.0, 1.0, &mut layer.opacity);
                         if (layer.opacity - old_opacity).abs() > 0.001 {
                             self.actions
                                 .push(UIAction::SetLayerOpacity(layer.id, layer.opacity));
                         }
 
                         // Phase 1: Layer management buttons
-                        if ui.button(self.i18n.t("btn-duplicate")) {
+                        if ui.button(self.i18n.t("layers-duplicate")) {
                             self.actions.push(UIAction::DuplicateLayer(layer.id));
                         }
                         ui.same_line();
-                        if ui.button(self.i18n.t("btn-remove")) {
+                        if ui.button(self.i18n.t("layers-remove")) {
                             self.actions.push(UIAction::RemoveLayer(layer.id));
                         }
 
@@ -608,11 +618,11 @@ impl AppUI {
                 ui.separator();
 
                 // Layer management buttons
-                if ui.button(self.i18n.t("btn-add-layer")) {
+                if ui.button(self.i18n.t("layers-add")) {
                     self.actions.push(UIAction::AddLayer);
                 }
                 ui.same_line();
-                if ui.button(self.i18n.t("btn-eject-all")) {
+                if ui.button(self.i18n.t("layers-eject-all")) {
                     self.actions.push(UIAction::EjectAllLayers);
                 }
             });
@@ -624,14 +634,13 @@ impl AppUI {
             return;
         }
 
-        ui.window(self.i18n.t("panel-paints"))
+        ui.window(self.i18n.t("paints-title"))
             .size([350.0, 400.0], Condition::FirstUseEver)
             .position([810.0, 470.0], Condition::FirstUseEver)
             .build(|| {
-                ui.text(format!(
-                    "{}: {}",
-                    self.i18n.t("label-total-paints"),
-                    paint_manager.paints().len()
+                ui.text(self.i18n.t_args(
+                    "paints-total",
+                    &[("count", &paint_manager.paints().len().to_string())],
                 ));
                 ui.separator();
 
@@ -650,19 +659,19 @@ impl AppUI {
                         ui.indent();
 
                         // Opacity slider
-                        ui.slider(self.i18n.t("label-opacity"), 0.0, 1.0, &mut paint.opacity);
+                        ui.slider(self.i18n.t("paint-opacity"), 0.0, 1.0, &mut paint.opacity);
 
                         // Playback controls for video
                         if paint.paint_type == mapmap_core::PaintType::Video {
-                            ui.checkbox(self.i18n.t("check-playing"), &mut paint.is_playing);
+                            ui.checkbox(self.i18n.t("paints-playing"), &mut paint.is_playing);
                             ui.same_line();
-                            ui.checkbox(self.i18n.t("mode-loop"), &mut paint.loop_playback);
-                            ui.slider(self.i18n.t("label-speed"), 0.1, 2.0, &mut paint.rate);
+                            ui.checkbox(self.i18n.t("paints-loop"), &mut paint.loop_playback);
+                            ui.slider(self.i18n.t("paints-speed"), 0.1, 2.0, &mut paint.rate);
                         }
 
                         // Color picker for color type
                         if paint.paint_type == mapmap_core::PaintType::Color {
-                            ui.color_edit4(self.i18n.t("label-color"), &mut paint.color);
+                            ui.color_edit4(self.i18n.t("paints-color"), &mut paint.color);
                         }
 
                         ui.unindent();
@@ -689,14 +698,13 @@ impl AppUI {
             return;
         }
 
-        ui.window(self.i18n.t("panel-mappings"))
+        ui.window(self.i18n.t("mappings-title"))
             .size([350.0, 450.0], Condition::FirstUseEver)
             .position([810.0, 10.0], Condition::FirstUseEver)
             .build(|| {
-                ui.text(format!(
-                    "{}: {}",
-                    self.i18n.t("label-total-mappings"),
-                    mapping_manager.mappings().len()
+                ui.text(self.i18n.t_args(
+                    "mappings-total",
+                    &[("count", &mapping_manager.mappings().len().to_string())],
                 ));
                 ui.separator();
 
@@ -731,22 +739,33 @@ impl AppUI {
                         ui.indent();
 
                         // Solo and Lock toggles
-                        ui.checkbox(self.i18n.t("check-solo"), &mut mapping.solo);
+                        ui.checkbox(self.i18n.t("mappings-solo"), &mut mapping.solo);
                         ui.same_line();
-                        ui.checkbox("Lock", &mut mapping.locked);
+                        ui.checkbox(self.i18n.t("mappings-lock"), &mut mapping.locked);
 
                         // Opacity slider
-                        ui.slider(self.i18n.t("label-opacity"), 0.0, 1.0, &mut mapping.opacity);
+                        ui.slider(
+                            self.i18n.t("mappings-opacity"),
+                            0.0,
+                            1.0,
+                            &mut mapping.opacity,
+                        );
 
                         // Depth (Z-order)
-                        ui.slider(self.i18n.t("label-depth"), -10.0, 10.0, &mut mapping.depth);
+                        ui.slider(
+                            self.i18n.t("mappings-depth"),
+                            -10.0,
+                            10.0,
+                            &mut mapping.depth,
+                        );
 
                         // Mesh info
-                        ui.text(format!(
-                            "{}: {:?} ({} vertices)",
-                            self.i18n.t("label-mesh"),
-                            mapping.mesh.mesh_type,
-                            mapping.mesh.vertex_count()
+                        ui.text(self.i18n.t_args(
+                            "mappings-mesh",
+                            &[
+                                ("type", &format!("{:?}", mapping.mesh.mesh_type)),
+                                ("count", &mapping.mesh.vertex_count().to_string()),
+                            ],
                         ));
 
                         // Remove button for this mapping
@@ -780,11 +799,11 @@ impl AppUI {
             return;
         }
 
-        ui.window(self.i18n.t("panel-transforms"))
+        ui.window(self.i18n.t("transform-title"))
             .size([360.0, 520.0], Condition::FirstUseEver)
             .position([10.0, 140.0], Condition::FirstUseEver)
             .build(|| {
-                ui.text(self.i18n.t("header-transform-sys"));
+                ui.text(self.i18n.t("transform-phase1"));
                 ui.separator();
 
                 if let Some(selected_id) = self.selected_layer_id {
@@ -795,16 +814,36 @@ impl AppUI {
                         let transform = &mut layer.transform;
 
                         // Position controls
-                        ui.text(format!("{}:", self.i18n.t("label-position")));
-                        ui.slider("X", -1000.0, 1000.0, &mut transform.position.x);
-                        ui.slider("Y", -1000.0, 1000.0, &mut transform.position.y);
+                        ui.text(self.i18n.t("transform-position"));
+                        ui.slider(
+                            self.i18n.t("transform-position-x"),
+                            -1000.0,
+                            1000.0,
+                            &mut transform.position.x,
+                        );
+                        ui.slider(
+                            self.i18n.t("transform-position-y"),
+                            -1000.0,
+                            1000.0,
+                            &mut transform.position.y,
+                        );
 
                         ui.separator();
 
                         // Scale controls
-                        ui.text(format!("{}:", self.i18n.t("label-scale")));
-                        ui.slider("Width", 0.1, 5.0, &mut transform.scale.x);
-                        ui.slider("Height", 0.1, 5.0, &mut transform.scale.y);
+                        ui.text(self.i18n.t("transform-scale"));
+                        ui.slider(
+                            self.i18n.t("transform-width"),
+                            0.1,
+                            5.0,
+                            &mut transform.scale.x,
+                        );
+                        ui.slider(
+                            self.i18n.t("transform-height"),
+                            0.1,
+                            5.0,
+                            &mut transform.scale.y,
+                        );
 
                         // Uniform scale toggle
                         if ui.button(self.i18n.t("btn-reset-scale")) {
@@ -815,7 +854,7 @@ impl AppUI {
                         ui.separator();
 
                         // Rotation controls (in degrees for UI)
-                        ui.text(format!("{}:", self.i18n.t("label-rotation")));
+                        ui.text(self.i18n.t("transform-rotation"));
                         let mut rot_x_deg = transform.rotation.x.to_degrees();
                         let mut rot_y_deg = transform.rotation.y.to_degrees();
                         let mut rot_z_deg = transform.rotation.z.to_degrees();
@@ -836,8 +875,18 @@ impl AppUI {
 
                         // Anchor point controls
                         ui.text(format!("{}:", self.i18n.t("label-anchor")));
-                        ui.slider("Anchor X", 0.0, 1.0, &mut transform.anchor.x);
-                        ui.slider("Anchor Y", 0.0, 1.0, &mut transform.anchor.y);
+                        ui.slider(
+                            self.i18n.t("transform-anchor-x"),
+                            0.0,
+                            1.0,
+                            &mut transform.anchor.x,
+                        );
+                        ui.slider(
+                            self.i18n.t("transform-anchor-y"),
+                            0.0,
+                            1.0,
+                            &mut transform.anchor.y,
+                        );
 
                         if ui.button(self.i18n.t("btn-center-anchor")) {
                             transform.anchor = glam::Vec2::splat(0.5);
@@ -846,8 +895,8 @@ impl AppUI {
                         ui.separator();
 
                         // Resize mode presets (Phase 1, Month 6)
-                        ui.text(format!("{}:", self.i18n.t("header-resize-presets")));
-                        if ui.button(self.i18n.t("btn-resize-fill")) {
+                        ui.text(self.i18n.t("transform-presets"));
+                        if ui.button(self.i18n.t("transform-fill")) {
                             self.actions
                                 .push(UIAction::ApplyResizeMode(selected_id, ResizeMode::Fill));
                         }
@@ -867,11 +916,11 @@ impl AppUI {
                                 .push(UIAction::ApplyResizeMode(selected_id, ResizeMode::Original));
                         }
                     } else {
-                        ui.text(self.i18n.t("msg-no-layer-selected")); // Reusing msg
+                        ui.text(self.i18n.t("transform-no-selection"));
                     }
                 } else {
-                    ui.text(self.i18n.t("msg-no-layer-selected"));
-                    ui.text(self.i18n.t("msg-select-layer-tip"));
+                    ui.text(self.i18n.t("transform-no-layer"));
+                    ui.text(self.i18n.t("transform-select-tip"));
                 }
             });
     }
@@ -1104,12 +1153,15 @@ impl AppUI {
                             ));
                         }
                         if cal.brightness == 0.0 && cal.contrast == 1.0 && cal.saturation == 1.0 {
-                            ui.text_disabled("  (Defaults)");
+                            ui.text_disabled(format!("  ({})", self.i18n.t("label-none")));
                         }
 
                         ui.separator();
 
-                        ui.text_colored([0.5, 0.8, 1.0, 1.0], "Tip:");
+                        ui.text_colored(
+                            [0.5, 0.8, 1.0, 1.0],
+                            format!("{}:", self.i18n.t("output-tip")),
+                        );
                         ui.text_wrapped(self.i18n.t("tip-panels-auto-open"));
 
                         ui.separator();
