@@ -209,8 +209,29 @@ jobs:
                                   sessionData.pullRequest?.branch ||
                                   sessionData.pullRequest?.head;
                     
+                    core.info(`      Session data keys: ${Object.keys(sessionData).join(', ')}`);
+                    
                     if (branch) {
                       core.info(`      ✅ Completed with branch: ${branch}`);
+                      
+                      // Check if branch exists in repository
+                      try {
+                        await github.rest.repos.getBranch({
+                          owner: context.repo.owner,
+                          repo: context.repo.repo,
+                          branch: branch
+                        });
+                        core.info(`      ✅ Branch '${branch}' exists in repository`);
+                      } catch (branchError) {
+                        core.warning(`      ❌ Branch '${branch}' does not exist in repository`);
+                        await github.rest.issues.createComment({
+                          owner: context.repo.owner,
+                          repo: context.repo.repo,
+                          issue_number: session.issueNumber,
+                          body: `✅ **Jules session completed!** But branch '${branch}' was not found in the repository. Please check the Jules session and push the branch manually if needed.`
+                        });
+                        continue; // Skip PR creation
+                      }
                       
                       // Check if PR already exists for this branch
                       const existingPR = prs.find(pr => pr.head.ref === branch && pr.state === 'open');
@@ -250,13 +271,16 @@ jobs:
                         } catch (prError) {
                           core.warning(`      Could not create PR: ${prError.message}`);
                         }
+                      } else {
+                        core.info(`      ℹ️ PR already exists for branch '${branch}'`);
                       }
                     } else {
+                      core.warning(`      No branch found in session data`);
                       await github.rest.issues.createComment({
                         owner: context.repo.owner,
                         repo: context.repo.repo,
                         issue_number: session.issueNumber,
-                        body: `✅ **Jules session completed!** No branch detected - please check the session manually.`
+                        body: `✅ **Jules session completed!** No branch detected in session data - please check the session manually.`
                       });
                     }
                     
@@ -269,8 +293,9 @@ jobs:
                       issue_number: session.issueNumber,
                       body: `⚠️ **Jules session failed** - Please check the session details and retry if needed.`
                     });
+                  } else {
+                    core.info(`      ⏳ Session still in progress: ${status}`);
                   }
-                  // else: still in progress
                   
                 } catch (error) {
                   core.warning(`      Error: ${error.message}`);
@@ -335,3 +360,4 @@ jobs:
           echo "  2. Commit and push"
           echo "  3. Or cancel the running workflow in GitHub Actions"
           echo ""
+ 
