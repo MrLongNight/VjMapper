@@ -30,14 +30,12 @@ impl LocaleManager {
 
     fn load_bundle(lang_id: &LanguageIdentifier) -> FluentBundle<FluentResource> {
         let mut bundle = FluentBundle::new(vec![lang_id.clone()]);
-        
+
         // Determine available locales
         // Note: This must match folders in locales/
-        let available_locales: Vec<LanguageIdentifier> = vec![
-            "en".parse().unwrap(),
-            "de".parse().unwrap(),
-        ];
-        
+        let available_locales: Vec<LanguageIdentifier> =
+            vec!["en".parse().unwrap(), "de".parse().unwrap()];
+
         // Negotiate
         let requested = vec![lang_id.clone()];
         let default = "en".parse().unwrap();
@@ -47,42 +45,42 @@ impl LocaleManager {
             Some(&default),
             NegotiationStrategy::Filtering,
         );
-        
+
         // Load resources
         let active_lang = supported.first().unwrap();
         // Use just the language code ("en", "de") for folder names
-        let lang_key = active_lang.language.as_str(); 
-        
+        let lang_key = active_lang.language.as_str();
+
         let path = format!("{}/main.ftl", lang_key);
-        
+
         // Function to load and add resource
         let load_res = |b: &mut FluentBundle<FluentResource>, p: &str| {
             if let Some(file) = Locales::get(p) {
-                 if let Ok(source) = String::from_utf8(file.data.into_owned()) {
-                     if let Ok(resource) = FluentResource::try_new(source) {
-                         let _ = b.add_resource(resource);
-                         return true;
-                     }
-                 }
+                if let Ok(source) = String::from_utf8(file.data.into_owned()) {
+                    if let Ok(resource) = FluentResource::try_new(source) {
+                        let _ = b.add_resource(resource);
+                        return true;
+                    }
+                }
             }
             false
         };
 
         if !load_res(&mut bundle, &path) {
-             eprintln!("Locale file not found or invalid: {}", path);
-             // Fallback to English if failed
-             if lang_key != "en" {
-                 load_res(&mut bundle, "en/main.ftl");
-             }
+            eprintln!("Locale file not found or invalid: {}", path);
+            // Fallback to English if failed
+            if lang_key != "en" {
+                load_res(&mut bundle, "en/main.ftl");
+            }
         }
-        
+
         bundle
     }
-    
+
     pub fn set_locale(&mut self, lang_id: &str) {
-         let lang: LanguageIdentifier = lang_id.parse().unwrap_or_else(|_| "en-US".parse().unwrap());
-         self.bundle = Self::load_bundle(&lang);
-         self.current_lang = lang;
+        let lang: LanguageIdentifier = lang_id.parse().unwrap_or_else(|_| "en-US".parse().unwrap());
+        self.bundle = Self::load_bundle(&lang);
+        self.current_lang = lang;
     }
 
     pub fn t(&self, key: &str) -> String {

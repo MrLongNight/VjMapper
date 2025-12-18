@@ -9,10 +9,12 @@ mod window_manager;
 use anyhow::Result;
 use egui_wgpu::Renderer;
 use egui_winit::State;
+use mapmap_control::{shortcuts::Action, ControlManager};
 use mapmap_core::{
     audio::{backend::cpal_backend::CpalBackend, backend::AudioBackend, AudioAnalyzer},
     AppState, OutputId,
 };
+
 use mapmap_mcp::{McpAction, McpServer};
 // Define McpAction locally or import if we move it to core later -> Removed local definition
 
@@ -56,6 +58,8 @@ struct App {
     last_autosave: std::time::Instant,
     /// Receiver for MCP commands
     mcp_receiver: Receiver<McpAction>,
+    /// Unified control manager
+    control_manager: ControlManager,
 }
 
 impl App {
@@ -155,6 +159,7 @@ impl App {
             egui_renderer,
             last_autosave: std::time::Instant::now(),
             mcp_receiver,
+            control_manager: ControlManager::new(),
         })
     }
 
@@ -346,6 +351,29 @@ impl App {
                 McpAction::LoadProject(path) => {
                     info!("MCP: Loading project from {:?}", path);
                     self.load_project_file(&path);
+                }
+                McpAction::AddLayer => {
+                    info!("MCP: Adding layer");
+                    self.state.layer_manager.create_layer("New Layer");
+                    self.state.dirty = true;
+                }
+                McpAction::RemoveLayer(id) => {
+                    info!("MCP: Removing layer {}", id);
+                    self.state.layer_manager.remove_layer(id);
+                    self.state.dirty = true;
+                }
+                McpAction::TriggerCue(id) => {
+                    info!("MCP: Triggering cue {}", id);
+                    self.control_manager.execute_action(Action::GotoCue(id));
+                }
+                McpAction::NextCue => {
+                    info!("MCP: Next cue");
+                    self.control_manager.execute_action(Action::NextCue);
+                }
+                McpAction::PrevCue => {
+                    info!("MCP: Prev cue");
+                    println!("Triggering PrevCue"); // Debug print as per earlier pattern
+                    self.control_manager.execute_action(Action::PrevCue);
                 }
             }
         }

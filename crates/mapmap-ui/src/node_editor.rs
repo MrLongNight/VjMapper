@@ -3,6 +3,7 @@
 //! Visual node graph for creating complex effects by connecting nodes.
 //! Supports effect nodes, math nodes, utility nodes, and custom node API.
 
+use crate::i18n::LocaleManager;
 use egui::{Color32, Pos2, Rect, Response, Sense, Stroke, Ui, Vec2};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -125,45 +126,45 @@ pub enum NodeType {
 
 impl NodeType {
     /// Get human-readable name
-    pub fn name(&self) -> &str {
+    pub fn name(&self, locale: &LocaleManager) -> String {
         match self {
-            Self::Blur { .. } => "Blur",
-            Self::Glow { .. } => "Glow",
-            Self::ColorCorrection { .. } => "Color Correction",
-            Self::Sharpen { .. } => "Sharpen",
-            Self::EdgeDetect => "Edge Detect",
-            Self::ChromaKey { .. } => "Chroma Key",
-            Self::Add => "Add",
-            Self::Subtract => "Subtract",
-            Self::Multiply => "Multiply",
-            Self::Divide => "Divide",
-            Self::Sin => "Sin",
-            Self::Cos => "Cos",
-            Self::Abs => "Abs",
-            Self::Clamp { .. } => "Clamp",
-            Self::Lerp => "Lerp",
-            Self::SmoothStep => "Smooth Step",
-            Self::Switch => "Switch",
-            Self::Merge => "Merge",
-            Self::Split => "Split",
-            Self::Value(_) => "Value",
-            Self::Vector3 { .. } => "Vector3",
-            Self::Color { .. } => "Color",
-            Self::Input { .. } => "Input",
-            Self::Output { .. } => "Output",
-            Self::Custom { name, .. } => name,
+            Self::Blur { .. } => locale.t("node-blur"),
+            Self::Glow { .. } => locale.t("node-glow"),
+            Self::ColorCorrection { .. } => locale.t("node-color-correction"),
+            Self::Sharpen { .. } => locale.t("node-sharpen"),
+            Self::EdgeDetect => locale.t("node-edge-detect"),
+            Self::ChromaKey { .. } => locale.t("node-chroma-key"),
+            Self::Add => locale.t("node-math-add"),
+            Self::Subtract => locale.t("node-math-subtract"),
+            Self::Multiply => locale.t("node-math-multiply"),
+            Self::Divide => locale.t("node-math-divide"),
+            Self::Sin => locale.t("node-math-sin"),
+            Self::Cos => locale.t("node-math-cos"),
+            Self::Abs => locale.t("node-math-abs"),
+            Self::Clamp { .. } => locale.t("node-math-clamp"),
+            Self::Lerp => locale.t("node-math-lerp"),
+            Self::SmoothStep => locale.t("node-math-smooth-step"),
+            Self::Switch => locale.t("node-utility-switch"),
+            Self::Merge => locale.t("node-utility-merge"),
+            Self::Split => locale.t("node-utility-split"),
+            Self::Value(_) => locale.t("node-constant-value"),
+            Self::Vector3 { .. } => locale.t("node-constant-vector3"),
+            Self::Color { .. } => locale.t("node-constant-color"),
+            Self::Input { .. } => locale.t("node-io-input"),
+            Self::Output { .. } => locale.t("node-io-output"),
+            Self::Custom { name, .. } => name.clone(),
         }
     }
 
     /// Get category for palette grouping
-    pub fn category(&self) -> &str {
+    pub fn category(&self, locale: &LocaleManager) -> String {
         match self {
             Self::Blur { .. }
             | Self::Glow { .. }
             | Self::ColorCorrection { .. }
             | Self::Sharpen { .. }
             | Self::EdgeDetect
-            | Self::ChromaKey { .. } => "Effects",
+            | Self::ChromaKey { .. } => locale.t("node-category-effects"),
             Self::Add
             | Self::Subtract
             | Self::Multiply
@@ -173,11 +174,13 @@ impl NodeType {
             | Self::Abs
             | Self::Clamp { .. }
             | Self::Lerp
-            | Self::SmoothStep => "Math",
-            Self::Switch | Self::Merge | Self::Split => "Utility",
-            Self::Value(_) | Self::Vector3 { .. } | Self::Color { .. } => "Constants",
-            Self::Input { .. } | Self::Output { .. } => "I/O",
-            Self::Custom { .. } => "Custom",
+            | Self::SmoothStep => locale.t("node-category-math"),
+            Self::Switch | Self::Merge | Self::Split => locale.t("node-category-utility"),
+            Self::Value(_) | Self::Vector3 { .. } | Self::Color { .. } => {
+                locale.t("node-category-constants")
+            }
+            Self::Input { .. } | Self::Output { .. } => locale.t("node-category-io"),
+            Self::Custom { .. } => locale.t("node-category-custom"),
         }
     }
 
@@ -461,7 +464,7 @@ impl NodeEditor {
     }
 
     /// Render the node editor UI
-    pub fn ui(&mut self, ui: &mut Ui) -> Option<NodeEditorAction> {
+    pub fn ui(&mut self, ui: &mut Ui, locale: &LocaleManager) -> Option<NodeEditorAction> {
         let mut action = None;
 
         // Canvas background
@@ -520,7 +523,7 @@ impl NodeEditor {
             let node_screen_pos = to_screen(node.position);
             let node_screen_rect = Rect::from_min_size(node_screen_pos, node.size * self.zoom);
 
-            let node_response = self.draw_node(ui, &painter, node, node_screen_rect);
+            let node_response = self.draw_node(ui, &painter, node, node_screen_rect, locale);
 
             if node_response.clicked() {
                 self.selected_nodes.clear();
@@ -568,20 +571,21 @@ impl NodeEditor {
                     .show(ui.ctx(), |ui| {
                         egui::Frame::popup(ui.style()).show(ui, |ui| {
                             ui.set_min_width(200.0);
-                            ui.label("Add Node:");
+                            ui.label(locale.t("node-add"));
                             ui.separator();
 
                             let mut selected_type: Option<NodeType> = None;
-                            let mut current_category = "";
+                            let mut current_category = String::new();
 
                             for node_type in &self.node_palette {
-                                if node_type.category() != current_category {
-                                    current_category = node_type.category();
+                                let category = node_type.category(locale);
+                                if category != current_category {
+                                    current_category = category.clone();
                                     ui.separator();
-                                    ui.label(current_category);
+                                    ui.label(&current_category);
                                 }
 
-                                if ui.button(node_type.name()).clicked() {
+                                if ui.button(node_type.name(locale)).clicked() {
                                     selected_type = Some(node_type.clone());
                                     self.show_palette = false;
                                 }
@@ -654,7 +658,14 @@ impl NodeEditor {
     }
 
     /// Draw a node
-    fn draw_node(&self, ui: &Ui, painter: &egui::Painter, node: &Node, rect: Rect) -> Response {
+    fn draw_node(
+        &self,
+        ui: &Ui,
+        painter: &egui::Painter,
+        node: &Node,
+        rect: Rect,
+        locale: &LocaleManager,
+    ) -> Response {
         let response = ui.interact(rect, egui::Id::new(node.id), Sense::click_and_drag());
 
         let is_selected = self.selected_nodes.contains(&node.id);
@@ -674,7 +685,7 @@ impl NodeEditor {
         painter.text(
             title_rect.center(),
             egui::Align2::CENTER_CENTER,
-            node.node_type.name(),
+            node.node_type.name(locale),
             egui::FontId::proportional(14.0 * self.zoom),
             Color32::WHITE,
         );

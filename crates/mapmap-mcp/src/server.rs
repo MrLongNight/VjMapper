@@ -137,6 +137,52 @@ impl McpServer {
                         }),
                     },
                     Tool {
+                        name: "layer_create".to_string(),
+                        description: Some("Create a new layer".to_string()),
+                        input_schema: serde_json::json!({
+                            "type": "object",
+                            "properties": {},
+                        }),
+                    },
+                    Tool {
+                        name: "layer_delete".to_string(),
+                        description: Some("Delete a layer".to_string()),
+                        input_schema: serde_json::json!({
+                            "type": "object",
+                            "properties": {
+                                "layer_id": { "type": "integer" }
+                            },
+                            "required": ["layer_id"]
+                        }),
+                    },
+                    Tool {
+                        name: "cue_trigger".to_string(),
+                        description: Some("Trigger a specific cue".to_string()),
+                        input_schema: serde_json::json!({
+                            "type": "object",
+                            "properties": {
+                                "cue_id": { "type": "integer" }
+                            },
+                            "required": ["cue_id"]
+                        }),
+                    },
+                    Tool {
+                        name: "cue_next".to_string(),
+                        description: Some("Go to the next cue".to_string()),
+                        input_schema: serde_json::json!({
+                            "type": "object",
+                            "properties": {},
+                        }),
+                    },
+                    Tool {
+                        name: "cue_previous".to_string(),
+                        description: Some("Go to the previous cue".to_string()),
+                        input_schema: serde_json::json!({
+                            "type": "object",
+                            "properties": {},
+                        }),
+                    },
+                    Tool {
                         name: "media_play".to_string(),
                         description: Some("Start media playback".to_string()),
                         input_schema: serde_json::json!({
@@ -350,6 +396,114 @@ impl McpServer {
                     "media_play" => self.send_osc_msg("/mapmap/playback/play", vec![], id),
                     "media_pause" => self.send_osc_msg("/mapmap/playback/pause", vec![], id),
                     "media_stop" => self.send_osc_msg("/mapmap/playback/stop", vec![], id),
+                    "layer_create" => {
+                        if let Some(sender) = &self.action_sender {
+                            let _ = sender.send(McpAction::AddLayer);
+                            Some(success_response(
+                                id,
+                                serde_json::json!(CallToolResult {
+                                    content: vec![ToolContent::Text {
+                                        text: "Layer creation triggered".to_string()
+                                    }],
+                                    is_error: Some(false),
+                                }),
+                            ))
+                        } else {
+                            Some(error_response(
+                                id,
+                                -32000,
+                                "Internal error: Action sender not connected",
+                            ))
+                        }
+                    }
+                    "layer_delete" => {
+                        if let Some(layer_id) = args.get("layer_id").and_then(|v| v.as_u64()) {
+                            if let Some(sender) = &self.action_sender {
+                                let _ = sender.send(McpAction::RemoveLayer(layer_id));
+                                Some(success_response(
+                                    id,
+                                    serde_json::json!(CallToolResult {
+                                        content: vec![ToolContent::Text {
+                                            text: format!("Layer {} deletion triggered", layer_id)
+                                        }],
+                                        is_error: Some(false),
+                                    }),
+                                ))
+                            } else {
+                                Some(error_response(
+                                    id,
+                                    -32000,
+                                    "Internal error: Action sender not connected",
+                                ))
+                            }
+                        } else {
+                            Some(error_response(id, -32602, "Invalid arguments"))
+                        }
+                    }
+                    "cue_trigger" => {
+                        if let Some(cue_id) = args.get("cue_id").and_then(|v| v.as_u64()) {
+                            if let Some(sender) = &self.action_sender {
+                                let _ = sender.send(McpAction::TriggerCue(cue_id));
+                                Some(success_response(
+                                    id,
+                                    serde_json::json!(CallToolResult {
+                                        content: vec![ToolContent::Text {
+                                            text: format!("Cue {} trigger triggered", cue_id)
+                                        }],
+                                        is_error: Some(false),
+                                    }),
+                                ))
+                            } else {
+                                Some(error_response(
+                                    id,
+                                    -32000,
+                                    "Internal error: Action sender not connected",
+                                ))
+                            }
+                        } else {
+                            Some(error_response(id, -32602, "Invalid arguments"))
+                        }
+                    }
+                    "cue_next" => {
+                        if let Some(sender) = &self.action_sender {
+                            let _ = sender.send(McpAction::NextCue);
+                            Some(success_response(
+                                id,
+                                serde_json::json!(CallToolResult {
+                                    content: vec![ToolContent::Text {
+                                        text: "Next cue triggered".to_string()
+                                    }],
+                                    is_error: Some(false),
+                                }),
+                            ))
+                        } else {
+                            Some(error_response(
+                                id,
+                                -32000,
+                                "Internal error: Action sender not connected",
+                            ))
+                        }
+                    }
+                    "cue_previous" => {
+                        if let Some(sender) = &self.action_sender {
+                            let _ = sender.send(McpAction::PrevCue);
+                            Some(success_response(
+                                id,
+                                serde_json::json!(CallToolResult {
+                                    content: vec![ToolContent::Text {
+                                        text: "Previous cue triggered".to_string()
+                                    }],
+                                    is_error: Some(false),
+                                }),
+                            ))
+                        } else {
+                            Some(error_response(
+                                id,
+                                -32000,
+                                "Internal error: Action sender not connected",
+                            ))
+                        }
+                    }
                     "project_save" => {
                         if let Some(path_str) = args.get("path").and_then(|v| v.as_str()) {
                             let path = PathBuf::from(path_str);

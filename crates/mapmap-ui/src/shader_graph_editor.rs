@@ -2,7 +2,9 @@
 //!
 //! Phase 3: Effects Pipeline
 //! Node-based visual shader editor using ImGui
+//!
 
+use crate::i18n::LocaleManager;
 use imgui::*;
 use mapmap_core::{NodeId, NodeType, ShaderGraph, ShaderNode};
 use std::collections::HashMap;
@@ -95,73 +97,84 @@ impl ShaderGraphEditor {
     }
 
     /// Draw the shader graph editor UI
-    pub fn draw(&mut self, ui: &Ui) -> Vec<ShaderGraphAction> {
+    pub fn draw(&mut self, ui: &Ui, locale: &LocaleManager) -> Vec<ShaderGraphAction> {
         let mut actions = Vec::new();
 
         // Main menu bar
         if let Some(_menu_bar) = ui.begin_menu_bar() {
-            if let Some(_menu) = ui.begin_menu("File") {
-                if ui.menu_item("New Graph") {
+            if let Some(_menu) = ui.begin_menu(locale.t("sg-menu-file")) {
+                if ui.menu_item(locale.t("sg-new-graph")) {
                     actions.push(ShaderGraphAction::NewGraph);
                 }
-                if ui.menu_item("Load Graph") {
+                if ui.menu_item(locale.t("sg-load-graph")) {
                     actions.push(ShaderGraphAction::LoadGraph);
                 }
-                if ui.menu_item("Save Graph") {
+                if ui.menu_item(locale.t("sg-save-graph")) {
                     actions.push(ShaderGraphAction::SaveGraph);
                 }
                 ui.separator();
-                if ui.menu_item("Generate WGSL") {
+                if ui.menu_item(locale.t("sg-generate-wgsl")) {
                     actions.push(ShaderGraphAction::GenerateCode);
                 }
             }
 
-            if let Some(_menu) = ui.begin_menu("View") {
-                ui.checkbox("Node Palette", &mut self.show_palette);
-                ui.checkbox("Properties", &mut self.show_properties);
-                ui.checkbox("Code Preview", &mut self.show_code_preview);
+            if let Some(_menu) = ui.begin_menu(locale.t("sg-menu-view")) {
+                ui.checkbox(locale.t("sg-view-palette"), &mut self.show_palette);
+                ui.checkbox(locale.t("sg-view-properties"), &mut self.show_properties);
+                ui.checkbox(locale.t("sg-view-code"), &mut self.show_code_preview);
             }
         }
 
         // Draw panels
         if self.show_palette {
-            self.draw_node_palette(ui, &mut actions);
+            self.draw_node_palette(ui, &mut actions, locale);
         }
 
         if self.show_properties && !self.selected_nodes.is_empty() {
-            self.draw_properties_panel(ui, &mut actions);
+            self.draw_properties_panel(ui, &mut actions, locale);
         }
 
         if self.show_code_preview {
-            self.draw_code_preview(ui);
+            self.draw_code_preview(ui, locale);
         }
 
         // Draw main canvas
-        self.draw_canvas(ui, &mut actions);
+        self.draw_canvas(ui, &mut actions, locale);
 
         actions
     }
 
     /// Draw node palette
-    fn draw_node_palette(&mut self, ui: &Ui, actions: &mut Vec<ShaderGraphAction>) {
-        ui.window("Node Palette")
+    fn draw_node_palette(
+        &mut self,
+        ui: &Ui,
+        actions: &mut Vec<ShaderGraphAction>,
+        locale: &LocaleManager,
+    ) {
+        ui.window(locale.t("sg-window-palette"))
             .size([250.0, 400.0], Condition::FirstUseEver)
             .position([10.0, 40.0], Condition::FirstUseEver)
             .build(|| {
                 // Search box
                 ui.input_text("##search", &mut self.palette_search)
-                    .hint("Search nodes...")
+                    .hint(locale.t("sg-search-hint"))
                     .build();
 
                 ui.separator();
 
                 // Category buttons
                 let categories = vec![
-                    "All", "Input", "Math", "Color", "Texture", "Effects", "Utility",
+                    ("All", locale.t("sg-category-all")),
+                    ("Input", locale.t("sg-category-input")),
+                    ("Math", locale.t("sg-category-math")),
+                    ("Color", locale.t("sg-category-color")),
+                    ("Texture", locale.t("sg-category-texture")),
+                    ("Effects", locale.t("sg-category-effects")),
+                    ("Utility", locale.t("sg-category-utility")),
                 ];
-                for category in categories {
-                    if ui.small_button(category) {
-                        self.palette_category = category.to_string();
+                for (category_id, category_label) in categories {
+                    if ui.small_button(category_label) {
+                        self.palette_category = category_id.to_string();
                     }
                     ui.same_line();
                 }
@@ -172,7 +185,7 @@ impl ShaderGraphEditor {
                 // Node list
                 let node_types = self.filter_node_types();
                 for node_type in node_types {
-                    if ui.button(node_type.display_name()) {
+                    if ui.button(get_node_type_name(&node_type, locale)) {
                         actions.push(ShaderGraphAction::AddNode(node_type));
                     }
                 }
@@ -180,20 +193,29 @@ impl ShaderGraphEditor {
     }
 
     /// Draw properties panel for selected node
-    fn draw_properties_panel(&mut self, ui: &Ui, actions: &mut Vec<ShaderGraphAction>) {
-        ui.window("Node Properties")
+    fn draw_properties_panel(
+        &mut self,
+        ui: &Ui,
+        actions: &mut Vec<ShaderGraphAction>,
+        locale: &LocaleManager,
+    ) {
+        ui.window(locale.t("sg-window-properties"))
             .size([300.0, 400.0], Condition::FirstUseEver)
             .position([ui.window_size()[0] - 310.0, 40.0], Condition::FirstUseEver)
             .build(|| {
                 if let Some(node_id) = self.selected_nodes.first() {
                     if let Some(graph) = &self.graph {
                         if let Some(node) = graph.nodes.get(node_id) {
-                            ui.text(format!("Node: {}", node.node_type.display_name()));
-                            ui.text(format!("ID: {}", node.id));
+                            ui.text(format!(
+                                "{} {}",
+                                locale.t("sg-prop-node"),
+                                get_node_type_name(&node.node_type, locale)
+                            ));
+                            ui.text(format!("{} {}", locale.t("sg-prop-id"), node.id));
                             ui.separator();
 
                             // Display and edit parameters
-                            ui.text("Parameters:");
+                            ui.text(locale.t("sg-prop-params"));
                             for (name, value) in &node.parameters {
                                 ui.text(format!("{}: {:?}", name, value));
                                 // TODO: Add parameter editing widgets
@@ -202,12 +224,12 @@ impl ShaderGraphEditor {
                             ui.separator();
 
                             // Display inputs
-                            ui.text("Inputs:");
+                            ui.text(locale.t("sg-prop-inputs"));
                             for input in &node.inputs {
                                 let status = if input.connected_output.is_some() {
-                                    "Connected"
+                                    locale.t("sg-prop-connected")
                                 } else {
-                                    "Not connected"
+                                    locale.t("sg-prop-not-connected")
                                 };
                                 ui.text(format!(
                                     "  {} [{}] - {}",
@@ -220,7 +242,7 @@ impl ShaderGraphEditor {
                             ui.separator();
 
                             // Display outputs
-                            ui.text("Outputs:");
+                            ui.text(locale.t("sg-prop-outputs"));
                             for output in &node.outputs {
                                 ui.text(format!(
                                     "  {} [{}]",
@@ -232,7 +254,7 @@ impl ShaderGraphEditor {
                             ui.separator();
 
                             // Delete button
-                            if ui.button("Delete Node") {
+                            if ui.button(locale.t("sg-delete-node")) {
                                 actions.push(ShaderGraphAction::DeleteNode(*node_id));
                             }
                         }
@@ -242,21 +264,26 @@ impl ShaderGraphEditor {
     }
 
     /// Draw code preview panel
-    fn draw_code_preview(&self, ui: &Ui) {
-        ui.window("WGSL Code Preview")
+    fn draw_code_preview(&self, ui: &Ui, locale: &LocaleManager) {
+        ui.window(locale.t("sg-window-code"))
             .size([600.0, 500.0], Condition::FirstUseEver)
             .build(|| {
                 if let Some(code) = &self.generated_code {
                     ui.text_wrapped(code);
                 } else {
-                    ui.text("No code generated. Use File -> Generate WGSL");
+                    ui.text(locale.t("sg-code-none"));
                 }
             });
     }
 
     /// Draw main canvas
-    fn draw_canvas(&mut self, ui: &Ui, _actions: &mut Vec<ShaderGraphAction>) {
-        ui.window("Shader Graph Canvas")
+    fn draw_canvas(
+        &mut self,
+        ui: &Ui,
+        _actions: &mut Vec<ShaderGraphAction>,
+        locale: &LocaleManager,
+    ) {
+        ui.window(locale.t("sg-window-canvas"))
             .size([800.0, 600.0], Condition::FirstUseEver)
             .position([260.0, 40.0], Condition::FirstUseEver)
             .build(|| {
@@ -287,7 +314,7 @@ impl ShaderGraphEditor {
 
                     // Draw nodes
                     for (node_id, node) in &graph.nodes {
-                        self.draw_node(&draw_list, canvas_pos, *node_id, node, ui);
+                        self.draw_node(&draw_list, canvas_pos, *node_id, node, ui, locale);
                     }
                 }
 
@@ -353,6 +380,7 @@ impl ShaderGraphEditor {
         node_id: NodeId,
         node: &ShaderNode,
         _ui: &Ui,
+        locale: &LocaleManager,
     ) {
         let pos = self
             .node_positions
@@ -398,7 +426,7 @@ impl ShaderGraphEditor {
         draw_list.add_text(
             [screen_pos[0] + 5.0, screen_pos[1] + 5.0],
             [1.0, 1.0, 1.0, 1.0],
-            node.node_type.display_name(),
+            get_node_type_name(&node.node_type, locale),
         );
     }
 
@@ -518,4 +546,46 @@ pub enum ShaderGraphAction {
     SelectNode(NodeId),
     DeselectAll,
     GenerateCode,
+}
+
+fn get_node_type_name(node_type: &NodeType, locale: &LocaleManager) -> String {
+    match node_type {
+        NodeType::TextureInput => locale.t("node-texture-input"),
+        NodeType::TimeInput => locale.t("node-time-input"),
+        NodeType::UVInput => locale.t("node-uv-input"),
+        NodeType::ParameterInput => locale.t("node-parameter-input"),
+        NodeType::AudioInput => locale.t("node-audio-input"),
+        NodeType::Add => locale.t("node-add"),
+        NodeType::Subtract => locale.t("node-subtract"),
+        NodeType::Multiply => locale.t("node-multiply"),
+        NodeType::Divide => locale.t("node-divide"),
+        NodeType::Sin => locale.t("node-sin"),
+        NodeType::Cos => locale.t("node-cos"),
+        NodeType::Power => locale.t("node-power"),
+        NodeType::Mix => locale.t("node-mix"),
+        NodeType::Clamp => locale.t("node-clamp"),
+        NodeType::Smoothstep => locale.t("node-smoothstep"),
+        NodeType::ColorRamp => locale.t("node-color-ramp"),
+        NodeType::HSVToRGB => locale.t("node-hsv-to-rgb"),
+        NodeType::RGBToHSV => locale.t("node-rgb-to-hsv"),
+        NodeType::Brightness => locale.t("node-brightness"),
+        NodeType::Contrast => locale.t("node-contrast"),
+        NodeType::Desaturate => locale.t("node-desaturate"),
+        NodeType::TextureSample => locale.t("node-texture-sample"),
+        NodeType::TextureSampleLod => locale.t("node-texture-sample-lod"),
+        NodeType::TextureCombine => locale.t("node-texture-combine"),
+        NodeType::UVTransform => locale.t("node-uv-transform"),
+        NodeType::UVDistort => locale.t("node-uv-distort"),
+        NodeType::Blur => locale.t("node-blur"),
+        NodeType::Glow => locale.t("node-glow"),
+        NodeType::PixelSort => locale.t("node-pixel-sort"),
+        NodeType::Displacement => locale.t("node-displacement"),
+        NodeType::ChromaticAberration => locale.t("node-chromatic-aberration"),
+        NodeType::Kaleidoscope => locale.t("node-kaleidoscope"),
+        NodeType::EdgeDetect => locale.t("node-edge-detect"),
+        NodeType::Split => locale.t("node-split"),
+        NodeType::Combine => locale.t("node-combine"),
+        NodeType::Remap => locale.t("node-remap"),
+        NodeType::Output => locale.t("node-output"),
+    }
 }

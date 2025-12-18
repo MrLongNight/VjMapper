@@ -42,17 +42,17 @@ impl EffectType {
 
     pub fn icon(&self) -> &'static str {
         match self {
-            EffectType::ColorAdjust => "🎨",
-            EffectType::Blur => "🌫️",
-            EffectType::ChromaticAberration => "🌈",
-            EffectType::EdgeDetect => "📐",
-            EffectType::Glow => "✨",
-            EffectType::Kaleidoscope => "🔮",
-            EffectType::Invert => "🔄",
-            EffectType::Pixelate => "🟩",
-            EffectType::Vignette => "⭕",
-            EffectType::FilmGrain => "📽️",
-            EffectType::Custom => "⚙️",
+            EffectType::ColorAdjust => "ðŸŽ¨",
+            EffectType::Blur => "ðŸŒ«ï¸",
+            EffectType::ChromaticAberration => "ðŸŒˆ",
+            EffectType::EdgeDetect => "ðŸ“",
+            EffectType::Glow => "âœ¨",
+            EffectType::Kaleidoscope => "ðŸ”®",
+            EffectType::Invert => "ðŸ”„",
+            EffectType::Pixelate => "ðŸŸ©",
+            EffectType::Vignette => "â­•",
+            EffectType::FilmGrain => "ðŸ“½ï¸",
+            EffectType::Custom => "âš™ï¸",
         }
     }
 
@@ -290,7 +290,7 @@ impl EffectChainPanel {
             return;
         }
 
-        egui::Window::new(format!("🎬 {}", locale.t("panel-effect-chain")))
+        egui::Window::new(format!("ðŸŽ¬ {}", locale.t("panel-effect-chain")))
             .default_size([320.0, 500.0])
             .resizable(true)
             .show(ctx, |ui| {
@@ -315,7 +315,7 @@ impl EffectChainPanel {
         ui.horizontal(|ui| {
             // Add effect button
             if ui
-                .button(format!("➕ {}", locale.t("effect-add")))
+                .button(format!("âž• {}", locale.t("effect-add")))
                 .clicked()
             {
                 self.show_add_menu = !self.show_add_menu;
@@ -323,7 +323,7 @@ impl EffectChainPanel {
 
             // Preset buttons
             if ui
-                .button(format!("📂 {}", locale.t("effect-presets")))
+                .button(format!("ðŸ“‚ {}", locale.t("effect-presets")))
                 .clicked()
             {
                 self.show_preset_browser = !self.show_preset_browser;
@@ -331,7 +331,7 @@ impl EffectChainPanel {
 
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 if ui
-                    .button(format!("🗑️ {}", locale.t("effect-clear")))
+                    .button(format!("ðŸ—‘ï¸ {}", locale.t("effect-clear")))
                     .clicked()
                 {
                     self.actions.push(EffectChainAction::ClearAll);
@@ -518,18 +518,18 @@ impl EffectChainPanel {
 
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         // Delete button
-                        if ui.small_button("✖").clicked() {
+                        if ui.small_button("âœ–").clicked() {
                             remove = true;
                         }
 
                         // Move buttons
                         ui.add_enabled_ui(!is_last, |ui| {
-                            if ui.small_button("▼").clicked() {
+                            if ui.small_button("â–¼").clicked() {
                                 move_down = true;
                             }
                         });
                         ui.add_enabled_ui(!is_first, |ui| {
-                            if ui.small_button("▲").clicked() {
+                            if ui.small_button("â–²").clicked() {
                                 move_up = true;
                             }
                         });
@@ -758,7 +758,7 @@ impl EffectChainPanel {
             ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                 // Save preset button
                 if ui
-                    .button(format!("💾 {}", locale.t("effect-save")))
+                    .button(format!("ðŸ’¾ {}", locale.t("effect-save")))
                     .clicked()
                 {
                     // Show save dialog
@@ -773,14 +773,14 @@ impl EffectChainPanel {
         let mut load_preset_path: Option<String> = None;
 
         let mut open = self.show_preset_browser;
-        egui::Window::new(format!("📂 {}", locale.t("effect-presets-browser")))
+        egui::Window::new(format!("ðŸ“‚ {}", locale.t("effect-presets-browser")))
             .default_size([400.0, 300.0])
             .resizable(true)
             .open(&mut open)
             .show(ctx, |ui| {
                 // Search bar
                 ui.horizontal(|ui| {
-                    ui.label("🔍");
+                    ui.label("ðŸ”");
                     ui.add(
                         egui::TextEdit::singleline(&mut self.preset_search)
                             .hint_text(locale.t("effect-search")),
@@ -803,7 +803,11 @@ impl EffectChainPanel {
                             }
 
                             ui.horizontal(|ui| {
-                                let star = if preset.is_favorite { "⭐" } else { "☆" };
+                                let star = if preset.is_favorite {
+                                    "â­"
+                                } else {
+                                    "â˜†"
+                                };
                                 ui.label(star);
 
                                 if ui.button(&preset.name).clicked() {

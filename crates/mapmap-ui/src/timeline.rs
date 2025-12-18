@@ -3,6 +3,7 @@
 //! Phase 3: Effects Pipeline
 //! Timeline editor for keyframe-based parameter animation
 
+use crate::i18n::LocaleManager;
 use imgui::*;
 use mapmap_core::{AnimationClip, AnimationTrack, InterpolationMode};
 
@@ -92,34 +93,39 @@ impl TimelineEditor {
     }
 
     /// Draw the timeline UI
-    pub fn draw(&mut self, ui: &Ui) -> Vec<TimelineAction> {
+    pub fn draw(&mut self, ui: &Ui, locale: &LocaleManager) -> Vec<TimelineAction> {
         let mut actions = Vec::new();
 
         // Transport controls
-        self.draw_transport_controls(ui, &mut actions);
+        self.draw_transport_controls(ui, &mut actions, locale);
 
         ui.separator();
 
         // Timeline ruler and tracks
-        self.draw_timeline(ui, &mut actions);
+        self.draw_timeline(ui, &mut actions, locale);
 
         // Curve editor (if enabled)
         if self.show_curve_editor {
-            self.draw_curve_editor(ui, &mut actions);
+            self.draw_curve_editor(ui, &mut actions, locale);
         }
 
         actions
     }
 
     /// Draw transport controls (play/pause/stop)
-    fn draw_transport_controls(&mut self, ui: &Ui, actions: &mut Vec<TimelineAction>) {
+    fn draw_transport_controls(
+        &mut self,
+        ui: &Ui,
+        actions: &mut Vec<TimelineAction>,
+        locale: &LocaleManager,
+    ) {
         // Play/Pause button
         if self.playing {
-            if ui.button("Pause") {
+            if ui.button(locale.t("timeline-pause")) {
                 self.playing = false;
                 actions.push(TimelineAction::Pause);
             }
-        } else if ui.button("Play") {
+        } else if ui.button(locale.t("timeline-play")) {
             self.playing = true;
             actions.push(TimelineAction::Play);
         }
@@ -127,7 +133,7 @@ impl TimelineEditor {
         ui.same_line();
 
         // Stop button
-        if ui.button("Stop") {
+        if ui.button(locale.t("timeline-stop")) {
             self.playing = false;
             self.current_time = 0.0;
             actions.push(TimelineAction::Stop);
@@ -136,17 +142,21 @@ impl TimelineEditor {
         ui.same_line();
 
         // Current time display and input
-        ui.text(format!("Time: {:.2}s", self.current_time));
+        ui.text(format!(
+            "{}: {:.2}s",
+            locale.t("timeline-time"),
+            self.current_time
+        ));
 
         ui.same_line();
 
         // Loop toggle
-        ui.checkbox("Loop", &mut self.loop_enabled);
+        ui.checkbox(locale.t("timeline-loop"), &mut self.loop_enabled);
 
         ui.same_line();
 
         // Snap toggle
-        ui.checkbox("Snap", &mut self.snap_enabled);
+        ui.checkbox(locale.t("timeline-snap"), &mut self.snap_enabled);
 
         ui.same_line();
 
@@ -155,33 +165,43 @@ impl TimelineEditor {
             self.zoom = (self.zoom * 0.8).max(20.0);
         }
         ui.same_line();
-        ui.text(format!("Zoom: {:.0}px/s", self.zoom));
+        ui.text(format!(
+            "{}: {:.0}px/s",
+            locale.t("timeline-zoom"),
+            self.zoom
+        ));
         ui.same_line();
-        if ui.button("+") {
+        ui.text("+");
+        if ui.is_item_clicked() {
             self.zoom = (self.zoom * 1.25).min(500.0);
         }
 
         ui.same_line();
 
         // Curve editor toggle
-        ui.checkbox("Curves", &mut self.show_curve_editor);
+        ui.checkbox(locale.t("timeline-curves"), &mut self.show_curve_editor);
 
         ui.same_line();
 
         // Add keyframe button
-        if ui.button("Add Keyframe") {
+        if ui.button(locale.t("timeline-add-keyframe")) {
             actions.push(TimelineAction::AddKeyframe(self.current_time));
         }
     }
 
     /// Draw timeline ruler and tracks
-    fn draw_timeline(&mut self, ui: &Ui, actions: &mut Vec<TimelineAction>) {
+    fn draw_timeline(
+        &mut self,
+        ui: &Ui,
+        actions: &mut Vec<TimelineAction>,
+        locale: &LocaleManager,
+    ) {
         if self.clip.is_none() {
-            ui.text("No animation clip loaded");
+            ui.text(locale.t("timeline-no-clip"));
             return;
         }
 
-        ui.window("Timeline")
+        ui.window(locale.t("timeline-window-title"))
             .size([ui.window_size()[0] - 20.0, 300.0], Condition::FirstUseEver)
             .build(|| {
                 let draw_list = ui.get_window_draw_list();
@@ -455,12 +475,21 @@ impl TimelineEditor {
     }
 
     /// Draw curve editor
-    fn draw_curve_editor(&self, ui: &Ui, _actions: &mut Vec<TimelineAction>) {
-        ui.window("Curve Editor")
+    fn draw_curve_editor(
+        &self,
+        ui: &Ui,
+        _actions: &mut Vec<TimelineAction>,
+        locale: &LocaleManager,
+    ) {
+        ui.window(locale.t("curve-editor-title"))
             .size([600.0, 300.0], Condition::FirstUseEver)
             .build(|| {
                 if let Some(track_name) = &self.curve_editor_track {
-                    ui.text(format!("Editing: {}", track_name));
+                    ui.text(format!(
+                        "{}: {}",
+                        locale.t("curve-editor-editing"),
+                        track_name
+                    ));
                     ui.separator();
 
                     if let Some(clip) = &self.clip {
@@ -488,7 +517,7 @@ impl TimelineEditor {
                         }
                     }
                 } else {
-                    ui.text("Select a track to edit curves");
+                    ui.text(locale.t("curve-editor-select-track"));
                 }
             });
     }
