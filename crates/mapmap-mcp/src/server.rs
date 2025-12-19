@@ -8,16 +8,19 @@ use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tracing::{error, info};
 
 pub struct McpServer {
+    // Optional OSC client (currently unused but will be used for OSC tools)
+    #[allow(dead_code)]
     osc_client: Option<OscClient>,
+    // Channel to send actions to main app
     action_sender: Option<Sender<McpAction>>,
 }
 
 impl McpServer {
-    pub fn new(action_sender: Option<Sender<McpAction>>) -> Self {
+    pub fn new(action_sender: Option<crossbeam_channel::Sender<crate::McpAction>>) -> Self {
         // Try to connect to default VJMapper OSC port
         let osc_client = match OscClient::new("127.0.0.1:8000") {
             Ok(client) => {
-                info!("MCP Server connected regarding OSC to 127.0.0.1:8000");
+                info!("MCP Server connected to OSC at 127.0.0.1:8000");
                 Some(client)
             }
             Err(e) => {
@@ -25,7 +28,6 @@ impl McpServer {
                 None
             }
         };
-
         Self {
             osc_client,
             action_sender,
@@ -352,6 +354,7 @@ impl McpServer {
                     Some(error_response(id, -32602, "Missing name parameter"))
                 }
             }
+            // Handle tool calls
             "tools/call" => {
                 // Parse params
                 let params: CallToolParams = match serde_json::from_value(
@@ -361,205 +364,128 @@ impl McpServer {
                     Err(_) => return Some(error_response(id, -32602, "Invalid params")),
                 };
 
-                let args = params.arguments.unwrap_or(serde_json::json!({}));
-
                 match params.name.as_str() {
-                    "send_osc" => self.handle_send_osc(id, &args),
-                    "layer_set_opacity" => {
-                        if let (Some(layer_id), Some(opacity)) = (
-                            args.get("layer_id").and_then(|v| v.as_u64()),
-                            args.get("opacity").and_then(|v| v.as_f64()),
-                        ) {
-                            self.send_osc_msg(
-                                &format!("/mapmap/layer/{}/opacity", layer_id),
-                                vec![rosc::OscType::Float(opacity as f32)],
-                                id,
-                            )
-                        } else {
-                            Some(error_response(id, -32602, "Invalid arguments"))
+                    "project_save" => {
+                        if let Some(args) = params.arguments {
+                            if let Some(path_val) = args.get("path") {
+                                if let Some(path_str) = path_val.as_str() {
+                                    if let Some(sender) = &self.action_sender {
+                                        let _ = sender.send(crate::McpAction::SaveProject(
+                                            PathBuf::from(path_str),
+                                        ));
+                                    }
+                                    return Some(success_response(
+                                        id,
+                                        serde_json::json!({"status":"queued"}),
+                                    ));
+                                }
+                            }
                         }
+                        Some(error_response(id, -32602, "Missing path"))
                     }
-                    "layer_set_visibility" => {
-                        if let (Some(layer_id), Some(visible)) = (
-                            args.get("layer_id").and_then(|v| v.as_u64()),
-                            args.get("visible").and_then(|v| v.as_bool()),
-                        ) {
-                            let val = if visible { 1.0 } else { 0.0 };
-                            // Or use boolean type for OSC if supported by App
-                            self.send_osc_msg(
-                                &format!("/mapmap/layer/{}/visible", layer_id),
-                                vec![rosc::OscType::Float(val)], // Using float for now as bool support varies
-                                id,
-                            )
-                        } else {
-                            Some(error_response(id, -32602, "Invalid arguments"))
+                    "project_load" => {
+                        if let Some(args) = params.arguments {
+                            if let Some(path_val) = args.get("path") {
+                                if let Some(path_str) = path_val.as_str() {
+                                    if let Some(sender) = &self.action_sender {
+                                        let _ = sender.send(crate::McpAction::LoadProject(
+                                            PathBuf::from(path_str),
+                                        ));
+                                    }
+                                    return Some(success_response(
+                                        id,
+                                        serde_json::json!({"status":"queued"}),
+                                    ));
+                                }
+                            }
                         }
+                        Some(error_response(id, -32602, "Missing path"))
                     }
-                    "media_play" => self.send_osc_msg("/mapmap/playback/play", vec![], id),
-                    "media_pause" => self.send_osc_msg("/mapmap/playback/pause", vec![], id),
-                    "media_stop" => self.send_osc_msg("/mapmap/playback/stop", vec![], id),
                     "layer_create" => {
-                        let name = args
-                            .get("name")
-                            .and_then(|v| v.as_str())
-                            .unwrap_or("New Layer");
-
-                        if let Some(sender) = &self.action_sender {
-                            let _ = sender.send(McpAction::AddLayer(name.to_string()));
-                            Some(success_response(
-                                id,
-                                serde_json::json!(CallToolResult {
-                                    content: vec![ToolContent::Text {
-                                        text: "Layer creation triggered".to_string()
-                                    }],
-                                    is_error: Some(false),
-                                }),
-                            ))
-                        } else {
-                            Some(error_response(
-                                id,
-                                -32000,
-                                "Internal error: Action sender not connected",
-                            ))
+                        if let Some(args) = params.arguments {
+                            if let Some(name_val) = args.get("name") {
+                                if let Some(name_str) = name_val.as_str() {
+                                    if let Some(sender) = &self.action_sender {
+                                        let _ = sender
+                                            .send(crate::McpAction::AddLayer(name_str.to_string()));
+                                    }
+                                    return Some(success_response(
+                                        id,
+                                        serde_json::json!({"status":"queued"}),
+                                    ));
+                                }
+                            }
                         }
+                        Some(error_response(id, -32602, "Missing layer name"))
                     }
                     "layer_delete" => {
-                        if let Some(layer_id) = args.get("layer_id").and_then(|v| v.as_u64()) {
-                            if let Some(sender) = &self.action_sender {
-                                let _ = sender.send(McpAction::RemoveLayer(layer_id));
-                                Some(success_response(
-                                    id,
-                                    serde_json::json!(CallToolResult {
-                                        content: vec![ToolContent::Text {
-                                            text: format!("Layer {} deletion triggered", layer_id)
-                                        }],
-                                        is_error: Some(false),
-                                    }),
-                                ))
-                            } else {
-                                Some(error_response(
-                                    id,
-                                    -32000,
-                                    "Internal error: Action sender not connected",
-                                ))
+                        if let Some(args) = params.arguments {
+                            if let Some(layer_id_val) = args.get("layer_id") {
+                                if let Some(layer_id) = layer_id_val.as_u64() {
+                                    if let Some(sender) = &self.action_sender {
+                                        let _ = sender
+                                            .send(crate::McpAction::RemoveLayer(layer_id as u32));
+                                    }
+                                    return Some(success_response(
+                                        id,
+                                        serde_json::json!({"status":"queued"}),
+                                    ));
+                                }
                             }
-                        } else {
-                            Some(error_response(id, -32602, "Invalid arguments"))
                         }
+                        Some(error_response(id, -32602, "Missing layer_id"))
                     }
                     "cue_trigger" => {
-                        if let Some(cue_id) = args.get("cue_id").and_then(|v| v.as_u64()) {
-                            if let Some(sender) = &self.action_sender {
-                                let _ = sender.send(McpAction::TriggerCue(cue_id));
-                                Some(success_response(
-                                    id,
-                                    serde_json::json!(CallToolResult {
-                                        content: vec![ToolContent::Text {
-                                            text: format!("Cue {} trigger triggered", cue_id)
-                                        }],
-                                        is_error: Some(false),
-                                    }),
-                                ))
-                            } else {
-                                Some(error_response(
-                                    id,
-                                    -32000,
-                                    "Internal error: Action sender not connected",
-                                ))
+                        if let Some(args) = params.arguments {
+                            if let Some(cue_id_val) = args.get("cue_id") {
+                                if let Some(cue_id) = cue_id_val.as_u64() {
+                                    if let Some(sender) = &self.action_sender {
+                                        let _ = sender
+                                            .send(crate::McpAction::TriggerCue(cue_id as u32));
+                                    }
+                                    return Some(success_response(
+                                        id,
+                                        serde_json::json!({"status":"queued"}),
+                                    ));
+                                }
                             }
-                        } else {
-                            Some(error_response(id, -32602, "Invalid arguments"))
                         }
+                        Some(error_response(id, -32602, "Missing cue_id"))
                     }
                     "cue_next" => {
                         if let Some(sender) = &self.action_sender {
-                            let _ = sender.send(McpAction::NextCue);
-                            Some(success_response(
-                                id,
-                                serde_json::json!(CallToolResult {
-                                    content: vec![ToolContent::Text {
-                                        text: "Next cue triggered".to_string()
-                                    }],
-                                    is_error: Some(false),
-                                }),
-                            ))
-                        } else {
-                            Some(error_response(
-                                id,
-                                -32000,
-                                "Internal error: Action sender not connected",
-                            ))
+                            let _ = sender.send(crate::McpAction::NextCue);
                         }
+                        Some(success_response(id, serde_json::json!({"status":"queued"})))
                     }
                     "cue_previous" => {
                         if let Some(sender) = &self.action_sender {
-                            let _ = sender.send(McpAction::PrevCue);
-                            Some(success_response(
-                                id,
-                                serde_json::json!(CallToolResult {
-                                    content: vec![ToolContent::Text {
-                                        text: "Previous cue triggered".to_string()
-                                    }],
-                                    is_error: Some(false),
-                                }),
-                            ))
-                        } else {
-                            Some(error_response(
-                                id,
-                                -32000,
-                                "Internal error: Action sender not connected",
-                            ))
+                            let _ = sender.send(crate::McpAction::PrevCue);
                         }
+                        Some(success_response(id, serde_json::json!({"status":"queued"})))
                     }
-                    "project_save" => {
-                        if let Some(path_str) = args.get("path").and_then(|v| v.as_str()) {
-                            let path = PathBuf::from(path_str);
-                            if let Some(sender) = &self.action_sender {
-                                let _ = sender.send(McpAction::SaveProject(path));
-                                Some(success_response(
-                                    id,
-                                    serde_json::json!(CallToolResult {
-                                        content: vec![ToolContent::Text {
-                                            text: "Save triggered".to_string()
-                                        }],
-                                        is_error: Some(false),
-                                    }),
-                                ))
-                            } else {
-                                Some(error_response(
-                                    id,
-                                    -32000,
-                                    "Internal error: Action sender not connected",
-                                ))
-                            }
-                        } else {
-                            Some(error_response(id, -32602, "Invalid arguments"))
+                    "media_play" => {
+                        if let Some(sender) = &self.action_sender {
+                            let _ = sender.send(crate::McpAction::MediaPlay);
                         }
+                        Some(success_response(id, serde_json::json!({"status":"queued"})))
                     }
-                    "project_load" => {
-                        if let Some(path_str) = args.get("path").and_then(|v| v.as_str()) {
-                            let path = PathBuf::from(path_str);
-                            if let Some(sender) = &self.action_sender {
-                                let _ = sender.send(McpAction::LoadProject(path));
-                                Some(success_response(
-                                    id,
-                                    serde_json::json!(CallToolResult {
-                                        content: vec![ToolContent::Text {
-                                            text: "Load triggered".to_string()
-                                        }],
-                                        is_error: Some(false),
-                                    }),
-                                ))
-                            } else {
-                                Some(error_response(
-                                    id,
-                                    -32000,
-                                    "Internal error: Action sender not connected",
-                                ))
-                            }
-                        } else {
-                            Some(error_response(id, -32602, "Invalid arguments"))
+                    "media_pause" => {
+                        if let Some(sender) = &self.action_sender {
+                            let _ = sender.send(crate::McpAction::MediaPause);
                         }
+                        Some(success_response(id, serde_json::json!({"status":"queued"})))
+                    }
+                    "media_stop" => {
+                        if let Some(sender) = &self.action_sender {
+                            let _ = sender.send(crate::McpAction::MediaStop);
+                        }
+                        Some(success_response(id, serde_json::json!({"status":"queued"})))
+                    }
+                    "layer_list" => {
+                        // Mock empty list for now
+                        let layers: Vec<String> = vec![];
+                        Some(success_response(id, serde_json::json!({"layers": layers})))
                     }
                     _ => Some(error_response(id, -32601, "Tool not found")),
                 }
@@ -568,6 +494,7 @@ impl McpServer {
         }
     }
 
+    #[allow(dead_code)]
     fn handle_send_osc(
         &self,
         id: Option<serde_json::Value>,
@@ -591,6 +518,7 @@ impl McpServer {
         ))
     }
 
+    #[allow(dead_code)]
     fn send_osc_msg(
         &self,
         address: &str,

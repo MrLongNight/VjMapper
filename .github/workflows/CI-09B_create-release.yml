@@ -38,11 +38,17 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Setup vcpkg
+        uses: microsoft/setup-vcpkg@v0
+        with:
+          vcpkgGitCommitId: "latest"
+          cache: true
+
       - name: Install vcpkg dependencies
         run: |
           vcpkg install ffmpeg[core,avcodec,avformat,swscale,swresample]:x64-windows
         shell: pwsh
-
+      
       - name: Setup Rust toolchain
         uses: dtolnay/rust-toolchain@stable
       
@@ -87,10 +93,19 @@ jobs:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      - name: Setup vcpkg
+        run: |
+          git clone https://github.com/microsoft/vcpkg.git $env:VCPKG_INSTALLATION_ROOT
+          & "$env:VCPKG_INSTALLATION_ROOT\bootstrap-vcpkg.bat"
+        shell: pwsh
+        env:
+          VCPKG_INSTALLATION_ROOT: C:\vcpkg
       
       - name: Install vcpkg dependencies
         run: |
-          vcpkg install ffmpeg[core,avcodec,avformat,swscale,swresample]:x64-windows
+          $env:VCPKG_INSTALLATION_ROOT = "C:\vcpkg"
+          & "$env:VCPKG_INSTALLATION_ROOT\vcpkg" install ffmpeg[core,avcodec,avformat,swscale,swresample]:x64-windows
         shell: pwsh
       
       - name: Setup Rust toolchain
