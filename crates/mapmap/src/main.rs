@@ -376,6 +376,18 @@ impl App {
                     println!("Triggering PrevCue"); // Debug print as per earlier pattern
                     self.control_manager.execute_action(Action::PrevCue);
                 }
+                McpAction::MediaPlay => {
+                    info!("MCP: Media Play");
+                    // TODO: Integrate with media player when available
+                }
+                McpAction::MediaPause => {
+                    info!("MCP: Media Pause");
+                    // TODO: Integrate with media player when available
+                }
+                McpAction::MediaStop => {
+                    info!("MCP: Media Stop");
+                    // TODO: Integrate with media player when available
+                }
             }
         }
 

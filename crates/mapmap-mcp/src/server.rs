@@ -486,6 +486,13 @@ impl McpServer {
                         let layers: Vec<String> = vec![];
                         Some(success_response(id, serde_json::json!({"layers": layers})))
                     }
+                    "send_osc" => {
+                        if let Some(args) = params.arguments {
+                            self.handle_send_osc(id, &serde_json::to_value(args).unwrap())
+                        } else {
+                            Some(error_response(id, -32602, "Missing arguments for send_osc"))
+                        }
+                    }
                     _ => Some(error_response(id, -32601, "Tool not found")),
                 }
             }
