@@ -26,4 +26,10 @@ pub enum McpAction {
     NextCue,
     /// Go to the previous cue.
     PrevCue,
+    /// Start media playback
+    MediaPlay,
+    /// Pause media playback
+    MediaPause,
+    /// Stop media playback
+    MediaStop,
 }

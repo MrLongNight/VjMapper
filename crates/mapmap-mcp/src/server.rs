@@ -423,8 +423,8 @@ impl McpServer {
                             if let Some(layer_id_val) = args.get("layer_id") {
                                 if let Some(layer_id) = layer_id_val.as_u64() {
                                     if let Some(sender) = &self.action_sender {
-                                        let _ = sender
-                                            .send(crate::McpAction::RemoveLayer(layer_id as u32));
+                                        let _ =
+                                            sender.send(crate::McpAction::RemoveLayer(layer_id));
                                     }
                                     return Some(success_response(
                                         id,
@@ -440,8 +440,7 @@ impl McpServer {
                             if let Some(cue_id_val) = args.get("cue_id") {
                                 if let Some(cue_id) = cue_id_val.as_u64() {
                                     if let Some(sender) = &self.action_sender {
-                                        let _ = sender
-                                            .send(crate::McpAction::TriggerCue(cue_id as u32));
+                                        let _ = sender.send(crate::McpAction::TriggerCue(cue_id));
                                     }
                                     return Some(success_response(
                                         id,
