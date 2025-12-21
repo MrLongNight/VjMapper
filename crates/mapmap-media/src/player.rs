@@ -80,11 +80,16 @@ pub struct VideoPlayer {
 impl VideoPlayer {
     /// Create a new video player with a decoder
     pub fn new(decoder: impl VideoDecoder + 'static) -> Self {
+        Self::new_with_box(Box::new(decoder))
+    }
+
+    /// Create a new video player with a boxed decoder trait object
+    pub fn new_with_box(decoder: Box<dyn VideoDecoder>) -> Self {
         let (command_sender, command_receiver) = unbounded();
         let (status_sender, status_receiver) = unbounded();
 
         Self {
-            decoder: Box::new(decoder),
+            decoder,
             state: PlaybackState::Idle,
             current_time: Duration::ZERO,
             playback_speed: 1.0,
@@ -194,7 +199,6 @@ impl VideoPlayer {
             (PlaybackState::Paused, PlaybackState::Playing) => Ok(()),
             (_, PlaybackState::Stopped) => Ok(()), // Stop is always valid
             (_, PlaybackState::Error(_)) => Ok(()), // Error can happen anytime
-            // (PlaybackState::Error(_), PlaybackState::Stopped) => Ok(()), // Covered by (_, Stopped)
             (PlaybackState::Error(_), PlaybackState::Idle) => Ok(()), // Reset from error
             _ => Err(PlayerError::InvalidStateTransition {
                 from: format!("{:?}", self.state),
@@ -298,6 +302,7 @@ mod tests {
     use crate::{MediaError, PixelFormat};
 
     // A mock decoder that can be configured to fail.
+    #[derive(Clone)]
     struct MockDecoder {
         fail_seek: bool,
         fail_next_frame: bool,
@@ -345,6 +350,10 @@ mod tests {
                     format: PixelFormat::RGBA8,
                 })
             }
+        }
+
+        fn clone_decoder(&self) -> crate::Result<Box<dyn VideoDecoder>> {
+            Ok(Box::new(self.clone()))
         }
     }
 
