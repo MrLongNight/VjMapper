@@ -663,4 +663,139 @@ mod tests {
         // Check that band energies are calculated
         assert_eq!(analysis.band_energies.len(), 7);
     }
+
+    #[test]
+    fn test_audio_config_defaults() {
+        let config = AudioConfig::default();
+        assert_eq!(config.sample_rate, 44100);
+        assert_eq!(config.fft_size, 1024);
+        assert!((config.overlap - 0.5).abs() < 0.01);
+        assert!((config.smoothing - 0.8).abs() < 0.01);
+    }
+
+    #[test]
+    fn test_fft_size_variations() {
+        // Test with different FFT sizes
+        for fft_size in [512, 1024, 2048] {
+            let config = AudioConfig {
+                sample_rate: 44100,
+                fft_size,
+                overlap: 0.5,
+                smoothing: 0.8,
+            };
+            let analyzer = AudioAnalyzer::new(config);
+            assert_eq!(analyzer.magnitude_buffer.len(), fft_size / 2);
+        }
+    }
+
+    #[test]
+    fn test_all_frequency_bands() {
+        let bands = FrequencyBand::all();
+        assert_eq!(bands.len(), 7);
+
+        // Verify all band ranges are correctly defined
+        for band in bands {
+            let (min, max) = band.frequency_range();
+            assert!(min < max, "Band {:?} has invalid range", band);
+            assert!(min >= 20.0, "Band {:?} below audible range", band);
+            assert!(max <= 20000.0, "Band {:?} above audible range", band);
+        }
+    }
+
+    #[test]
+    fn test_audio_mapping_types() {
+        let analysis = AudioAnalysis {
+            rms_volume: 0.5,
+            peak_volume: 0.7,
+            beat_detected: true,
+            beat_strength: 0.8,
+            onset_detected: true,
+            tempo_bpm: Some(120.0),
+            band_energies: [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7],
+            fft_magnitudes: vec![0.1; 512],
+            ..Default::default()
+        };
+
+        // Test Volume mapping
+        let mapping = AudioReactiveMapping {
+            parameter_name: "test".to_string(),
+            source: AudioSource::SystemInput,
+            mapping_type: AudioMappingType::Volume,
+            frequency_band: None,
+            output_min: 0.0,
+            output_max: 1.0,
+            smoothing: 0.5,
+            attack: 0.1,
+            release: 0.3,
+        };
+        let value = mapping.apply(&analysis, 0.0, 0.016);
+        assert!(value > 0.0);
+
+        // Test Beat mapping
+        let beat_mapping = AudioReactiveMapping {
+            mapping_type: AudioMappingType::Beat,
+            ..mapping.clone()
+        };
+        let beat_value = beat_mapping.apply(&analysis, 0.0, 0.016);
+        assert!(beat_value > 0.0); // Should be 1.0 for beat detected
+
+        // Test BandEnergy mapping
+        let band_mapping = AudioReactiveMapping {
+            mapping_type: AudioMappingType::BandEnergy,
+            frequency_band: Some(FrequencyBand::Bass),
+            ..mapping.clone()
+        };
+        let band_value = band_mapping.apply(&analysis, 0.0, 0.016);
+        assert!(band_value >= 0.0);
+    }
+
+    #[test]
+    fn test_audio_analysis_default() {
+        let analysis = AudioAnalysis::default();
+        assert_eq!(analysis.timestamp, 0.0);
+        assert_eq!(analysis.fft_magnitudes.len(), 512);
+        assert_eq!(analysis.band_energies.len(), 7);
+        assert!(!analysis.beat_detected);
+        assert!(!analysis.onset_detected);
+    }
+
+    #[test]
+    fn test_audio_source_variants() {
+        assert_ne!(AudioSource::SystemInput, AudioSource::VideoAudio);
+        assert_ne!(AudioSource::VideoAudio, AudioSource::AudioFile);
+        assert_ne!(AudioSource::AudioFile, AudioSource::SystemInput);
+    }
+
+    #[test]
+    fn test_attack_release_envelope() {
+        let mapping = AudioReactiveMapping {
+            parameter_name: "opacity".to_string(),
+            source: AudioSource::SystemInput,
+            mapping_type: AudioMappingType::Volume,
+            frequency_band: None,
+            output_min: 0.0,
+            output_max: 1.0,
+            smoothing: 0.5,
+            attack: 0.1,
+            release: 0.5, // Slower release
+        };
+
+        let analysis_high = AudioAnalysis {
+            rms_volume: 1.0,
+            ..Default::default()
+        };
+        let analysis_low = AudioAnalysis {
+            rms_volume: 0.0,
+            ..Default::default()
+        };
+
+        // Attack: value should increase
+        let v1 = mapping.apply(&analysis_high, 0.0, 0.016);
+        assert!(v1 > 0.0);
+
+        // Release: value should decrease but slower
+        let v2 = mapping.apply(&analysis_low, 1.0, 0.016);
+        assert!(v2 < 1.0);
+        assert!(v2 > 0.0); // Should not drop to 0 immediately
+    }
 }
