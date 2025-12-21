@@ -207,6 +207,7 @@ btn-eject-all = Alle auswerfen (X)
 panel-paints = Farben/Medien
 label-total-paints = Paints insgesamt: { $count }
 check-playing = Wiedergabe
+paints-color = Farbe
 mode-loop = Schleife
 label-speed = Geschwindigkeit
 label-composition = Komposition
