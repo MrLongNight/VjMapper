@@ -145,6 +145,47 @@ jobs:
         path: target/release/MapFlow
         if-no-files-found: ignore
 
+  # Build on Windows (without FFmpeg - ffmpeg-next 6.x incompatible with FFmpeg 7.x)
+  build-windows:
+    name: Build (Windows)
+    runs-on: windows-latest
+    env:
+      RUST_TOOLCHAIN: stable
+    permissions:
+      contents: read
+    
+    steps:
+    - name: Configure Git
+      run: git config --global core.autocrlf false
+    - uses: actions/checkout@v4
+
+    - name: Install Rust (stable)
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt, clippy
+
+    - name: Rust Cache
+      uses: swatinem/rust-cache@v2
+
+    - name: Build (Release, no FFmpeg)
+      env:
+        RUST_BACKTRACE: full
+      run: |
+        cargo build --release --verbose --no-default-features --features audio
+
+    - name: Run tests (Release, no FFmpeg)
+      if: ${{ github.event.inputs.skip_tests != 'true' }}
+      env:
+        RUST_BACKTRACE: full
+      run: cargo test --release --workspace --verbose --no-default-features --features audio
+
+    - name: Upload artifacts (Windows binary)
+      uses: actions/upload-artifact@v4
+      with:
+        name: mapflow-windows-release
+        path: target/release/MapFlow.exe
+        if-no-files-found: ignore
+
   # Security scanning
   security:
     name: Security Audit
@@ -173,7 +214,7 @@ jobs:
   # Success gate for branch protection
   ci-success:
     name: CI Success Gate
-    needs: [quality, build-and-test, security]
+    needs: [quality, build-and-test, build-windows, security]
     runs-on: ubuntu-latest
     if: always()
     permissions:
@@ -184,11 +225,16 @@ jobs:
       if: always()
       run: |
         # Check results of dependent jobs and fail if any are not "success"
+        # Note: build-windows is included but may have issues with FFmpeg - we log but don't fail
         if [ "${{ needs.quality.result }}" != "success" ] || [ "${{ needs.build-and-test.result }}" != "success" ] || [ "${{ needs.security.result }}" != "success" ]; then
           echo "::error::One or more required jobs failed or were cancelled."
           echo "quality: ${{ needs.quality.result }}"
           echo "build-and-test: ${{ needs.build-and-test.result }}"
+          echo "build-windows: ${{ needs.build-windows.result }}"
           echo "security: ${{ needs.security.result }}"
           exit 1
+        fi
+        if [ "${{ needs.build-windows.result }}" != "success" ]; then
+          echo "::warning::Windows build did not succeed (result: ${{ needs.build-windows.result }}), but this is not blocking."
         fi
         echo "✓ All CI checks passed successfully"
