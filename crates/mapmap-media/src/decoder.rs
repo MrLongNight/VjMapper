@@ -88,7 +88,7 @@ fn yuv420p_to_rgba(yuv_data: &[u8], width: u32, height: u32) -> Vec<u8> {
 /// Note: VideoDecoder does not require Send because FFmpeg's scaler context
 /// is not thread-safe. Decoders should be used on a single thread or wrapped
 /// in appropriate synchronization primitives.
-pub trait VideoDecoder: Send + Sync {
+pub trait VideoDecoder {
     fn next_frame(&mut self) -> Result<DecodedFrame>;
     fn seek(&mut self, timestamp: Duration) -> Result<()>;
     fn duration(&self) -> Duration;
