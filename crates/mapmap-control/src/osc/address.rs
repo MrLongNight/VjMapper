@@ -268,4 +268,108 @@ mod tests {
             "/mapmap/paint/3/parameter/speed"
         );
     }
+
+    #[test]
+    fn test_parse_layer_rotation() {
+        let target = parse_osc_address("/mapmap/layer/2/rotation").unwrap();
+        assert_eq!(target, ControlTarget::LayerRotation(2));
+    }
+
+    #[test]
+    fn test_parse_layer_scale() {
+        let target = parse_osc_address("/mapmap/layer/7/scale").unwrap();
+        assert_eq!(target, ControlTarget::LayerScale(7));
+    }
+
+    #[test]
+    fn test_parse_layer_visibility() {
+        let target = parse_osc_address("/mapmap/layer/10/visibility").unwrap();
+        assert_eq!(target, ControlTarget::LayerVisibility(10));
+    }
+
+    #[test]
+    fn test_parse_playback_position() {
+        let target = parse_osc_address("/mapmap/playback/position").unwrap();
+        assert_eq!(target, ControlTarget::PlaybackPosition);
+    }
+
+    #[test]
+    fn test_parse_output_brightness() {
+        let target = parse_osc_address("/mapmap/output/0/brightness").unwrap();
+        assert_eq!(target, ControlTarget::OutputBrightness(0));
+    }
+
+    #[test]
+    fn test_parse_master_opacity() {
+        let target = parse_osc_address("/mapmap/master/opacity").unwrap();
+        assert_eq!(target, ControlTarget::MasterOpacity);
+    }
+
+    #[test]
+    fn test_parse_master_blackout() {
+        let target = parse_osc_address("/mapmap/master/blackout").unwrap();
+        assert_eq!(target, ControlTarget::MasterBlackout);
+    }
+
+    #[test]
+    fn test_round_trip_layer_targets() {
+        // Test that parsing the address generated from a target gives back the same target
+        let targets = vec![
+            ControlTarget::LayerOpacity(5),
+            ControlTarget::LayerPosition(3),
+            ControlTarget::LayerScale(1),
+            ControlTarget::LayerRotation(8),
+            ControlTarget::LayerVisibility(0),
+        ];
+
+        for target in targets {
+            let address = control_target_to_address(&target);
+            let parsed = parse_osc_address(&address).unwrap();
+            assert_eq!(parsed, target);
+        }
+    }
+
+    #[test]
+    fn test_round_trip_master_targets() {
+        let targets = vec![ControlTarget::MasterOpacity, ControlTarget::MasterBlackout];
+
+        for target in targets {
+            let address = control_target_to_address(&target);
+            let parsed = parse_osc_address(&address).unwrap();
+            assert_eq!(parsed, target);
+        }
+    }
+
+    #[test]
+    fn test_round_trip_playback_targets() {
+        let targets = vec![
+            ControlTarget::PlaybackSpeed(None),
+            ControlTarget::PlaybackPosition,
+        ];
+
+        for target in targets {
+            let address = control_target_to_address(&target);
+            let parsed = parse_osc_address(&address).unwrap();
+            assert_eq!(parsed, target);
+        }
+    }
+
+    #[test]
+    fn test_invalid_category() {
+        assert!(parse_osc_address("/mapmap/unknown/test").is_err());
+    }
+
+    #[test]
+    fn test_invalid_output_address() {
+        assert!(parse_osc_address("/mapmap/output").is_err());
+        assert!(parse_osc_address("/mapmap/output/abc").is_err());
+        assert!(parse_osc_address("/mapmap/output/0").is_err());
+        assert!(parse_osc_address("/mapmap/output/0/unknown").is_err());
+    }
+
+    #[test]
+    fn test_invalid_master_address() {
+        assert!(parse_osc_address("/mapmap/master").is_err());
+        assert!(parse_osc_address("/mapmap/master/unknown").is_err());
+    }
 }
