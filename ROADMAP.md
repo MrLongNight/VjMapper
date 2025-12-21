@@ -265,12 +265,12 @@
   - ⬜ Main Menu & Toolbar (`render_menu_bar`)
   - ⬜ Shader Graph Editor (`shader_graph_editor.rs` - Legacy Version)
 
-- ⬜ **Internationalisierung (i18n) – NEU**
-  - ⬜ Sprachauswahl UI (Deutsch / Englisch)
-  - ⬜ `fluent` oder `rust-i18n` Crate integrieren
-  - ⬜ Übersetzungsdateien (`locales/de.ftl`, `locales/en.ftl`)
-  - ⬜ Dynamischer Sprachwechsel zur Laufzeit
-  - ⬜ Persistierung der Spracheinstellung in User-Config
+- 🟡 **Internationalisierung (i18n) – NEU**
+  - ✅ Sprachauswahl UI (Deutsch / Englisch)
+  - ✅ `fluent` oder `rust-i18n` Crate integrieren
+  - ✅ Übersetzungsdateien (`locales/de.ftl`, `locales/en.ftl`)
+  - ✅ Dynamischer Sprachwechsel zur Laufzeit
+  - ✅ Persistierung der Spracheinstellung in User-Config (COMPLETED 2025-12-21)
   - ⬜ Alle UI-Strings extrahieren und übersetzen
 
 ### Phase 7: Advanced Show Control (Module-Based Timeline) – PLANNED
@@ -337,9 +337,9 @@
   - ✅ Benchmarks: `texture_upload.rs`, `video_decode.rs`
   - ✅ Examples: `hello_world_projection.rs`, `simple_render.rs`
 
-- ⬜ **Fehlende Tests**
-  - ⬜ Audio-System-Tests mit Audio-Feature aktiviert
-  - ⬜ OSC-Integration-Tests
+- 🟡 **Fehlende Tests**
+  - ✅ Audio-System-Tests mit Audio-Feature aktiviert (COMPLETED 2025-12-21, 16 Tests)
+  - ✅ OSC-Integration-Tests (COMPLETED 2025-12-21, 19 Tests)
   - ⬜ Multi-Output-Rendering-Tests
   - ⬜ Effect-Chain-Tests
   - ⬜ Project-Save/Load-Tests
@@ -353,9 +353,9 @@
   - ✅ FFmpeg-Installation in Linux-Builds korrigiert (libavutil-Fehler behoben)
   - ✅ Toolchain-Updates (stable verwendet, dtolnay/rust-toolchain@stable)
   - ✅ Windows-Build-Fixes (vcpkg-Pfade, git-ownership)
-  - ⬜ Audio-Feature in CI aktivieren fehlt
+  - ✅ Audio-Feature in CI aktiviert
   - ⬜ FFmpeg in CI-Builds aktivieren fehlt
-  - ⬜ Windows-CI-Builds fehlen
+  - ✅ Windows-CI-Builds (COMPLETED 2025-12-21, non-blocking)
   - ⬜ macOS-CI-Builds fehlen (optional)
 
 - 🟡 **Packaging**
