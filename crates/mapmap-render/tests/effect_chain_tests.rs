@@ -71,15 +71,24 @@ fn test_effect_chain_reordering() {
 
     // Move id2 up
     chain.move_up(id2);
-    assert_eq!(chain.effects.iter().map(|e| e.id).collect::<Vec<_>>(), vec![id2, id1, id3]);
+    assert_eq!(
+        chain.effects.iter().map(|e| e.id).collect::<Vec<_>>(),
+        vec![id2, id1, id3]
+    );
 
     // Move id3 down (no-op)
     chain.move_down(id3);
-    assert_eq!(chain.effects.iter().map(|e| e.id).collect::<Vec<_>>(), vec![id2, id1, id3]);
+    assert_eq!(
+        chain.effects.iter().map(|e| e.id).collect::<Vec<_>>(),
+        vec![id2, id1, id3]
+    );
 
     // Move id2 down
     chain.move_down(id2);
-    assert_eq!(chain.effects.iter().map(|e| e.id).collect::<Vec<_>>(), vec![id1, id2, id3]);
+    assert_eq!(
+        chain.effects.iter().map(|e| e.id).collect::<Vec<_>>(),
+        vec![id1, id2, id3]
+    );
 }
 
 #[test]
@@ -129,7 +138,11 @@ async fn test_apply_chain_smoke_test() {
     let height = 128;
     let texture_desc = wgpu::TextureDescriptor {
         label: Some("Test Texture"),
-        size: wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
+        size: wgpu::Extent3d {
+            width,
+            height,
+            depth_or_array_layers: 1,
+        },
         mip_level_count: 1,
         sample_count: 1,
         dimension: wgpu::TextureDimension::D2,
@@ -152,7 +165,15 @@ async fn test_apply_chain_smoke_test() {
         label: Some("Test Encoder"),
     });
 
-    renderer.apply_chain(&mut encoder, &input_view, &output_view, &chain, 0.0, width, height);
+    renderer.apply_chain(
+        &mut encoder,
+        &input_view,
+        &output_view,
+        &chain,
+        0.0,
+        width,
+        height,
+    );
 
     // The test passes if this doesn't panic
     queue.submit(Some(encoder.finish()));
@@ -181,5 +202,8 @@ fn test_effect_preset_serialization() {
     let deserialized_chain: EffectChain = serde_json::from_str(&serialized_json).unwrap();
 
     // Compare
-    assert_eq!(chain, deserialized_chain, "Deserialized chain should match the original");
+    assert_eq!(
+        chain, deserialized_chain,
+        "Deserialized chain should match the original"
+    );
 }
