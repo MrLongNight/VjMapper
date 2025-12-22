@@ -2781,6 +2781,7 @@ dependencies = [
  "bytemuck",
  "criterion",
  "crossbeam-channel",
+ "futures-channel",
  "glam",
  "image",
  "mapmap-core",
