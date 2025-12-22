@@ -3,7 +3,9 @@
 use crate::{MediaError, Result};
 use std::path::Path;
 use std::time::Duration;
-use tracing::{info, warn};
+use tracing::info;
+#[cfg(feature = "ffmpeg")]
+use tracing::warn;
 
 /// Pixel format for decoded frames
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -440,10 +442,10 @@ impl FFmpegDecoder {
     }
 
     /// Open a video file with hardware acceleration
-    pub fn open_with_hw_accel<P: AsRef<Path>>(path: P, hw_accel: HwAccelType) -> Result<Self> {
+    pub fn open_with_hw_accel<P: AsRef<Path>>(_path: P, _hw_accel: HwAccelType) -> Result<Self> {
         #[cfg(feature = "ffmpeg")]
         {
-            match ffmpeg_impl::RealFFmpegDecoder::open(path, hw_accel) {
+            match ffmpeg_impl::RealFFmpegDecoder::open(_path, _hw_accel) {
                 Ok(decoder) => Ok(FFmpegDecoder::Real(decoder)),
                 Err(e) => {
                     warn!("FFmpeg decoder failed: {}, using test pattern", e);

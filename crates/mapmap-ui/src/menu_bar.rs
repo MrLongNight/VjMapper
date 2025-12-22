@@ -19,7 +19,10 @@ pub fn show(ctx: &egui::Context, ui_state: &mut AppUI) -> Vec<UIAction> {
 
             // --- File Menu ---
             ui.menu_button(ui_state.i18n.t("menu-file"), |ui| {
-                if ui.button(ui_state.i18n.t("menu-file-new-project")).clicked() {
+                if ui
+                    .button(ui_state.i18n.t("menu-file-new-project"))
+                    .clicked()
+                {
                     actions.push(UIAction::NewProject);
                     ui.close_menu();
                 }
@@ -137,7 +140,7 @@ pub fn show(ctx: &egui::Context, ui_state: &mut AppUI) -> Vec<UIAction> {
                     ui_state.i18n.t("check-show-layers"),
                 );
                 ui.checkbox(
-                    &mut ui_state.show_paints,
+                    &mut ui_state.paint_panel.visible,
                     ui_state.i18n.t("check-show-paints"),
                 );
                 ui.checkbox(
@@ -156,12 +159,18 @@ pub fn show(ctx: &egui::Context, ui_state: &mut AppUI) -> Vec<UIAction> {
                     &mut ui_state.show_oscillator,
                     ui_state.i18n.t("check-show-oscillator"),
                 );
-                ui.checkbox(&mut ui_state.show_audio, ui_state.i18n.t("check-show-audio"));
+                ui.checkbox(
+                    &mut ui_state.show_audio,
+                    ui_state.i18n.t("check-show-audio"),
+                );
                 ui.checkbox(
                     &mut ui_state.show_cue_panel,
                     ui_state.i18n.t("check-show-cues"),
                 );
-                ui.checkbox(&mut ui_state.show_stats, ui_state.i18n.t("check-show-stats"));
+                ui.checkbox(
+                    &mut ui_state.show_stats,
+                    ui_state.i18n.t("check-show-stats"),
+                );
                 ui.separator();
                 if ui.button(ui_state.i18n.t("btn-fullscreen")).clicked() {
                     actions.push(UIAction::ToggleFullscreen);
