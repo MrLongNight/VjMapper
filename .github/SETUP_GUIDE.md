@@ -63,7 +63,7 @@ Für `main` Branch:
 **Jules sollte konfiguriert werden um:**
 
 1. **Issues überwachen:**
-   - Repository: `MrLongNight/VjMapper`
+   - Repository: `MrLongNight/MapFlow`
    - Label: `jules-task`
    - Check Interval: 5 Minuten
 

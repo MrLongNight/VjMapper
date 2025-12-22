@@ -1,6 +1,6 @@
 # GitHub Actions Workflows
 
-This directory contains automated workflows for the VjMapper project, implementing a comprehensive CI/CD pipeline with Jules AI integration.
+This directory contains automated workflows for the MapFlow project, implementing a comprehensive CI/CD pipeline with Jules AI integration.
 
 ## 🤖 Workflows Overview
 
@@ -400,4 +400,4 @@ For issues with workflows:
 ---
 
 **Last Updated:** 2024-12-04  
-**Maintained By:** VjMapper Team
+**Maintained By:** MapFlow Team

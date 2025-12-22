@@ -315,7 +315,7 @@ jobs:
             DATE=$(date +%Y-%m-%d)
             
             # Try multiple section names
-            for SECTION in "## Next Immediate Actions" "## Recently Completed" "## Completed Tasks" "# VjMapper"; do
+            for SECTION in "## Next Immediate Actions" "## Recently Completed" "## Completed Tasks" "# MapFlow"; do
               if grep -q "^${SECTION}" ROADMAP.md; then
                 echo "✅ Adding completion note to '${SECTION}' section"
                 

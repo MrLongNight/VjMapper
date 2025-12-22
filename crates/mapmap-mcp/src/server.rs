@@ -17,7 +17,7 @@ pub struct McpServer {
 
 impl McpServer {
     pub fn new(action_sender: Option<crossbeam_channel::Sender<crate::McpAction>>) -> Self {
-        // Try to connect to default VJMapper OSC port
+        // Try to connect to default MapFlow OSC port
         let osc_client = match OscClient::new("127.0.0.1:8000") {
             Ok(client) => {
                 info!("MCP Server connected to OSC at 127.0.0.1:8000");
@@ -83,7 +83,7 @@ impl McpServer {
                         prompts: None,
                     },
                     server_info: ServerInfo {
-                        name: "vjmapper-mcp".to_string(),
+                        name: "MapFlow-mcp".to_string(),
                         version: "0.1.0".to_string(),
                     },
                 };
@@ -96,7 +96,7 @@ impl McpServer {
                     Tool {
                         name: "send_osc".to_string(),
                         description: Some(
-                            "Send an Open Sound Control (OSC) message to VJMapper".to_string(),
+                            "Send an Open Sound Control (OSC) message to MapFlow".to_string(),
                         ),
                         input_schema: serde_json::json!({
                             "type": "object",
@@ -646,7 +646,7 @@ impl McpServer {
                         "uri": "project://current",
                         "name": "Current Project",
                         "mimeType": "application/json",
-                        "description": "The current VJMapper project state"
+                        "description": "The current MapFlow project state"
                     }),
                     serde_json::json!({
                         "uri": "layer://list",
@@ -735,7 +735,7 @@ impl McpServer {
                         "troubleshoot" => Some(success_response(
                             id,
                             serde_json::json!({
-                                "description": "Troubleshoot VJMapper",
+                                "description": "Troubleshoot MapFlow",
                                 "messages": [
                                     {
                                         "role": "user",

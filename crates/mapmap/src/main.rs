@@ -1,6 +1,6 @@
-//! MapMap - Open source Vj Projection Mapping Software
+//! MapFlow - Open source Vj Projection Mapping Software
 //!
-//! This is the main application crate for MapMap.
+//! This is the main application crate for MapFlow.
 
 #![warn(missing_docs)]
 
@@ -286,8 +286,8 @@ impl App {
             match action {
                 mapmap_ui::UIAction::SaveProjectAs => {
                     if let Some(path) = FileDialog::new()
-                        .add_filter("MapMap Project", &["mapmap", "ron", "json"])
-                        .set_file_name("project.mapmap")
+                        .add_filter("MapFlow Project", &["mflow", "mapmap", "ron", "json"])
+                        .set_file_name("project.mflow")
                         .save_file()
                     {
                         if let Err(e) = save_project(&self.state, &path) {
@@ -300,8 +300,8 @@ impl App {
                 mapmap_ui::UIAction::SaveProject(path_str) => {
                     let path = if path_str.is_empty() {
                         if let Some(path) = FileDialog::new()
-                            .add_filter("MapMap Project", &["mapmap", "ron", "json"])
-                            .set_file_name("project.mapmap")
+                            .add_filter("MapFlow Project", &["mflow", "mapmap", "ron", "json"])
+                            .set_file_name("project.mflow")
                             .save_file()
                         {
                             path
@@ -324,7 +324,7 @@ impl App {
                 mapmap_ui::UIAction::LoadProject(path_str) => {
                     let path = if path_str.is_empty() {
                         if let Some(path) = FileDialog::new()
-                            .add_filter("MapMap Project", &["mapmap", "ron", "json"])
+                            .add_filter("MapFlow Project", &["mflow", "mapmap", "ron", "json"])
                             .pick_file()
                         {
                             path
@@ -418,18 +418,17 @@ impl App {
             }
         }
 
-
         // Process egui panel actions
         if let Some(action) = self.ui_state.paint_panel.take_action() {
             match action {
                 mapmap_ui::paint_panel::PaintPanelAction::AddPaint => {
-                    self.state.paint_manager.add_paint(
-                        mapmap_core::paint::Paint::color(
+                    self.state
+                        .paint_manager
+                        .add_paint(mapmap_core::paint::Paint::color(
                             0,
                             "New Color",
                             [1.0, 1.0, 1.0, 1.0],
-                        ),
-                    );
+                        ));
                     self.state.dirty = true;
                 }
                 mapmap_ui::paint_panel::PaintPanelAction::RemovePaint(id) => {
@@ -515,12 +514,15 @@ impl App {
                     let menu_actions = menu_bar::show(ctx, &mut self.ui_state);
                     self.ui_state.actions.extend(menu_actions);
 
-<<<<<<< HEAD
+                    // Render Dashboard
+                    dashboard_action = self.ui_state.dashboard.ui(ctx, &self.ui_state.i18n);
+
                     // Render Audio Panel
                     if self.ui_state.show_audio {
                         let analysis = self.audio_analyzer.get_latest_analysis();
-                        egui::Window::new(self.ui_state.i18n.t("audio-panel-title"))
-                            .show(ctx, |ui| {
+                        egui::Window::new(self.ui_state.i18n.t("audio-panel-title")).show(
+                            ctx,
+                            |ui| {
                                 if let Some(action) = self.ui_state.audio_panel.ui(
                                     ui,
                                     &self.ui_state.i18n,
@@ -547,15 +549,11 @@ impl App {
                                         }
                                     }
                                 }
-                            });
+                            },
+                        );
                     }
 
                     // Render Effect Chain Panel
-=======
-                    dashboard_action = self.ui_state.dashboard.ui(ctx, &self.ui_state.i18n);
-
-                    // Render Effect Chain Panel if visible
->>>>>>> origin/feature/menu-bar-egui-514237342778400185
                     self.ui_state
                         .effect_chain_panel
                         .ui(ctx, &self.ui_state.i18n);
@@ -728,7 +726,7 @@ impl App {
 fn main() -> Result<()> {
     // Initialize logging
     tracing_subscriber::fmt::init();
-    info!("Starting MapMap...");
+    info!("Starting MapFlow...");
 
     // Create the event loop
     let event_loop = EventLoop::new()?;

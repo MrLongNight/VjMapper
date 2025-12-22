@@ -16,6 +16,7 @@ cpal = { workspace = true, optional = true }
 rustfft = { workspace = true }
 hound = { workspace = true }
 crossbeam-channel = { workspace = true }
+parking_lot = { workspace = true }
 winit = { workspace = true, optional = true }
 
 [features]

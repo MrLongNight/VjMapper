@@ -1,5 +1,5 @@
 name: Feature Request
-description: Suggest a new feature for VjMapper (will be processed by Jules)
+description: Suggest a new feature for MapFlow (will be processed by Jules)
 title: "[Feature]: "
 labels: ["feature-request", "jules-task"]
 assignees: []
@@ -9,7 +9,7 @@ body:
     attributes:
       value: |
         ## Feature Request
-        Suggest a new feature or enhancement for VjMapper.
+        Suggest a new feature or enhancement for MapFlow.
         
   - type: textarea
     id: problem

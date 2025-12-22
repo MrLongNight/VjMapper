@@ -1,4 +1,4 @@
-# MapMap Code of Conduct
+# MapFlow Code of Conduct
 
 ## Our Pledge
 

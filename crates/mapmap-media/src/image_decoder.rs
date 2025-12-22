@@ -308,4 +308,16 @@ mod tests {
         assert!(!GifDecoder::supports_format("test.png"));
         assert!(!GifDecoder::supports_format("test.jpg"));
     }
+
+    #[test]
+    fn test_still_image_decoder_new_not_found() {
+        let result = StillImageDecoder::open("a_file_that_does_not_exist.png");
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn test_gif_decoder_new_not_found() {
+        let result = GifDecoder::open("a_file_that_does_not_exist.gif");
+        assert!(result.is_err());
+    }
 }

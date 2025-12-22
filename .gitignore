@@ -17,7 +17,12 @@
 
 # Other files
 *.out
+
+# Logs (moved to logs/ directory)
+/logs/
 *.log
+*.autosave
+.*.autosave
 
 # Mac OS X / MacOS
 *.DS_Store

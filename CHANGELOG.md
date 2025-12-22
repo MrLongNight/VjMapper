@@ -5,7 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.2.0] - 2025-12-22: MapFlow Rebranding
+- **REBRANDING:** Das Projekt wurde von **MapFlow** in **MapFlow** umbenannt.
+  - Windows Executable: `mapflow.exe`
+  - Linux Executable: `mapflow`
+  - Repository URL: `https://github.com/MrLongNight/MapFlow`
+  - Neue CI Icons und Application Icons integriert.
+  - Alle Dokumentationen aktualisiert.
+
+## [0.1.0] - Unreleased
 - 2025-12-22: [CONSOLIDATED] All Jules UI Migrations (#78)
 - 2025-12-22: Migrate Audio Visualization Panel to egui (#72)
 - 2025-12-22: Add Project Save/Load Tests (#68)
@@ -56,10 +64,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **CI:** Add `toolchain: stable` to the build workflow to fix CI failures. ([#39](https://github.com/MrLongNight/VjMapper/pull/39))
-- **UI:** Fix incorrect import path for media player enums in `dashboard.rs`. ([#39](https://github.com/MrLongNight/VjMapper/pull/39))
+- **CI:** Add `toolchain: stable` to the build workflow to fix CI failures. ([#39](https://github.com/MrLongNight/MapFlow/pull/39))
+- **UI:** Fix incorrect import path for media player enums in `dashboard.rs`. ([#39](https://github.com/MrLongNight/MapFlow/pull/39))
 
 ### Added
 
-- **Media:** Implement a robust and fault-tolerant media playback state machine with a command-based control system, validated state transitions, and comprehensive unit tests. ([#39](https://github.com/MrLongNight/VjMapper/pull/39))
-- **UI:** Add a speed slider, loop mode selector, and timeline scrubber to the dashboard for media playback control. ([#39](https://github.com/MrLongNight/VjMapper/pull/39))
+- **Media:** Implement a robust and fault-tolerant media playback state machine with a command-based control system, validated state transitions, and comprehensive unit tests. ([#39](https://github.com/MrLongNight/MapFlow/pull/39))
+- **UI:** Add a speed slider, loop mode selector, and timeline scrubber to the dashboard for media playback control. ([#39](https://github.com/MrLongNight/MapFlow/pull/39))

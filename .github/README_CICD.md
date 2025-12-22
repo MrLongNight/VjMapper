@@ -186,7 +186,7 @@ gh workflow run "CI-01:Build&Test" -f skip_platforms=true -f skip_tests=true
 ---
 
 **Letztes Update:** 2024-12-16  
-**Maintainer:** VjMapper Team  
+**Maintainer:** MapFlow Team  
 **Status:** ✅ Produktionsbereit
 
 **Nächster Schritt:** Lies [SETUP_GUIDE.md](SETUP_GUIDE.md) für 5-Minuten Setup! 🚀
