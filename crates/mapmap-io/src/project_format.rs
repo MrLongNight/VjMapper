@@ -141,9 +141,7 @@ mod tests {
             project_file.metadata.created_at,
             loaded_project_file.metadata.created_at
         );
-        assert!(
-            project_file.metadata.modified_at <= loaded_project_file.metadata.modified_at
-        );
+        assert!(project_file.metadata.modified_at <= loaded_project_file.metadata.modified_at);
     }
 
     #[test]
