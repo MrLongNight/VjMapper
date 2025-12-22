@@ -9,10 +9,13 @@ struct TestEnvironment {
 }
 
 async fn setup_test_environment() -> Option<TestEnvironment> {
-    WgpuBackend::new().await.ok().map(|backend| TestEnvironment {
-        device: backend.device.clone(),
-        queue: backend.queue.clone(),
-    })
+    WgpuBackend::new()
+        .await
+        .ok()
+        .map(|backend| TestEnvironment {
+            device: backend.device.clone(),
+            queue: backend.queue.clone(),
+        })
 }
 
 /// Helper to create a texture with a solid color
@@ -77,8 +80,7 @@ async fn read_texture_data(
     let bytes_per_pixel = 4;
     let unpadded_bytes_per_row = bytes_per_pixel * width;
     let alignment = wgpu::COPY_BYTES_PER_ROW_ALIGNMENT;
-    let padded_bytes_per_row =
-        (unpadded_bytes_per_row + alignment - 1) & !(alignment - 1);
+    let padded_bytes_per_row = (unpadded_bytes_per_row + alignment - 1) & !(alignment - 1);
     let buffer_size = (padded_bytes_per_row * height) as u64;
 
     let buffer = device.create_buffer(&wgpu::BufferDescriptor {
@@ -120,8 +122,7 @@ async fn read_texture_data(
     rx.await.unwrap().unwrap();
 
     let padded_data = slice.get_mapped_range();
-    let mut unpadded_data =
-        Vec::with_capacity((unpadded_bytes_per_row * height) as usize);
+    let mut unpadded_data = Vec::with_capacity((unpadded_bytes_per_row * height) as usize);
     for chunk in padded_data.chunks_exact(padded_bytes_per_row as usize) {
         unpadded_data.extend_from_slice(&chunk[..unpadded_bytes_per_row as usize]);
     }
@@ -129,7 +130,6 @@ async fn read_texture_data(
 
     unpadded_data
 }
-
 
 #[test]
 fn test_render_to_multiple_outputs() {
@@ -141,8 +141,7 @@ fn test_render_to_multiple_outputs() {
             let color = [255, 0, 0, 255]; // Red
 
             // 1. Create a source texture with a solid color
-            let source_texture =
-                create_solid_color_texture(&device, &queue, width, height, color);
+            let source_texture = create_solid_color_texture(&device, &queue, width, height, color);
             let source_view = source_texture.create_view(&wgpu::TextureViewDescriptor::default());
 
             // 2. Define output configurations (we won't use them directly for rendering,
@@ -190,10 +189,9 @@ fn test_render_to_multiple_outputs() {
             // 5. Render to each output texture
             for texture in &output_textures {
                 let view = texture.create_view(&wgpu::TextureViewDescriptor::default());
-                let mut encoder =
-                    device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                        label: Some("Render Encoder"),
-                    });
+                let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor {
+                    label: Some("Render Encoder"),
+                });
                 {
                     let mut render_pass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                         label: Some("Render Pass"),
@@ -262,8 +260,7 @@ fn test_individual_output_transforms() {
             let height: u32 = 64;
             let color = [0, 255, 0, 255]; // Green
 
-            let source_texture =
-                create_solid_color_texture(&device, &queue, width, height, color);
+            let source_texture = create_solid_color_texture(&device, &queue, width, height, color);
             let source_view = source_texture.create_view(&wgpu::TextureViewDescriptor::default());
 
             let output_texture = device.create_texture(&wgpu::TextureDescriptor {
@@ -293,7 +290,8 @@ fn test_individual_output_transforms() {
             let uniform_buffer = mesh_renderer.create_uniform_buffer(transform, 1.0);
             let uniform_bind_group = mesh_renderer.create_uniform_bind_group(&uniform_buffer);
 
-            let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+            let mut encoder =
+                device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
             {
                 let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                     label: None,
@@ -354,13 +352,16 @@ fn test_edge_blending_between_outputs() {
             let color = [255, 0, 0, 255]; // Red
 
             // Create a solid red texture
-            let source_texture =
-                create_solid_color_texture(&device, &queue, width, height, color);
+            let source_texture = create_solid_color_texture(&device, &queue, width, height, color);
             let source_view = source_texture.create_view(&wgpu::TextureViewDescriptor::default());
 
             let output_texture = device.create_texture(&wgpu::TextureDescriptor {
                 label: Some("Edge Blend Output"),
-                size: wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
+                size: wgpu::Extent3d {
+                    width,
+                    height,
+                    depth_or_array_layers: 1,
+                },
                 mip_level_count: 1,
                 sample_count: 1,
                 dimension: wgpu::TextureDimension::D2,
@@ -370,25 +371,35 @@ fn test_edge_blending_between_outputs() {
             });
             let output_view = output_texture.create_view(&wgpu::TextureViewDescriptor::default());
 
-            let edge_blend_renderer = EdgeBlendRenderer::new(device.clone(), wgpu::TextureFormat::Rgba8UnormSrgb).unwrap();
+            let edge_blend_renderer =
+                EdgeBlendRenderer::new(device.clone(), wgpu::TextureFormat::Rgba8UnormSrgb)
+                    .unwrap();
 
             // Blend the right edge
             let blend_config = EdgeBlendConfig {
-                right: EdgeBlendZone { enabled: true, width: 0.5, offset: 0.0 },
+                right: EdgeBlendZone {
+                    enabled: true,
+                    width: 0.5,
+                    offset: 0.0,
+                },
                 ..Default::default()
             };
             let uniform_buffer = edge_blend_renderer.create_uniform_buffer(&blend_config);
             let uniform_bind_group = edge_blend_renderer.create_uniform_bind_group(&uniform_buffer);
             let texture_bind_group = edge_blend_renderer.create_texture_bind_group(&source_view);
 
-            let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+            let mut encoder =
+                device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
             {
                 let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                     label: None,
                     color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                         view: &output_view,
                         resolve_target: None,
-                        ops: wgpu::Operations { load: wgpu::LoadOp::Clear(wgpu::Color::BLACK), store: wgpu::StoreOp::Store },
+                        ops: wgpu::Operations {
+                            load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+                            store: wgpu::StoreOp::Store,
+                        },
                     })],
                     depth_stencil_attachment: None,
                     timestamp_writes: None,
@@ -406,20 +417,30 @@ fn test_edge_blending_between_outputs() {
             // Pixel just before the blend zone (uv.x slightly < 0.5) should be fully red
             let before_blend_x = width / 2 - 1;
             let before_blend_idx = ((y * width) + before_blend_x) * 4;
-            assert_eq!(&data[before_blend_idx as usize..(before_blend_idx + 4) as usize], color);
+            assert_eq!(
+                &data[before_blend_idx as usize..(before_blend_idx + 4) as usize],
+                color
+            );
 
             // Pixel in the middle of the blend zone (uv.x = 0.75) should be faded
             let mid_blend_x = width * 3 / 4;
             let mid_blend_idx = ((y * width) + mid_blend_x) * 4;
             let mid_red_value = data[mid_blend_idx as usize];
-            assert!(mid_red_value > 10 && mid_red_value < 200, "Expected blended value at center of blend zone, got {}", mid_red_value);
+            assert!(
+                mid_red_value > 10 && mid_red_value < 200,
+                "Expected blended value at center of blend zone, got {}",
+                mid_red_value
+            );
 
             // Pixel at the far right edge (uv.x = 1.0) should be black
             let end_x = width - 1;
             let end_idx = ((y * width) + end_x) * 4;
             // Gamma correction means it might not be perfectly 0
-            assert!(data[end_idx as usize] < 10, "Expected near-black value at the edge, got {}", data[end_idx as usize]);
-
+            assert!(
+                data[end_idx as usize] < 10,
+                "Expected near-black value at the edge, got {}",
+                data[end_idx as usize]
+            );
         } else {
             println!("Skipping test: No suitable GPU adapter found.");
         }
@@ -435,12 +456,17 @@ fn test_color_calibration_per_output() {
             let height: u32 = 64;
             let gray_color = [128, 128, 128, 255];
 
-            let source_texture = create_solid_color_texture(&device, &queue, width, height, gray_color);
+            let source_texture =
+                create_solid_color_texture(&device, &queue, width, height, gray_color);
             let source_view = source_texture.create_view(&wgpu::TextureViewDescriptor::default());
 
             let output_texture = device.create_texture(&wgpu::TextureDescriptor {
                 label: Some("Color Calib Output"),
-                size: wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
+                size: wgpu::Extent3d {
+                    width,
+                    height,
+                    depth_or_array_layers: 1,
+                },
                 mip_level_count: 1,
                 sample_count: 1,
                 dimension: wgpu::TextureDimension::D2,
@@ -450,7 +476,9 @@ fn test_color_calibration_per_output() {
             });
             let output_view = output_texture.create_view(&wgpu::TextureViewDescriptor::default());
 
-            let calib_renderer = ColorCalibrationRenderer::new(device.clone(), wgpu::TextureFormat::Rgba8UnormSrgb).unwrap();
+            let calib_renderer =
+                ColorCalibrationRenderer::new(device.clone(), wgpu::TextureFormat::Rgba8UnormSrgb)
+                    .unwrap();
             let texture_bind_group = calib_renderer.create_texture_bind_group(&source_view);
 
             // Increase brightness and contrast
@@ -462,14 +490,18 @@ fn test_color_calibration_per_output() {
             let uniform_buffer = calib_renderer.create_uniform_buffer(&calib_config);
             let uniform_bind_group = calib_renderer.create_uniform_bind_group(&uniform_buffer);
 
-            let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+            let mut encoder =
+                device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
             {
                 let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                     label: None,
                     color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                         view: &output_view,
                         resolve_target: None,
-                        ops: wgpu::Operations { load: wgpu::LoadOp::Clear(wgpu::Color::BLACK), store: wgpu::StoreOp::Store },
+                        ops: wgpu::Operations {
+                            load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+                            store: wgpu::StoreOp::Store,
+                        },
                     })],
                     depth_stencil_attachment: None,
                     timestamp_writes: None,
@@ -486,8 +518,11 @@ fn test_color_calibration_per_output() {
             // We expect the gray to be significantly brighter.
             // Original: 128. After brightness/contrast: should be > 128.
             let calibrated_value = calibrated_pixel[0];
-            assert!(calibrated_value > 150, "Expected a brighter gray value, got {}", calibrated_value);
-
+            assert!(
+                calibrated_value > 150,
+                "Expected a brighter gray value, got {}",
+                calibrated_value
+            );
         } else {
             println!("Skipping test: No suitable GPU adapter found.");
         }
@@ -513,7 +548,11 @@ fn test_different_output_resolutions() {
             for (width, height) in resolutions {
                 let output_texture = device.create_texture(&wgpu::TextureDescriptor {
                     label: Some(&format!("Output {}x{}", width, height)),
-                    size: wgpu::Extent3d { width, height, depth_or_array_layers: 1 },
+                    size: wgpu::Extent3d {
+                        width,
+                        height,
+                        depth_or_array_layers: 1,
+                    },
                     mip_level_count: 1,
                     sample_count: 1,
                     dimension: wgpu::TextureDimension::D2,
@@ -521,16 +560,21 @@ fn test_different_output_resolutions() {
                     usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
                     view_formats: &[],
                 });
-                let output_view = output_texture.create_view(&wgpu::TextureViewDescriptor::default());
+                let output_view =
+                    output_texture.create_view(&wgpu::TextureViewDescriptor::default());
 
-                let mut encoder = device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
+                let mut encoder =
+                    device.create_command_encoder(&wgpu::CommandEncoderDescriptor::default());
                 {
                     let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                         label: None,
                         color_attachments: &[Some(wgpu::RenderPassColorAttachment {
                             view: &output_view,
                             resolve_target: None,
-                            ops: wgpu::Operations { load: wgpu::LoadOp::Clear(wgpu::Color::BLACK), store: wgpu::StoreOp::Store },
+                            ops: wgpu::Operations {
+                                load: wgpu::LoadOp::Clear(wgpu::Color::BLACK),
+                                store: wgpu::StoreOp::Store,
+                            },
                         })],
                         depth_stencil_attachment: None,
                         timestamp_writes: None,
@@ -542,7 +586,11 @@ fn test_different_output_resolutions() {
 
                 let data = read_texture_data(&device, &queue, &output_texture, width, height).await;
                 for (i, chunk) in data.chunks_exact(4).enumerate() {
-                    assert_eq!(chunk, color, "Pixel {} at res {}x{} was incorrect", i, width, height);
+                    assert_eq!(
+                        chunk, color,
+                        "Pixel {} at res {}x{} was incorrect",
+                        i, width, height
+                    );
                 }
             }
         } else {
