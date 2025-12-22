@@ -1,7 +1,7 @@
 # MapFlow – Vollständige Roadmap und Feature-Status
 
-> **Version:** 1.2  
-> **Stand:** 2025-12-18  
+> **Version:** 1.3  
+> **Stand:** 2025-12-22  
 > **Zielgruppe:** @jules und Entwickler-Team  
 > **Projekt-Version:** 0.1.0
 
@@ -20,6 +20,12 @@
 ---
 
 ## Feature-Status-Übersicht
+
+### General Updates
+- 🟡 **Rebranding: MapFlow -> MapFlow**
+  - ✅ Rename Project (2025-12-22)
+  - 🟡 Update UI Strings & Docs (In Progress)
+  - 🟡 Rename WiX Installer Config (In Progress)
 
 ### Core / Layer / Mapping System
 
@@ -297,7 +303,7 @@
 - ✅ **MCP-Server Implementierung (COMPLETED 2025-12-18)**
   - ✅ MCP-Server-Crate erstellt (`mapmap-mcp/`)
   - ✅ JSON-RPC 2.0 Transport (stdio/SSE)
-  - ✅ Tool-Definitionen für VJMapper-Funktionen implementiert
+  - ✅ Tool-Definitionen für MapFlow-Funktionen implementiert
   - ✅ Resource-Definitionen implementiert
   - ✅ Prompt-Definitionen für AI-Assistenz implementiert
   - ✅ Integration mit Gemini CLI / Claude Desktop

@@ -33,7 +33,7 @@ impl UserConfig {
     /// Get the config file path
     fn config_path() -> Option<PathBuf> {
         dirs::config_dir().map(|mut p| {
-            p.push("VJMapper");
+            p.push("MapFlow");
             p.push("config.json");
             p
         })
@@ -103,7 +103,7 @@ mod tests {
     fn test_serialize_deserialize() {
         let config = UserConfig {
             language: "de".to_string(),
-            last_project: Some("/path/to/project.vjmapper".to_string()),
+            last_project: Some("/path/to/project.MapFlow".to_string()),
             recent_files: vec!["file1.mp4".to_string(), "file2.mp4".to_string()],
         };
 

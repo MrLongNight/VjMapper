@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [0.2.0] - 2025-12-22: MapFlow Rebranding
-- **REBRANDING:** Das Projekt wurde von **VjMapper** in **MapFlow** umbenannt.
+- **REBRANDING:** Das Projekt wurde von **MapFlow** in **MapFlow** umbenannt.
   - Windows Executable: `mapflow.exe`
   - Linux Executable: `mapflow`
   - Repository URL: `https://github.com/MrLongNight/MapFlow`
@@ -64,10 +64,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- **CI:** Add `toolchain: stable` to the build workflow to fix CI failures. ([#39](https://github.com/MrLongNight/VjMapper/pull/39))
-- **UI:** Fix incorrect import path for media player enums in `dashboard.rs`. ([#39](https://github.com/MrLongNight/VjMapper/pull/39))
+- **CI:** Add `toolchain: stable` to the build workflow to fix CI failures. ([#39](https://github.com/MrLongNight/MapFlow/pull/39))
+- **UI:** Fix incorrect import path for media player enums in `dashboard.rs`. ([#39](https://github.com/MrLongNight/MapFlow/pull/39))
 
 ### Added
 
-- **Media:** Implement a robust and fault-tolerant media playback state machine with a command-based control system, validated state transitions, and comprehensive unit tests. ([#39](https://github.com/MrLongNight/VjMapper/pull/39))
-- **UI:** Add a speed slider, loop mode selector, and timeline scrubber to the dashboard for media playback control. ([#39](https://github.com/MrLongNight/VjMapper/pull/39))
+- **Media:** Implement a robust and fault-tolerant media playback state machine with a command-based control system, validated state transitions, and comprehensive unit tests. ([#39](https://github.com/MrLongNight/MapFlow/pull/39))
+- **UI:** Add a speed slider, loop mode selector, and timeline scrubber to the dashboard for media playback control. ([#39](https://github.com/MrLongNight/MapFlow/pull/39))

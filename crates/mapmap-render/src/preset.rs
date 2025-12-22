@@ -358,7 +358,7 @@ impl PresetLibrary {
         let cinema_preset = EffectPreset::with_metadata(
             PresetMetadata {
                 name: "Cinema Look".to_string(),
-                author: "VJMapper".to_string(),
+                author: "MapFlow".to_string(),
                 description: "Classic cinematic color grading with vignette and subtle grain"
                     .to_string(),
                 category: "Factory".to_string(),
@@ -394,7 +394,7 @@ impl PresetLibrary {
         let vhs_preset = EffectPreset::with_metadata(
             PresetMetadata {
                 name: "Retro VHS".to_string(),
-                author: "VJMapper".to_string(),
+                author: "MapFlow".to_string(),
                 description: "90s VHS aesthetic with chromatic aberration and heavy grain"
                     .to_string(),
                 category: "Factory".to_string(),
@@ -427,7 +427,7 @@ impl PresetLibrary {
         let dreamy_preset = EffectPreset::with_metadata(
             PresetMetadata {
                 name: "Dreamy".to_string(),
-                author: "VJMapper".to_string(),
+                author: "MapFlow".to_string(),
                 description: "Soft dreamy look with gentle blur and enhanced colors".to_string(),
                 category: "Factory".to_string(),
                 tags: vec!["dreamy".to_string(), "soft".to_string(), "blur".to_string()],
@@ -453,7 +453,7 @@ impl PresetLibrary {
         let edge_preset = EffectPreset::with_metadata(
             PresetMetadata {
                 name: "Neon Edges".to_string(),
-                author: "VJMapper".to_string(),
+                author: "MapFlow".to_string(),
                 description: "Glowing edge detection for a neon-like effect".to_string(),
                 category: "Factory".to_string(),
                 tags: vec!["edge".to_string(), "neon".to_string(), "glow".to_string()],
@@ -509,7 +509,7 @@ mod tests {
 
     #[test]
     fn test_preset_library() {
-        let temp = temp_dir().join("vjmapper_preset_test");
+        let temp = temp_dir().join("MapFlow_preset_test");
         let _ = fs::remove_dir_all(&temp);
 
         let library = PresetLibrary::new(temp.clone()).unwrap();

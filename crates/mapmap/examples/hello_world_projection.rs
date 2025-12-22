@@ -18,14 +18,14 @@ use winit::{
 };
 
 fn main() {
-    println!("MapMap - Hello World Projection Mapping Example");
+    println!("MapFlow - Hello World Projection Mapping Example");
     println!("===============================================\n");
 
     // Step 1: Create the window
     let event_loop = EventLoop::new().unwrap();
     let window = Arc::new(
         WindowBuilder::new()
-            .with_title("MapMap - Hello World Projection")
+            .with_title("MapFlow - Hello World Projection")
             .with_inner_size(winit::dpi::PhysicalSize::new(1280, 720))
             .build(&event_loop)
             .unwrap(),

@@ -1,7 +1,7 @@
 [Desktop Entry]
-Name=VjMapper
+Name=MapFlow
 Comment=Professional Projection Mapping Software
-Exec=VjMapper
+Exec=MapFlow
 Icon=mapmap
 Terminal=false
 Type=Application

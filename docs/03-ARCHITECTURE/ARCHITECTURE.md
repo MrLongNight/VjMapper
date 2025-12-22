@@ -1,8 +1,8 @@
-# MapMap Architecture Documentation
+# MapFlow Architecture Documentation
 
 ## Overview
 
-MapMap is a modern projection mapping system written in Rust, designed to compete with professional tools like Resolume Arena. This document describes the architecture implemented in Phase 0 (Foundation).
+MapFlow is a modern projection mapping system written in Rust, designed to compete with professional tools like Resolume Arena. This document describes the architecture implemented in Phase 0 (Foundation).
 
 ## System Architecture
 

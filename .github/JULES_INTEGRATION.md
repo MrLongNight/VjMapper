@@ -54,7 +54,7 @@ Es gibt **drei Möglichkeiten**, Jules zu aktivieren:
 1. **Installiere die Jules GitHub App:**
    - Besuche: https://github.com/apps/jules
    - Klicke auf "Install" und wähle dein Repository aus
-   - Erlaube Zugriff auf das VjMapper-Repository
+   - Erlaube Zugriff auf das MapFlow-Repository
 
 2. **Fertig!** Jules überwacht automatisch:
    - Issues mit dem Label `jules-task` oder `jules`
@@ -108,7 +108,7 @@ curl 'https://jules.googleapis.com/v1alpha/sessions' \
   -d '{
     "prompt": "Implement feature from issue #123",
     "sourceContext": {
-      "source": "sources/github/MrLongNight/VjMapper",
+      "source": "sources/github/MrLongNight/MapFlow",
       "githubRepoContext": { "startingBranch": "main" }
     }
   }'
@@ -123,7 +123,7 @@ curl 'https://jules.googleapis.com/v1alpha/sessions' \
 
 ### 🎯 Empfohlene Konfiguration
 
-**Für dieses Repository (VjMapper):**
+**Für dieses Repository (MapFlow):**
 
 **Phase 1 - Quick Start (5 Minuten):**
 1. Installiere Jules GitHub App (Option 1)
@@ -450,10 +450,10 @@ cargo test --verbose
 
 ```bash
 # Statistiken anzeigen
-gh api repos/MrLongNight/VjMapper/issues \
+gh api repos/MrLongNight/MapFlow/issues \
   --jq '[.[] | select(.labels[].name == "jules-task")] | length'
 
-gh api repos/MrLongNight/VjMapper/pulls \
+gh api repos/MrLongNight/MapFlow/pulls \
   --jq '[.[] | select(.labels[].name == "jules-pr")] | length'
 ```
 

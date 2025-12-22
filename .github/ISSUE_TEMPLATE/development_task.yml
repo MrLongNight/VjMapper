@@ -1,5 +1,5 @@
 name: Development Task
-description: Development task for VjMapper project (can be processed by Jules)
+description: Development task for MapFlow project (can be processed by Jules)
 title: "[Task]: "
 labels: ["enhancement", "jules-task"]
 assignees: []

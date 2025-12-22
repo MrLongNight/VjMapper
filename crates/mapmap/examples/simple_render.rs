@@ -12,13 +12,13 @@ use winit::{
 };
 
 fn main() {
-    println!("MapMap - Simple Render Example");
+    println!("MapFlow - Simple Render Example");
     println!("==============================\n");
 
     let event_loop = EventLoop::new().unwrap();
     let window = Arc::new(
         WindowBuilder::new()
-            .with_title("MapMap - Simple Render")
+            .with_title("MapFlow - Simple Render")
             .with_inner_size(winit::dpi::PhysicalSize::new(800, 600))
             .build(&event_loop)
             .unwrap(),

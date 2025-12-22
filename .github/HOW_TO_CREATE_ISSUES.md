@@ -17,8 +17,8 @@ Ich habe ein **fertiges Script erstellt** das alle 8 Jules Issues für dich erst
 
 ```bash
 # 1. Repository clonen (falls noch nicht geschehen)
-git clone https://github.com/MrLongNight/VjMapper.git
-cd VjMapper
+git clone https://github.com/MrLongNight/MapFlow.git
+cd MapFlow
 
 # 2. Zu diesem Branch wechseln
 git checkout copilot/implement-ci-cd-workflow
@@ -95,7 +95,7 @@ bash create-jules-issues.sh
 gh issue list --label "jules-task"
 
 # 3. Jules API konfigurieren
-#    - Repository: MrLongNight/VjMapper
+#    - Repository: MrLongNight/MapFlow
 #    - Monitor Label: jules-task
 #    - PR Label: jules-pr
 

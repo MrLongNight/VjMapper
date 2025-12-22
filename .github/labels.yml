@@ -1,5 +1,5 @@
 # GitHub Labels Configuration
-# This file defines standard labels for the VjMapper project
+# This file defines standard labels for the MapFlow project
 # Can be synced using: gh label sync --file .github/labels.yml
 
 # Priority Labels
