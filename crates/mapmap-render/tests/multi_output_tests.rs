@@ -598,8 +598,3 @@ fn test_different_output_resolutions() {
         }
     });
 }
-            println!("Skipping test: No suitable GPU adapter found.");
-        }
-    });
-}
-}
