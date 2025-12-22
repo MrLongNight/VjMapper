@@ -25,6 +25,7 @@ pub mod paint;
 // Phase 3: Effects Pipeline
 pub mod animation;
 pub mod audio;
+pub mod audio_media_pipeline;
 pub mod audio_reactive;
 pub mod codegen;
 pub mod lut;
@@ -40,6 +41,7 @@ pub use audio::{
     AudioAnalysis, AudioAnalyzer, AudioConfig, AudioMappingType, AudioReactiveMapping, AudioSource,
     FrequencyBand,
 };
+pub use audio_media_pipeline::AudioMediaPipeline;
 pub use audio_reactive::{
     AudioAnimationBlendMode, AudioReactiveAnimationSystem, AudioReactiveController,
     AudioReactivePreset,
