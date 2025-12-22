@@ -6,6 +6,9 @@
 use glam::{Mat4, Vec2, Vec3};
 use serde::{Deserialize, Serialize};
 
+/// Unique identifier for a layer.
+pub type LayerId = u64;
+
 /// Blend mode for compositing layers
 #[repr(u32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, Default)]
@@ -243,7 +246,7 @@ impl Transform {
 /// A single layer in the composition
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub struct Layer {
-    pub id: u64,
+    pub id: LayerId,
     pub name: String,
     pub paint_id: Option<u64>,
     pub mapping_ids: Vec<u64>,
@@ -481,6 +484,11 @@ impl LayerManager {
         &self.layers
     }
 
+    /// Get all layers mutably
+    pub fn layers_mut(&mut self) -> &mut Vec<Layer> {
+        &mut self.layers
+    }
+
     /// Get all visible layers in render order
     pub fn visible_layers(&self) -> Vec<&Layer> {
         // Check if any layer is solo'd
@@ -521,8 +529,19 @@ impl LayerManager {
         false
     }
 
+    /// Move a layer from an old index to a new index.
+    pub fn move_layer_to(&mut self, old_index: usize, new_index: usize) -> bool {
+        if old_index < self.layers.len() && new_index < self.layers.len() {
+            let layer = self.layers.remove(old_index);
+            self.layers.insert(new_index, layer);
+            true
+        } else {
+            false
+        }
+    }
+
     /// Move layer to specific index
-    pub fn move_layer_to(&mut self, id: u64, new_index: usize) -> bool {
+    pub fn move_layer_by_id(&mut self, id: u64, new_index: usize) -> bool {
         if let Some(old_index) = self.layers.iter().position(|l| l.id == id) {
             if new_index < self.layers.len() {
                 let layer = self.layers.remove(old_index);

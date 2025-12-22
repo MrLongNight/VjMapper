@@ -438,6 +438,64 @@ impl App {
             }
         }
 
+        if let Some(action) = self.ui_state.layer_panel.take_action() {
+            use mapmap_ui::layer_panel::LayerPanelAction;
+            match action {
+                LayerPanelAction::AddLayer => {
+                    let name = format!("Layer {}", self.state.layer_manager.len() + 1);
+                    self.state.layer_manager.create_layer(name);
+                    self.state.dirty = true;
+                }
+                LayerPanelAction::RemoveLayer(id) => {
+                    self.state.layer_manager.remove_layer(id);
+                    self.state.dirty = true;
+                }
+                LayerPanelAction::DuplicateLayer(id) => {
+                    self.state.layer_manager.duplicate_layer(id);
+                    self.state.dirty = true;
+                }
+                LayerPanelAction::ToggleVisibility(id) => {
+                    if let Some(layer) = self.state.layer_manager.get_layer_mut(id) {
+                        layer.visible = !layer.visible;
+                        self.state.dirty = true;
+                    }
+                }
+                LayerPanelAction::ToggleSolo(id) => {
+                    if let Some(layer) = self.state.layer_manager.get_layer_mut(id) {
+                        layer.solo = !layer.solo;
+                        self.state.dirty = true;
+                    }
+                }
+                LayerPanelAction::ToggleLock(id) => {
+                    if let Some(layer) = self.state.layer_manager.get_layer_mut(id) {
+                        layer.locked = !layer.locked;
+                        self.state.dirty = true;
+                    }
+                }
+                LayerPanelAction::SetOpacity(id, opacity) => {
+                    if let Some(layer) = self.state.layer_manager.get_layer_mut(id) {
+                        layer.opacity = opacity;
+                        self.state.dirty = true;
+                    }
+                }
+                LayerPanelAction::SetBlendMode(id, mode) => {
+                    if let Some(layer) = self.state.layer_manager.get_layer_mut(id) {
+                        layer.blend_mode = mode;
+                        self.state.dirty = true;
+                    }
+                }
+                LayerPanelAction::ReorderLayer { old_index, new_index } => {
+                    self.state
+                        .layer_manager
+                        .move_layer_to(old_index, new_index);
+                    self.state.dirty = true;
+                }
+                LayerPanelAction::SelectLayer(id) => {
+                    self.ui_state.selected_layer_id = id;
+                }
+            }
+        }
+
         Ok(())
     }
 
@@ -497,8 +555,6 @@ impl App {
                     self.ui_state.render_stats(ui, 60.0, 16.6);
 
                     // Panels
-                    self.ui_state
-                        .render_layer_panel(ui, &mut self.state.layer_manager);
                     self.ui_state
                         .render_mapping_panel(ui, &mut self.state.mapping_manager);
                     self.ui_state
@@ -564,6 +620,15 @@ impl App {
                         &self.ui_state.i18n,
                         &mut self.state.paint_manager,
                     );
+
+                    // Render Layer Panel
+                    self.ui_state.layer_panel.render(
+                        ctx,
+                        &self.ui_state.i18n,
+                        &mut self.state.layer_manager,
+                        self.ui_state.selected_layer_id,
+                    );
+
                     // Update and render Transform Panel
                     if let Some(selected_id) = self.ui_state.selected_layer_id {
                         if let Some(layer) = self.state.layer_manager.get_layer(selected_id) {

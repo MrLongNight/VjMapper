@@ -136,7 +136,7 @@ pub fn show(ctx: &egui::Context, ui_state: &mut AppUI) -> Vec<UIAction> {
                     ui_state.i18n.t("check-show-controls"),
                 );
                 ui.checkbox(
-                    &mut ui_state.show_layers,
+                    &mut ui_state.layer_panel.visible,
                     ui_state.i18n.t("check-show-layers"),
                 );
                 ui.checkbox(

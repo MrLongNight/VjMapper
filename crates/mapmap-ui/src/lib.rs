@@ -20,6 +20,7 @@ pub mod cue_panel;
 pub mod dashboard;
 pub mod effect_chain_panel;
 pub mod i18n;
+pub mod layer_panel;
 pub mod media_browser;
 pub mod menu_bar;
 pub mod mesh_editor;
@@ -46,6 +47,7 @@ pub use effect_chain_panel::{
     EffectChainAction, EffectChainPanel, PresetEntry, UIEffect, UIEffectChain,
 };
 pub use imgui::OwnedDrawData;
+pub use layer_panel::LayerPanel;
 pub use media_browser::{MediaBrowser, MediaBrowserAction, MediaEntry, MediaType};
 pub use mesh_editor::{MeshEditor, MeshEditorAction};
 pub use node_editor::{Node, NodeEditor, NodeEditorAction, NodeType};
@@ -266,13 +268,13 @@ pub struct AppUI {
     pub menu_bar: menu_bar::MenuBar,
     pub dashboard: Dashboard,
     pub paint_panel: PaintPanel,
+    pub layer_panel: LayerPanel,
     pub show_osc_panel: bool,
     pub selected_control_target: ControlTarget,
     pub osc_port_input: String,
     pub osc_client_input: String,
     pub show_controls: bool,
     pub show_stats: bool,
-    pub show_layers: bool,
     pub show_mappings: bool,
     pub show_transforms: bool,        // Phase 1
     pub show_master_controls: bool,   // Phase 1
@@ -306,13 +308,13 @@ impl Default for AppUI {
             menu_bar: menu_bar::MenuBar::default(),
             dashboard: Dashboard::default(),
             paint_panel: PaintPanel::default(),
+            layer_panel: LayerPanel::default(),
             show_osc_panel: true,
             selected_control_target: ControlTarget::Custom("".to_string()),
             osc_port_input: "8000".to_string(),
             osc_client_input: "127.0.0.1:9000".to_string(),
             show_controls: true,
             show_stats: true,
-            show_layers: true,
             show_mappings: true,
             show_transforms: true,
             show_master_controls: true,
@@ -486,7 +488,10 @@ impl AppUI {
             ui.menu(self.i18n.t("menu-view"), || {
                 ui.checkbox(self.i18n.t("check-show-osc"), &mut self.show_osc_panel);
                 ui.checkbox(self.i18n.t("check-show-controls"), &mut self.show_controls);
-                ui.checkbox(self.i18n.t("check-show-layers"), &mut self.show_layers);
+                ui.checkbox(
+                    self.i18n.t("check-show-layers"),
+                    &mut self.layer_panel.visible,
+                );
                 ui.checkbox(
                     self.i18n.t("check-show-paints"),
                     &mut self.paint_panel.visible,
@@ -535,148 +540,6 @@ impl AppUI {
         });
     }
 
-    /// Render layer management panel
-    pub fn render_layer_panel(&mut self, ui: &Ui, layer_manager: &mut mapmap_core::LayerManager) {
-        use mapmap_core::BlendMode;
-
-        if !self.show_layers {
-            return;
-        }
-
-        ui.window(self.i18n.t("panel-layers"))
-            .size([380.0, 400.0], Condition::FirstUseEver)
-            .position([1530.0, 10.0], Condition::FirstUseEver)
-            .build(|| {
-                ui.text(self.i18n.t_args(
-                    "label-total-layers",
-                    &[("count", &layer_manager.layers().len().to_string())],
-                ));
-                ui.separator();
-
-                // Collect layer IDs to avoid borrow issues
-                let layer_ids: Vec<u64> = layer_manager.layers().iter().map(|l| l.id).collect();
-
-                // Layer list
-                for layer_id in layer_ids {
-                    if let Some(layer) = layer_manager.get_layer_mut(layer_id) {
-                        let _id = ui.push_id_usize(layer.id as usize);
-
-                        // Layer header with visibility toggle
-                        let mut visible = layer.visible;
-                        if ui.checkbox(format!("##visible_{}", layer.id), &mut visible) {
-                            layer.visible = visible;
-                        }
-                        ui.same_line();
-
-                        // Layer name (clickable to select)
-                        if ui.small_button(&layer.name) {
-                            self.selected_layer_id = Some(layer.id);
-                        }
-
-                        // Indent for layer properties
-                        ui.indent();
-
-                        // Phase 1: Bypass, Solo, Lock toggles
-                        let mut bypass = layer.bypass;
-                        if ui.checkbox(self.i18n.t("check-bypass"), &mut bypass) {
-                            layer.bypass = bypass;
-                            self.actions.push(UIAction::ToggleLayerBypass(layer.id));
-                        }
-                        ui.same_line();
-
-                        let mut solo = layer.solo;
-                        if ui.checkbox(self.i18n.t("check-solo"), &mut solo) {
-                            layer.solo = solo;
-                            self.actions.push(UIAction::ToggleLayerSolo(layer.id));
-                        }
-
-                        // Blend mode selector
-                        let blend_modes = [
-                            "Normal",
-                            "Add",
-                            "Subtract",
-                            "Multiply",
-                            "Screen",
-                            "Overlay",
-                            "Soft Light",
-                            "Hard Light",
-                            "Lighten",
-                            "Darken",
-                            "Color Dodge",
-                            "Color Burn",
-                            "Difference",
-                            "Exclusion",
-                        ];
-
-                        let current_mode_idx = layer.blend_mode as usize;
-                        let mut selected = current_mode_idx;
-
-                        if ui.combo(
-                            self.i18n.t("label-mode"),
-                            &mut selected,
-                            &blend_modes,
-                            |item| std::borrow::Cow::Borrowed(item),
-                        ) {
-                            layer.blend_mode = match selected {
-                                0 => BlendMode::Normal,
-                                1 => BlendMode::Add,
-                                2 => BlendMode::Subtract,
-                                3 => BlendMode::Multiply,
-                                4 => BlendMode::Screen,
-                                5 => BlendMode::Overlay,
-                                6 => BlendMode::SoftLight,
-                                7 => BlendMode::HardLight,
-                                8 => BlendMode::Lighten,
-                                9 => BlendMode::Darken,
-                                10 => BlendMode::ColorDodge,
-                                11 => BlendMode::ColorBurn,
-                                12 => BlendMode::Difference,
-                                13 => BlendMode::Exclusion,
-                                _ => BlendMode::Normal,
-                            };
-                        }
-
-                        // Phase 1: Opacity slider (Video Fader)
-                        let old_opacity = layer.opacity;
-                        ui.slider(
-                            self.i18n.t("label-master-opacity"),
-                            0.0,
-                            1.0,
-                            &mut layer.opacity,
-                        );
-                        if (layer.opacity - old_opacity).abs() > 0.001 {
-                            self.actions
-                                .push(UIAction::SetLayerOpacity(layer.id, layer.opacity));
-                        }
-
-                        // Phase 1: Layer management buttons
-                        if ui.button(self.i18n.t("btn-duplicate")) {
-                            self.actions.push(UIAction::DuplicateLayer(layer.id));
-                        }
-                        ui.same_line();
-                        if ui.button(self.i18n.t("btn-remove")) {
-                            self.actions.push(UIAction::RemoveLayer(layer.id));
-                        }
-
-                        ui.unindent();
-                        ui.separator();
-                    }
-                }
-
-                ui.separator();
-
-                // Layer management buttons
-                if ui.button(self.i18n.t("btn-add-layer")) {
-                    self.actions.push(UIAction::AddLayer);
-                }
-                ui.same_line();
-                if ui.button(self.i18n.t("btn-eject-all")) {
-                    self.actions.push(UIAction::EjectAllLayers);
-                }
-            });
-    }
-
-    /// Render mapping management panel
     pub fn render_mapping_panel(
         &mut self,
         ui: &Ui,
