@@ -21,7 +21,7 @@ use mapmap_mcp::{McpAction, McpServer};
 use crossbeam_channel::{unbounded, Receiver};
 use mapmap_io::{load_project, save_project};
 use mapmap_render::WgpuBackend;
-use mapmap_ui::{menu_bar, AppUI, ImGuiContext};
+use mapmap_ui::{menu_bar, AppUI, EdgeBlendAction, ImGuiContext};
 use rfd::FileDialog;
 use std::path::PathBuf;
 use std::thread;
@@ -438,6 +438,53 @@ impl App {
             }
         }
 
+        if let Some(action) = self.ui_state.edge_blend_panel.take_action() {
+            match action {
+                EdgeBlendAction::UpdateEdgeBlend(id, values) => {
+                    if let Some(output) = self.state.output_manager.get_output_mut(id) {
+                        output.edge_blend.left.enabled = values.left_enabled;
+                        output.edge_blend.left.width = values.left_width;
+                        output.edge_blend.left.offset = values.left_offset;
+                        output.edge_blend.right.enabled = values.right_enabled;
+                        output.edge_blend.right.width = values.right_width;
+                        output.edge_blend.right.offset = values.right_offset;
+                        output.edge_blend.top.enabled = values.top_enabled;
+                        output.edge_blend.top.width = values.top_width;
+                        output.edge_blend.top.offset = values.top_offset;
+                        output.edge_blend.bottom.enabled = values.bottom_enabled;
+                        output.edge_blend.bottom.width = values.bottom_width;
+                        output.edge_blend.bottom.offset = values.bottom_offset;
+                        output.edge_blend.gamma = values.gamma;
+                        self.state.dirty = true;
+                    }
+                }
+                EdgeBlendAction::UpdateColorCalibration(id, values) => {
+                    if let Some(output) = self.state.output_manager.get_output_mut(id) {
+                        output.color_calibration.brightness = values.brightness;
+                        output.color_calibration.contrast = values.contrast;
+                        output.color_calibration.gamma.x = values.gamma_r;
+                        output.color_calibration.gamma.y = values.gamma_g;
+                        output.color_calibration.gamma_b = values.gamma_b;
+                        output.color_calibration.saturation = values.saturation;
+                        output.color_calibration.color_temp = values.color_temp;
+                        self.state.dirty = true;
+                    }
+                }
+                EdgeBlendAction::ResetEdgeBlend(id) => {
+                    if let Some(output) = self.state.output_manager.get_output_mut(id) {
+                        output.edge_blend = Default::default();
+                        self.state.dirty = true;
+                    }
+                }
+                EdgeBlendAction::ResetColorCalibration(id) => {
+                    if let Some(output) = self.state.output_manager.get_output_mut(id) {
+                        output.color_calibration = Default::default();
+                        self.state.dirty = true;
+                    }
+                }
+            }
+        }
+
         Ok(())
     }
 
@@ -577,6 +624,18 @@ impl App {
                     self.ui_state
                         .transform_panel
                         .render(ctx, &self.ui_state.i18n);
+
+                    // Update and show the edge blend panel
+                    if let Some(output_id) = self.ui_state.selected_output_id {
+                        if let Some(output) = self.state.output_manager.get_output(output_id) {
+                            self.ui_state.edge_blend_panel.set_selected_output(output);
+                        }
+                    } else {
+                        self.ui_state.edge_blend_panel.clear_selection();
+                    }
+                    self.ui_state
+                        .edge_blend_panel
+                        .show(ctx, &self.ui_state.i18n);
                 });
 
                 self.egui_state
