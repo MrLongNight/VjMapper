@@ -23,6 +23,7 @@ pub mod media_browser;
 pub mod mesh_editor;
 pub mod node_editor;
 pub mod osc_panel;
+pub mod paint_panel;
 pub mod theme;
 pub mod timeline_v2;
 pub mod transform_panel;
@@ -45,6 +46,7 @@ pub use imgui::OwnedDrawData;
 pub use media_browser::{MediaBrowser, MediaBrowserAction, MediaEntry, MediaType};
 pub use mesh_editor::{MeshEditor, MeshEditorAction};
 pub use node_editor::{Node, NodeEditor, NodeEditorAction, NodeType};
+pub use paint_panel::PaintPanel;
 pub use theme::{Theme, ThemeConfig};
 pub use timeline_v2::{InterpolationType, TimelineAction as TimelineV2Action, TimelineV2};
 pub use transform_panel::{TransformAction, TransformPanel};
@@ -240,6 +242,7 @@ use mapmap_control::ControlTarget;
 /// UI state for the application
 pub struct AppUI {
     pub dashboard: Dashboard,
+    pub paint_panel: PaintPanel,
     pub show_osc_panel: bool,
     pub selected_control_target: ControlTarget,
     pub osc_port_input: String,
@@ -247,7 +250,6 @@ pub struct AppUI {
     pub show_controls: bool,
     pub show_stats: bool,
     pub show_layers: bool,
-    pub show_paints: bool,
     pub show_mappings: bool,
     pub show_transforms: bool,        // Phase 1
     pub show_master_controls: bool,   // Phase 1
@@ -278,6 +280,7 @@ impl Default for AppUI {
     fn default() -> Self {
         Self {
             dashboard: Dashboard::default(),
+            paint_panel: PaintPanel::default(),
             show_osc_panel: true,
             selected_control_target: ControlTarget::Custom("".to_string()),
             osc_port_input: "8000".to_string(),
@@ -285,7 +288,6 @@ impl Default for AppUI {
             show_controls: true,
             show_stats: true,
             show_layers: true,
-            show_paints: true,
             show_mappings: true,
             show_transforms: true,
             show_master_controls: true,
@@ -459,7 +461,10 @@ impl AppUI {
                 ui.checkbox(self.i18n.t("check-show-osc"), &mut self.show_osc_panel);
                 ui.checkbox(self.i18n.t("check-show-controls"), &mut self.show_controls);
                 ui.checkbox(self.i18n.t("check-show-layers"), &mut self.show_layers);
-                ui.checkbox(self.i18n.t("check-show-paints"), &mut self.show_paints);
+                ui.checkbox(
+                    self.i18n.t("check-show-paints"),
+                    &mut self.paint_panel.visible,
+                );
                 ui.checkbox(self.i18n.t("check-show-mappings"), &mut self.show_mappings);
                 ui.checkbox(
                     self.i18n.t("check-show-transforms"),
@@ -641,71 +646,6 @@ impl AppUI {
                 ui.same_line();
                 if ui.button(self.i18n.t("btn-eject-all")) {
                     self.actions.push(UIAction::EjectAllLayers);
-                }
-            });
-    }
-
-    /// Render paint management panel
-    pub fn render_paint_panel(&mut self, ui: &Ui, paint_manager: &mut mapmap_core::PaintManager) {
-        if !self.show_paints {
-            return;
-        }
-
-        ui.window(self.i18n.t("panel-paints"))
-            .size([380.0, 340.0], Condition::FirstUseEver)
-            .position([1530.0, 730.0], Condition::FirstUseEver)
-            .build(|| {
-                ui.text(self.i18n.t_args(
-                    "label-total-paints",
-                    &[("count", &paint_manager.paints().len().to_string())],
-                ));
-                ui.separator();
-
-                // Paint list
-                let paint_ids: Vec<mapmap_core::PaintId> =
-                    paint_manager.paints().iter().map(|p| p.id).collect();
-
-                for paint_id in paint_ids {
-                    if let Some(paint) = paint_manager.get_paint_mut(paint_id) {
-                        let _id = ui.push_id_usize(paint.id as usize);
-
-                        // Paint header
-                        ui.text(format!("{} ({:?})", paint.name, paint.paint_type));
-
-                        // Indent for paint properties
-                        ui.indent();
-
-                        // Opacity slider
-                        ui.slider(
-                            self.i18n.t("label-master-opacity"),
-                            0.0,
-                            1.0,
-                            &mut paint.opacity,
-                        );
-
-                        // Playback controls for video
-                        if paint.paint_type == mapmap_core::PaintType::Video {
-                            ui.checkbox(self.i18n.t("check-playing"), &mut paint.is_playing);
-                            ui.same_line();
-                            ui.checkbox(self.i18n.t("mode-loop"), &mut paint.loop_playback);
-                            ui.slider(self.i18n.t("label-speed"), 0.1, 2.0, &mut paint.rate);
-                        }
-
-                        // Color picker for color type
-                        if paint.paint_type == mapmap_core::PaintType::Color {
-                            ui.color_edit4(self.i18n.t("paints-color"), &mut paint.color);
-                        }
-
-                        ui.unindent();
-                        ui.separator();
-                    }
-                }
-
-                ui.separator();
-
-                // Paint management buttons
-                if ui.button(self.i18n.t("btn-add-paint")) {
-                    self.actions.push(UIAction::AddPaint);
                 }
             });
     }

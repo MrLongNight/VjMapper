@@ -402,6 +402,27 @@ impl App {
             }
         }
 
+
+        // Process egui panel actions
+        if let Some(action) = self.ui_state.paint_panel.take_action() {
+            match action {
+                mapmap_ui::paint_panel::PaintPanelAction::AddPaint => {
+                    self.state.paint_manager.add_paint(
+                        mapmap_core::paint::Paint::color(
+                            0,
+                            "New Color",
+                            [1.0, 1.0, 1.0, 1.0],
+                        ),
+                    );
+                    self.state.dirty = true;
+                }
+                mapmap_ui::paint_panel::PaintPanelAction::RemovePaint(id) => {
+                    self.state.paint_manager.remove_paint(id);
+                    self.state.dirty = true;
+                }
+            }
+        }
+
         Ok(())
     }
 
@@ -465,8 +486,6 @@ impl App {
                     self.ui_state
                         .render_layer_panel(ui, &mut self.state.layer_manager);
                     self.ui_state
-                        .render_paint_panel(ui, &mut self.state.paint_manager);
-                    self.ui_state
                         .render_mapping_panel(ui, &mut self.state.mapping_manager);
                     self.ui_state
                         .render_master_controls(ui, &mut self.state.layer_manager);
@@ -487,6 +506,12 @@ impl App {
                         .effect_chain_panel
                         .ui(ctx, &self.ui_state.i18n);
 
+                    // Render Paint Panel
+                    self.ui_state.paint_panel.render(
+                        ctx,
+                        &self.ui_state.i18n,
+                        &mut self.state.paint_manager,
+                    );
                     // Update and render Transform Panel
                     if let Some(selected_id) = self.ui_state.selected_layer_id {
                         if let Some(layer) = self.state.layer_manager.get_layer(selected_id) {

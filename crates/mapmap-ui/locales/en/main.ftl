@@ -194,6 +194,7 @@ btn-eject-all = Eject All (X)
 panel-paints = Paints
 label-total-paints = Total Paints: { $count }
 check-playing = Playing
+paints-color = Color
 mode-loop = Loop
 label-speed = Speed
 label-composition = Composition
