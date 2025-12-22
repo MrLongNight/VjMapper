@@ -485,6 +485,81 @@ impl App {
             }
         }
 
+        // Process MappingPanel actions
+        if let Some(action) = self.ui_state.mapping_panel.take_action() {
+            match action {
+                mapmap_ui::MappingAction::SelectMapping(id) => {
+                    self.ui_state.mapping_panel.selected_mapping_id = Some(id);
+                }
+                mapmap_ui::MappingAction::AddMapping(mesh_type) => {
+                    let paint_id = self
+                        .state
+                        .paint_manager
+                        .paints()
+                        .first()
+                        .map(|p| p.id)
+                        .unwrap_or(0);
+
+                    let mapping = match mesh_type {
+                        mapmap_core::MeshType::Quad => {
+                            mapmap_core::Mapping::quad(0, "New Quad", paint_id)
+                        }
+                        mapmap_core::MeshType::Triangle => {
+                            mapmap_core::Mapping::triangle(0, "New Triangle", paint_id)
+                        }
+                        _ => mapmap_core::Mapping::quad(0, "New Mapping", paint_id),
+                    };
+
+                    let id = self.state.mapping_manager.add_mapping(mapping);
+                    self.ui_state.mapping_panel.selected_mapping_id = Some(id);
+                    self.state.dirty = true;
+                }
+                mapmap_ui::MappingAction::RemoveMapping(id) => {
+                    self.state.mapping_manager.remove_mapping(id);
+                    if self.ui_state.mapping_panel.selected_mapping_id == Some(id) {
+                        self.ui_state.mapping_panel.selected_mapping_id = None;
+                    }
+                    self.state.dirty = true;
+                }
+                mapmap_ui::MappingAction::ToggleVisibility(id, visible) => {
+                    if let Some(mapping) = self.state.mapping_manager.get_mapping_mut(id) {
+                        mapping.visible = visible;
+                        self.state.dirty = true;
+                    }
+                }
+                mapmap_ui::MappingAction::UpdateMapping(id, update) => {
+                    if let Some(mapping) = self.state.mapping_manager.get_mapping_mut(id) {
+                        if let Some(name) = update.name {
+                            mapping.name = name;
+                        }
+                        if let Some(opacity) = update.opacity {
+                            mapping.opacity = opacity;
+                        }
+                        if let Some(depth) = update.depth {
+                            mapping.depth = depth;
+                        }
+                        if let Some(solo) = update.solo {
+                            mapping.solo = solo;
+                        }
+                        if let Some(locked) = update.locked {
+                            mapping.locked = locked;
+                        }
+                        self.state.dirty = true;
+                    }
+                }
+                mapmap_ui::MappingAction::MoveMappingUp(id) => {
+                    if self.state.mapping_manager.move_up(id) {
+                        self.state.dirty = true;
+                    }
+                }
+                mapmap_ui::MappingAction::MoveMappingDown(id) => {
+                    if self.state.mapping_manager.move_down(id) {
+                        self.state.dirty = true;
+                    }
+                }
+            }
+        }
+
         Ok(())
     }
 
@@ -544,10 +619,7 @@ impl App {
                     self.ui_state.render_stats(ui, 60.0, 16.6);
 
                     // Panels
-                    self.ui_state
-                        .render_layer_panel(ui, &mut self.state.layer_manager);
-                    // Mapping panel migrated to egui
-                    // self.ui_state.render_mapping_panel(ui, &mut self.state.mapping_manager);
+                    // Note: Layer Panel and Mapping Panel migrated to egui, removing ImGui calls
                     self.ui_state
                         .render_master_controls(ui, &mut self.state.layer_manager);
                     self.ui_state.render_cue_panel(ui);
@@ -604,6 +676,15 @@ impl App {
                     self.ui_state
                         .effect_chain_panel
                         .ui(ctx, &self.ui_state.i18n);
+
+                    // Render Layer Panel (migrated in #95)
+                    self.ui_state.layer_panel.show(
+                        ctx,
+                        &mut self.state.layer_manager,
+                        &mut self.ui_state.selected_layer_id,
+                        &mut self.ui_state.actions,
+                        &self.ui_state.i18n,
+                    );
 
                     // Render Paint Panel
                     self.ui_state.paint_panel.render(
