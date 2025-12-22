@@ -1,11 +1,11 @@
 [package]
 name = "mapmap"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
-authors = ["MapMap Contributors"]
+authors = ["MapFlow Contributors"]
 license = "GPL-3.0"
-repository = "https://github.com/johnjanik/mapmap"
-description = "Open source Vj Projection Mapping Software"
+repository = "https://github.com/MrLongNight/MapFlow"
+description = "MapFlow - Professional Projection Mapping Software"
 
 [dependencies]
 mapmap-core = { path = "../mapmap-core" }

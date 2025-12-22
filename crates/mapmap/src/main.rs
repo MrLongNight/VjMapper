@@ -1,6 +1,6 @@
-//! MapMap - Open source Vj Projection Mapping Software
+//! MapFlow - Open source Vj Projection Mapping Software
 //!
-//! This is the main application crate for MapMap.
+//! This is the main application crate for MapFlow.
 
 #![warn(missing_docs)]
 
@@ -286,8 +286,8 @@ impl App {
             match action {
                 mapmap_ui::UIAction::SaveProjectAs => {
                     if let Some(path) = FileDialog::new()
-                        .add_filter("MapMap Project", &["mapmap", "ron", "json"])
-                        .set_file_name("project.mapmap")
+                        .add_filter("MapFlow Project", &["mflow", "mapmap", "ron", "json"])
+                        .set_file_name("project.mflow")
                         .save_file()
                     {
                         if let Err(e) = save_project(&self.state, &path) {
@@ -300,8 +300,8 @@ impl App {
                 mapmap_ui::UIAction::SaveProject(path_str) => {
                     let path = if path_str.is_empty() {
                         if let Some(path) = FileDialog::new()
-                            .add_filter("MapMap Project", &["mapmap", "ron", "json"])
-                            .set_file_name("project.mapmap")
+                            .add_filter("MapFlow Project", &["mflow", "mapmap", "ron", "json"])
+                            .set_file_name("project.mflow")
                             .save_file()
                         {
                             path
@@ -324,7 +324,7 @@ impl App {
                 mapmap_ui::UIAction::LoadProject(path_str) => {
                     let path = if path_str.is_empty() {
                         if let Some(path) = FileDialog::new()
-                            .add_filter("MapMap Project", &["mapmap", "ron", "json"])
+                            .add_filter("MapFlow Project", &["mflow", "mapmap", "ron", "json"])
                             .pick_file()
                         {
                             path
@@ -726,7 +726,7 @@ impl App {
 fn main() -> Result<()> {
     // Initialize logging
     tracing_subscriber::fmt::init();
-    info!("Starting MapMap...");
+    info!("Starting MapFlow...");
 
     // Create the event loop
     let event_loop = EventLoop::new()?;

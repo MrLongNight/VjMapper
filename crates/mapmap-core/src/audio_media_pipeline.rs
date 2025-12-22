@@ -3,7 +3,7 @@
 //! This module connects the audio backend to the media pipeline,
 //! allowing audio analysis to drive visual effects in real-time.
 
-use crate::audio::{AudioAnalyzer, AudioConfig};
+use crate::audio::{AudioAnalysis, AudioAnalyzer, AudioConfig};
 use crate::audio_reactive::AudioReactiveController;
 use crossbeam_channel::{Receiver, Sender};
 use parking_lot::RwLock;
@@ -12,6 +12,7 @@ use std::sync::Arc;
 /// Audio pipeline that integrates with media processing
 pub struct AudioMediaPipeline {
     /// Audio analyzer for FFT and beat detection
+    #[allow(dead_code)]
     analyzer: Arc<RwLock<AudioAnalyzer>>,
 
     /// Audio-reactive controller for parameter mapping
@@ -21,7 +22,7 @@ pub struct AudioMediaPipeline {
     sample_sender: Sender<Vec<f32>>,
 
     /// Channel to receive analyzed data
-    analysis_receiver: Receiver<crate::audio::AudioAnalysis>,
+    analysis_receiver: Receiver<AudioAnalysis>,
 
     /// Latency compensation in milliseconds
     latency_ms: f32,
@@ -33,7 +34,7 @@ impl AudioMediaPipeline {
         let analyzer = Arc::new(RwLock::new(AudioAnalyzer::new(config)));
         let reactive_controller = Arc::new(RwLock::new(AudioReactiveController::new()));
 
-        let (sample_tx, sample_rx) = crossbeam_channel::unbounded();
+        let (sample_tx, sample_rx) = crossbeam_channel::unbounded::<Vec<f32>>();
         let analysis_rx = analyzer.read().analysis_receiver();
 
         // Spawn audio processing thread
@@ -67,7 +68,7 @@ impl AudioMediaPipeline {
     }
 
     /// Get the latest audio analysis
-    pub fn get_analysis(&self) -> Option<crate::audio::AudioAnalysis> {
+    pub fn get_analysis(&self) -> Option<AudioAnalysis> {
         self.analysis_receiver.try_recv().ok()
     }
 

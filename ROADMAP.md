@@ -1,4 +1,4 @@
-# VjMapper – Vollständige Roadmap und Feature-Status
+# MapFlow – Vollständige Roadmap und Feature-Status
 
 > **Version:** 1.2  
 > **Stand:** 2025-12-18  

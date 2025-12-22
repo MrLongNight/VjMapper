@@ -13,12 +13,12 @@ members = [
 ]
 
 [workspace.package]
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 rust-version = "1.75"
-authors = ["MapMap Contributors"]
+authors = ["MapMap Contributors", "MapFlow Contributors"]
 license = "GPL-3.0"
-repository = "https://github.com/johnjanik/mapmap"
+repository = "https://github.com/MrLongNight/MapFlow"
 
 [workspace.dependencies]
 # Core dependencies

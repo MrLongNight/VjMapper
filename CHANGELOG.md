@@ -5,7 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.2.0] - 2025-12-22: MapFlow Rebranding
+- **REBRANDING:** Das Projekt wurde von **VjMapper** in **MapFlow** umbenannt.
+  - Windows Executable: `mapflow.exe`
+  - Linux Executable: `mapflow`
+  - Repository URL: `https://github.com/MrLongNight/MapFlow`
+  - Neue CI Icons und Application Icons integriert.
+  - Alle Dokumentationen aktualisiert.
+
+## [0.1.0] - Unreleased
 - 2025-12-22: [CONSOLIDATED] All Jules UI Migrations (#78)
 - 2025-12-22: Migrate Audio Visualization Panel to egui (#72)
 - 2025-12-22: Add Project Save/Load Tests (#68)
