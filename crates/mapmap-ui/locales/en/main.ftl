@@ -381,3 +381,9 @@ btn-add = Add
 header-address-mappings = Address Mappings
 text-osc-edit-tip = (Edit osc_mappings.json for now)
 check-show-cues = Show Cues
+
+# Edge Blend & Color Calibration Panel
+panel-edge-blend-color = Edge Blend & Color Calibration
+edge-blend-no-output = Select an output from the Output panel to configure its edge blend and color settings.
+header-edge-blend = Edge Blending
+header-color-calibration = Color Calibration

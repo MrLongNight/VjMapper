@@ -388,3 +388,9 @@ btn-add = Hinzufügen
 header-address-mappings = Adress-Zuweisungen
 text-osc-edit-tip = (Bearbeite vorerst die osc_mappings.json)
 check-show-cues = Cues anzeigen
+
+# Edge Blend & Color Calibration Panel
+panel-edge-blend-color = Kantenüberblendung & Farbkalibrierung
+edge-blend-no-output = Wählen Sie einen Ausgang im Ausgabe-Panel, um dessen Kantenüberblendungs- und Farbeinstellungen zu konfigurieren.
+header-edge-blend = Kantenüberblendung
+header-color-calibration = Farbkalibrierung

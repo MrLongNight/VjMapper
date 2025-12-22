@@ -18,6 +18,7 @@ pub mod audio_panel;
 pub mod config;
 pub mod cue_panel;
 pub mod dashboard;
+pub mod edge_blend_panel;
 pub mod effect_chain_panel;
 pub mod i18n;
 pub mod media_browser;
@@ -42,6 +43,7 @@ pub use audio_panel::AudioPanel;
 pub use config::UserConfig;
 pub use cue_panel::CuePanel;
 pub use dashboard::{Dashboard, DashboardAction, DashboardWidget, WidgetType};
+pub use edge_blend_panel::{EdgeBlendAction, EdgeBlendPanel};
 pub use effect_chain_panel::{
     EffectChainAction, EffectChainPanel, PresetEntry, UIEffect, UIEffectChain,
 };
@@ -274,12 +276,11 @@ pub struct AppUI {
     pub show_stats: bool,
     pub show_layers: bool,
     pub show_mappings: bool,
-    pub show_transforms: bool,        // Phase 1
-    pub show_master_controls: bool,   // Phase 1
-    pub show_outputs: bool,           // Phase 2
-    pub show_edge_blend: bool,        // Phase 2
-    pub show_color_calibration: bool, // Phase 2
-    pub show_oscillator: bool,        // Oscillator distortion effect
+    pub show_transforms: bool,      // Phase 1
+    pub show_master_controls: bool, // Phase 1
+    pub show_outputs: bool,         // Phase 2
+    pub edge_blend_panel: EdgeBlendPanel,
+    pub show_oscillator: bool, // Oscillator distortion effect
     pub show_audio: bool,
     pub audio_panel: AudioPanel,
     pub show_cue_panel: bool,
@@ -317,8 +318,7 @@ impl Default for AppUI {
             show_transforms: true,
             show_master_controls: true,
             show_outputs: true,
-            show_edge_blend: false,        // Show only when output selected
-            show_color_calibration: false, // Show only when output selected
+            edge_blend_panel: EdgeBlendPanel::default(),
             show_oscillator: true,
             show_audio: true,
             audio_panel: AudioPanel::default(),
@@ -499,6 +499,10 @@ impl AppUI {
                 ui.checkbox(
                     self.i18n.t("check-show-master"),
                     &mut self.show_master_controls,
+                );
+                ui.checkbox(
+                    self.i18n.t("panel-edge-blend-color"),
+                    &mut self.edge_blend_panel.visible,
                 );
                 ui.checkbox(
                     self.i18n.t("check-show-oscillator"),
@@ -1034,206 +1038,6 @@ impl AppUI {
                 ui.separator();
                 ui.text_colored([0.0, 1.0, 0.0, 1.0], self.i18n.t("msg-multi-window-active"));
                 ui.text_disabled(self.i18n.t("msg-output-windows-tip"));
-            });
-    }
-
-    /// Phase 2: Render edge blend configuration
-    pub fn render_edge_blend_panel(
-        &mut self,
-        ui: &Ui,
-        output_manager: &mut mapmap_core::OutputManager,
-    ) {
-        // Auto-show when output is selected
-        if self.selected_output_id.is_some() {
-            self.show_edge_blend = true;
-        }
-
-        if !self.show_edge_blend || self.selected_output_id.is_none() {
-            return;
-        }
-
-        let output_id = self.selected_output_id.unwrap();
-        let output = output_manager.get_output_mut(output_id);
-
-        if output.is_none() {
-            return;
-        }
-
-        let output = output.unwrap();
-
-        ui.window(self.i18n.t("panel-edge-blend"))
-            .size([380.0, 450.0], Condition::FirstUseEver)
-            .position([1170.0, 620.0], Condition::FirstUseEver)
-            .build(|| {
-                ui.text(self.i18n.t_args("label-output", &[("name", &output.name)]));
-                ui.separator();
-
-                let blend = &mut output.edge_blend;
-
-                // Left edge
-                ui.checkbox(self.i18n.t("check-left"), &mut blend.left.enabled);
-                if blend.left.enabled {
-                    ui.indent();
-                    ui.slider(
-                        format!("{}##left", self.i18n.t("label-width")),
-                        0.0,
-                        0.5,
-                        &mut blend.left.width,
-                    );
-                    ui.slider(
-                        format!("{}##left", self.i18n.t("label-offset")),
-                        -0.1,
-                        0.1,
-                        &mut blend.left.offset,
-                    );
-                    ui.unindent();
-                }
-
-                ui.separator();
-
-                // Right edge
-                ui.checkbox(self.i18n.t("check-right"), &mut blend.right.enabled);
-                if blend.right.enabled {
-                    ui.indent();
-                    ui.slider(
-                        format!("{}##right", self.i18n.t("label-width")),
-                        0.0,
-                        0.5,
-                        &mut blend.right.width,
-                    );
-                    ui.slider(
-                        format!("{}##right", self.i18n.t("label-offset")),
-                        -0.1,
-                        0.1,
-                        &mut blend.right.offset,
-                    );
-                    ui.unindent();
-                }
-
-                ui.separator();
-
-                // Top edge
-                ui.checkbox(self.i18n.t("check-top"), &mut blend.top.enabled);
-                if blend.top.enabled {
-                    ui.indent();
-                    ui.slider(
-                        format!("{}##top", self.i18n.t("label-width")),
-                        0.0,
-                        0.5,
-                        &mut blend.top.width,
-                    );
-                    ui.slider(
-                        format!("{}##top", self.i18n.t("label-offset")),
-                        -0.1,
-                        0.1,
-                        &mut blend.top.offset,
-                    );
-                    ui.unindent();
-                }
-
-                ui.separator();
-
-                // Bottom edge
-                ui.checkbox(self.i18n.t("check-bottom"), &mut blend.bottom.enabled);
-                if blend.bottom.enabled {
-                    ui.indent();
-                    ui.slider(
-                        format!("{}##bottom", self.i18n.t("label-width")),
-                        0.0,
-                        0.5,
-                        &mut blend.bottom.width,
-                    );
-                    ui.slider(
-                        format!("{}##bottom", self.i18n.t("label-offset")),
-                        -0.1,
-                        0.1,
-                        &mut blend.bottom.offset,
-                    );
-                    ui.unindent();
-                }
-
-                ui.separator();
-
-                // Gamma control
-                ui.slider(self.i18n.t("label-gamma"), 1.0, 3.0, &mut blend.gamma);
-
-                ui.separator();
-
-                if ui.button(self.i18n.t("btn-reset-defaults")) {
-                    *blend = mapmap_core::EdgeBlendConfig::default();
-                }
-            });
-    }
-
-    /// Phase 2: Render color calibration panel
-    pub fn render_color_calibration_panel(
-        &mut self,
-        ui: &Ui,
-        output_manager: &mut mapmap_core::OutputManager,
-    ) {
-        // Auto-show when output is selected
-        if self.selected_output_id.is_some() {
-            self.show_color_calibration = true;
-        }
-
-        if !self.show_color_calibration || self.selected_output_id.is_none() {
-            return;
-        }
-
-        let output_id = self.selected_output_id.unwrap();
-        let output = output_manager.get_output_mut(output_id);
-
-        if output.is_none() {
-            return;
-        }
-
-        let output = output.unwrap();
-
-        ui.window(self.i18n.t("panel-color-cal"))
-            .size([380.0, 500.0], Condition::FirstUseEver)
-            .position([1560.0, 10.0], Condition::FirstUseEver)
-            .build(|| {
-                ui.text(self.i18n.t_args("label-output", &[("name", &output.name)]));
-                ui.separator();
-
-                let cal = &mut output.color_calibration;
-
-                ui.slider(
-                    self.i18n.t("label-brightness"),
-                    -1.0,
-                    1.0,
-                    &mut cal.brightness,
-                );
-                ui.slider(self.i18n.t("label-contrast"), 0.0, 2.0, &mut cal.contrast);
-
-                ui.separator();
-                ui.text(self.i18n.t("label-gamma-channels"));
-                ui.slider(self.i18n.t("label-gamma-red"), 0.5, 3.0, &mut cal.gamma.x);
-                ui.slider(self.i18n.t("label-gamma-green"), 0.5, 3.0, &mut cal.gamma.y);
-                ui.slider(self.i18n.t("label-gamma-blue"), 0.5, 3.0, &mut cal.gamma_b);
-
-                ui.separator();
-                ui.slider(
-                    self.i18n.t("label-color-temp"),
-                    2000.0,
-                    10000.0,
-                    &mut cal.color_temp,
-                );
-                ui.text_disabled("(D65 = 6500K)");
-
-                ui.separator();
-                ui.slider(
-                    self.i18n.t("label-saturation"),
-                    0.0,
-                    2.0,
-                    &mut cal.saturation,
-                );
-
-                ui.separator();
-
-                if ui.button(self.i18n.t("btn-reset-defaults")) {
-                    *cal = mapmap_core::ColorCalibration::default();
-                }
             });
     }
 
