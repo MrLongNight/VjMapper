@@ -624,7 +624,9 @@ impl EffectChainRenderer {
         if enabled_effects.is_empty() {
             // No effects, use quad renderer to copy input to output
             debug!("No effects enabled, passing through with QuadRenderer");
-            let bind_group = self.quad_renderer.create_bind_group(&self.device, input_view);
+            let bind_group = self
+                .quad_renderer
+                .create_bind_group(&self.device, input_view);
             let mut rpass = encoder.begin_render_pass(&wgpu::RenderPassDescriptor {
                 label: Some("Passthrough Render Pass"),
                 color_attachments: &[Some(wgpu::RenderPassColorAttachment {
