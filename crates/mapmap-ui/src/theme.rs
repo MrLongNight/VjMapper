@@ -68,68 +68,66 @@ impl ThemeConfig {
         ctx.set_style(style);
     }
 
-    /// Dark theme visuals (professional video application style)
+    /// 'Cyber Dark' theme inspired by Resolume Arena.
     fn dark_visuals() -> Visuals {
-        Visuals {
-            dark_mode: true,
-            override_text_color: Some(Color32::from_rgb(220, 220, 220)),
-            widgets: egui::style::Widgets {
-                noninteractive: egui::style::WidgetVisuals {
-                    bg_fill: Color32::from_rgb(30, 30, 30),
-                    weak_bg_fill: Color32::from_rgb(25, 25, 25),
-                    bg_stroke: egui::Stroke::new(1.0, Color32::from_rgb(50, 50, 50)),
-                    fg_stroke: egui::Stroke::new(1.0, Color32::from_rgb(180, 180, 180)),
-                    rounding: egui::Rounding::same(2.0),
-                    expansion: 0.0,
-                },
-                inactive: egui::style::WidgetVisuals {
-                    bg_fill: Color32::from_rgb(40, 40, 40),
-                    weak_bg_fill: Color32::from_rgb(35, 35, 35),
-                    bg_stroke: egui::Stroke::new(1.0, Color32::from_rgb(60, 60, 60)),
-                    fg_stroke: egui::Stroke::new(1.0, Color32::from_rgb(200, 200, 200)),
-                    rounding: egui::Rounding::same(2.0),
-                    expansion: 0.0,
-                },
-                hovered: egui::style::WidgetVisuals {
-                    bg_fill: Color32::from_rgb(50, 50, 50),
-                    weak_bg_fill: Color32::from_rgb(45, 45, 45),
-                    bg_stroke: egui::Stroke::new(1.0, Color32::from_rgb(80, 80, 80)),
-                    fg_stroke: egui::Stroke::new(1.5, Color32::from_rgb(220, 220, 220)),
-                    rounding: egui::Rounding::same(2.0),
-                    expansion: 1.0,
-                },
-                active: egui::style::WidgetVisuals {
-                    bg_fill: Color32::from_rgb(60, 120, 200),
-                    weak_bg_fill: Color32::from_rgb(55, 110, 180),
-                    bg_stroke: egui::Stroke::new(1.0, Color32::from_rgb(80, 140, 220)),
-                    fg_stroke: egui::Stroke::new(2.0, Color32::WHITE),
-                    rounding: egui::Rounding::same(2.0),
-                    expansion: 1.0,
-                },
-                open: egui::style::WidgetVisuals {
-                    bg_fill: Color32::from_rgb(45, 45, 45),
-                    weak_bg_fill: Color32::from_rgb(40, 40, 40),
-                    bg_stroke: egui::Stroke::new(1.0, Color32::from_rgb(70, 70, 70)),
-                    fg_stroke: egui::Stroke::new(1.0, Color32::from_rgb(210, 210, 210)),
-                    rounding: egui::Rounding::same(2.0),
-                    expansion: 0.0,
-                },
-            },
-            selection: egui::style::Selection {
-                bg_fill: Color32::from_rgb(60, 120, 200).linear_multiply(0.4),
-                stroke: egui::Stroke::new(1.0, Color32::from_rgb(80, 140, 220)),
-            },
-            hyperlink_color: Color32::from_rgb(100, 150, 255),
-            faint_bg_color: Color32::from_rgb(20, 20, 20),
-            extreme_bg_color: Color32::from_rgb(10, 10, 10),
-            code_bg_color: Color32::from_rgb(35, 35, 35),
-            warn_fg_color: Color32::from_rgb(255, 200, 100),
-            error_fg_color: Color32::from_rgb(255, 100, 100),
-            window_fill: Color32::from_rgb(25, 25, 25),
-            panel_fill: Color32::from_rgb(30, 30, 30),
-            window_stroke: egui::Stroke::new(1.0, Color32::from_rgb(50, 50, 50)),
-            ..Default::default()
-        }
+        let mut visuals = Visuals::dark();
+
+        visuals.override_text_color = Some(Color32::from_rgb(238, 238, 238)); // #eeeeee
+        visuals.hyperlink_color = Color32::from_rgb(0, 212, 163); // #00d4a3
+
+        // Backgrounds
+        visuals.window_fill = Color32::from_rgb(26, 26, 26); // #1a1a1a
+        visuals.panel_fill = Color32::from_rgb(38, 38, 38); // #262626
+        visuals.faint_bg_color = Color32::from_rgb(26, 26, 26);
+        visuals.extreme_bg_color = Color32::from_rgb(16, 16, 16);
+        visuals.code_bg_color = Color32::from_rgb(40, 40, 40);
+
+        // Strokes
+        visuals.window_stroke = egui::Stroke::new(1.0, Color32::from_rgb(60, 60, 60));
+
+        let rounding = egui::Rounding::same(2.0);
+
+        let widget_visuals = egui::style::WidgetVisuals {
+            bg_fill: Color32::from_rgb(51, 51, 51), // #333333 (Inactive)
+            weak_bg_fill: Color32::from_rgb(40, 40, 40),
+            bg_stroke: egui::Stroke::new(1.0, Color32::from_rgb(80, 80, 80)),
+            fg_stroke: egui::Stroke::new(1.0, Color32::from_rgb(200, 200, 200)),
+            rounding,
+            expansion: 0.0,
+        };
+
+        let hovered_visuals = egui::style::WidgetVisuals {
+            bg_fill: Color32::from_rgb(65, 65, 65),
+            weak_bg_fill: Color32::from_rgb(55, 55, 55),
+            bg_stroke: egui::Stroke::new(1.0, Color32::from_rgb(0, 212, 163)), // Accent on hover
+            fg_stroke: egui::Stroke::new(1.5, Color32::WHITE),
+            rounding,
+            expansion: 1.0,
+        };
+
+        let active_visuals = egui::style::WidgetVisuals {
+            bg_fill: Color32::from_rgb(0, 212, 163), // #00d4a3 (Accent)
+            weak_bg_fill: Color32::from_rgb(0, 180, 140),
+            bg_stroke: egui::Stroke::new(1.0, Color32::WHITE),
+            fg_stroke: egui::Stroke::new(2.0, Color32::BLACK), // High contrast text on accent
+            rounding,
+            expansion: 1.0,
+        };
+
+        visuals.widgets = egui::style::Widgets {
+            noninteractive: widget_visuals,
+            inactive: widget_visuals,
+            hovered: hovered_visuals,
+            active: active_visuals,
+            open: widget_visuals,
+        };
+
+        visuals.selection = egui::style::Selection {
+            bg_fill: Color32::from_rgb(0, 212, 163).linear_multiply(0.4),
+            stroke: egui::Stroke::new(1.0, Color32::from_rgb(0, 212, 163)),
+        };
+
+        visuals
     }
 
     /// Light theme visuals
