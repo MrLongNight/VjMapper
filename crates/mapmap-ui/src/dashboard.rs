@@ -76,7 +76,12 @@ impl Dashboard {
     }
 
     /// Render the dashboard UI
-    pub fn ui(&mut self, ctx: &egui::Context, locale: &LocaleManager) -> Option<DashboardAction> {
+    pub fn ui(
+        &mut self,
+        ctx: &egui::Context,
+        locale: &LocaleManager,
+        icon_manager: Option<&crate::icons::IconManager>,
+    ) -> Option<DashboardAction> {
         let mut action = None;
 
         if self.visible {
@@ -84,7 +89,7 @@ impl Dashboard {
             egui::Window::new("Dashboard")
                 .open(&mut is_open)
                 .show(ctx, |ui| {
-                    action = self.render_contents(ui, locale);
+                    action = self.render_contents(ui, locale, icon_manager);
                 });
             self.visible = is_open;
         }
@@ -93,22 +98,49 @@ impl Dashboard {
     }
 
     /// Renders the contents of the dashboard panel.
-    fn render_contents(&mut self, ui: &mut Ui, locale: &LocaleManager) -> Option<DashboardAction> {
+    fn render_contents(
+        &mut self,
+        ui: &mut Ui,
+        locale: &LocaleManager,
+        icon_manager: Option<&crate::icons::IconManager>,
+    ) -> Option<DashboardAction> {
         let mut action = None;
 
         ui.group(|ui| {
             // Playback controls
             ui.horizontal(|ui| {
-                // TODO: Icon
-                if ui.button(locale.t("btn-play")).clicked() {
+                let icon_size = 20.0;
+
+                // Helper for icon buttons
+                let mut icon_btn = |icon: Option<crate::icons::AppIcon>, text: &str| -> bool {
+                    if let (Some(mgr), Some(ic)) = (icon_manager, icon) {
+                        if let Some(img) = mgr.image(ic, icon_size) {
+                            return ui
+                                .add(egui::ImageButton::new(img))
+                                .on_hover_text(text)
+                                .clicked();
+                        }
+                    }
+                    ui.button(text).clicked()
+                };
+
+                // Play
+                if icon_btn(
+                    Some(crate::icons::AppIcon::ArrowRight),
+                    &locale.t("btn-play"),
+                ) {
+                    // Using ArrowRight as Play for now
                     action = Some(DashboardAction::SendCommand(PlaybackCommand::Play));
                 }
-                // TODO: Icon
-                if ui.button(locale.t("btn-pause")).clicked() {
+                // Pause (No icon yet, use text or maybe a placeholder)
+                if icon_btn(None, &locale.t("btn-pause")) {
                     action = Some(DashboardAction::SendCommand(PlaybackCommand::Pause));
                 }
-                // TODO: Icon
-                if ui.button(locale.t("btn-stop")).clicked() {
+                // Stop
+                if icon_btn(
+                    Some(crate::icons::AppIcon::ButtonStop),
+                    &locale.t("btn-stop"),
+                ) {
                     action = Some(DashboardAction::SendCommand(PlaybackCommand::Stop));
                 }
 

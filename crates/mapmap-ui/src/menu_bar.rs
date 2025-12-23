@@ -170,6 +170,7 @@ pub fn show(ctx: &egui::Context, ui_state: &mut AppUI) -> Vec<UIAction> {
                 );
                 ui.checkbox(&mut ui_state.show_timeline, "Timeline");
                 ui.checkbox(&mut ui_state.show_shader_graph, "Shader Graph");
+                ui.checkbox(&mut ui_state.show_toolbar, "Werkzeugleiste");
                 ui.checkbox(&mut ui_state.icon_demo_panel.visible, "Icon Gallery");
                 ui.separator();
                 if ui.button(ui_state.i18n.t("btn-fullscreen")).clicked() {
@@ -213,34 +214,36 @@ pub fn show(ctx: &egui::Context, ui_state: &mut AppUI) -> Vec<UIAction> {
         ui.add_space(4.0);
 
         // --- Toolbar ---
-        ui.horizontal(|ui| {
-            ui.style_mut().spacing.button_padding = egui::vec2(8.0, 4.0);
+        if ui_state.show_toolbar {
+            ui.horizontal(|ui| {
+                ui.style_mut().spacing.button_padding = egui::vec2(8.0, 4.0);
 
-            let icon_size = 24.0;
+                let icon_size = 32.0;
 
-            // Helper for icon buttons
-            let mut icon_btn = |icon: AppIcon, tooltip: &str| -> bool {
-                if let Some(mgr) = &ui_state.icon_manager {
-                    if let Some(img) = mgr.image(icon, icon_size) {
-                        return ui
-                            .add(egui::ImageButton::new(img).frame(false))
-                            .on_hover_text(tooltip)
-                            .clicked();
+                // Helper for icon buttons
+                let mut icon_btn = |icon: AppIcon, tooltip: &str| -> bool {
+                    if let Some(mgr) = &ui_state.icon_manager {
+                        if let Some(img) = mgr.image(icon, icon_size) {
+                            return ui
+                                .add(egui::ImageButton::new(img).frame(false))
+                                .on_hover_text(tooltip)
+                                .clicked();
+                        }
                     }
-                }
-                ui.button(tooltip).clicked()
-            };
+                    ui.button(tooltip).clicked()
+                };
 
-            if icon_btn(AppIcon::FloppyDisk, &ui_state.i18n.t("toolbar-save")) {
-                actions.push(UIAction::SaveProject(String::new()));
-            }
-            if icon_btn(AppIcon::ArrowLeft, &ui_state.i18n.t("toolbar-undo")) {
-                actions.push(UIAction::Undo);
-            }
-            if icon_btn(AppIcon::ArrowRight, &ui_state.i18n.t("toolbar-redo")) {
-                actions.push(UIAction::Redo);
-            }
-        });
+                if icon_btn(AppIcon::FloppyDisk, &ui_state.i18n.t("toolbar-save")) {
+                    actions.push(UIAction::SaveProject(String::new()));
+                }
+                if icon_btn(AppIcon::ArrowLeft, &ui_state.i18n.t("toolbar-undo")) {
+                    actions.push(UIAction::Undo);
+                }
+                if icon_btn(AppIcon::ArrowRight, &ui_state.i18n.t("toolbar-redo")) {
+                    actions.push(UIAction::Redo);
+                }
+            });
+        }
 
         ui.add_space(4.0);
         ui.separator();

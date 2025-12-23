@@ -453,7 +453,7 @@ impl MediaBrowser {
                     }
 
                     let entry = &self.entries[idx];
-                    let response = self.render_thumbnail_item(ui, entry, idx);
+                    let response = self.render_thumbnail_item(ui, entry, idx, _icons);
 
                     if response.clicked() {
                         self.selected = Some(idx);
@@ -542,7 +542,13 @@ impl MediaBrowser {
     }
 
     /// Render a thumbnail item
-    fn render_thumbnail_item(&self, ui: &mut Ui, entry: &MediaEntry, idx: usize) -> Response {
+    fn render_thumbnail_item(
+        &self,
+        ui: &mut Ui,
+        entry: &MediaEntry,
+        idx: usize,
+        icons: Option<&IconManager>,
+    ) -> Response {
         let size = Vec2::new(self.thumbnail_size, self.thumbnail_size + 40.0);
         let (rect, response) = ui.allocate_exact_size(size, Sense::click());
 
@@ -578,14 +584,41 @@ impl MediaBrowser {
                 // Placeholder
                 ui.painter()
                     .rect_filled(thumb_rect, 2.0, Color32::from_rgb(45, 45, 45));
-                let icon_pos = thumb_rect.center() - Vec2::new(20.0, 20.0);
-                ui.painter().text(
-                    icon_pos,
-                    egui::Align2::LEFT_TOP,
-                    entry.file_type.icon(),
-                    egui::FontId::proportional(40.0),
-                    Color32::from_rgb(100, 100, 100),
-                );
+
+                // Try to render icon, fallback to emoji
+                let mut rendered_icon = false;
+                if let Some(mgr) = icons {
+                    if let Some(app_icon) = entry.file_type.app_icon() {
+                        if let Some(texture) = mgr.get(app_icon) {
+                            // Calculate icon size (centered, 64x64 or smaller)
+                            let icon_size = Vec2::new(64.0, 64.0).min(thumb_rect.size() * 0.8);
+                            let icon_rect =
+                                egui::Rect::from_center_size(thumb_rect.center(), icon_size);
+
+                            ui.painter().image(
+                                texture.id(),
+                                icon_rect,
+                                egui::Rect::from_min_max(
+                                    egui::pos2(0.0, 0.0),
+                                    egui::pos2(1.0, 1.0),
+                                ),
+                                Color32::from_gray(200), // Tinted slightly
+                            );
+                            rendered_icon = true;
+                        }
+                    }
+                }
+
+                if !rendered_icon {
+                    let icon_pos = thumb_rect.center() - Vec2::new(20.0, 20.0);
+                    ui.painter().text(
+                        icon_pos,
+                        egui::Align2::LEFT_TOP,
+                        entry.file_type.icon(),
+                        egui::FontId::proportional(40.0),
+                        Color32::from_rgb(100, 100, 100),
+                    );
+                }
             }
 
             // Color tag indicator

@@ -722,7 +722,11 @@ impl App {
                     self.ui_state.actions.extend(menu_actions);
 
                     // Render Dashboard
-                    dashboard_action = self.ui_state.dashboard.ui(ctx, &self.ui_state.i18n);
+                    dashboard_action = self.ui_state.dashboard.ui(
+                        ctx,
+                        &self.ui_state.i18n,
+                        self.ui_state.icon_manager.as_ref(),
+                    );
 
                     // Migrated Panels Integration (Controls, Stats, Master, Cue)
                     self.ui_state.render_controls(ctx);

@@ -160,6 +160,7 @@ pub struct AppUI {
     pub show_controls: bool,
     pub show_stats: bool,
     pub show_layers: bool,
+    pub show_toolbar: bool,
 
     pub show_timeline: bool,
     pub show_shader_graph: bool,
@@ -249,6 +250,7 @@ impl Default for AppUI {
             node_editor_panel: node_editor::NodeEditor::default(),
             transform_panel: TransformPanel::default(),
             shortcut_panel: ShortcutPanel::new(),
+            show_toolbar: true,
             icon_manager: None, // Will be initialized with egui context
             icon_demo_panel: icon_demo_panel::IconDemoPanel::default(),
             user_config: config::UserConfig::load(),
