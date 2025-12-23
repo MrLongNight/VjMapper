@@ -3,9 +3,7 @@
 //! UI Panel for viewing and customizing keyboard shortcuts.
 
 use egui::{self, Key as EguiKey, RichText, ScrollArea};
-use mapmap_control::shortcuts::{
-    Action, DefaultShortcuts, Key, Modifiers, Shortcut, ShortcutContext,
-};
+use mapmap_control::shortcuts::{DefaultShortcuts, Key, Modifiers, Shortcut, ShortcutContext};
 
 use crate::i18n::LocaleManager;
 
@@ -193,11 +191,8 @@ impl ShortcutPanel {
                     ui.end_row();
 
                     let search_lower = self.search_filter.to_lowercase();
-                    let mut pending_record = None;
-                    let mut pending_reset = None;
-
-                    let mut pending_record = None;
-                    let mut pending_reset = None;
+                    let mut pending_record: Option<usize> = None;
+                    let mut pending_reset: Option<usize> = None;
 
                     for (idx, shortcut) in self.shortcuts.iter().enumerate() {
                         // Apply filters

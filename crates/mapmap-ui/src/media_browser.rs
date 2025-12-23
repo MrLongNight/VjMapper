@@ -4,6 +4,7 @@
 //! color coding, and hover preview playback.
 
 use crate::i18n::LocaleManager;
+use crate::icons::{AppIcon, IconManager};
 use egui::{Color32, Response, Sense, Ui, Vec2};
 use parking_lot::RwLock;
 use std::collections::HashMap;
@@ -52,6 +53,16 @@ impl MediaType {
             Self::ImageSequence => "🎞",
             Self::Audio => "🎵",
             Self::Unknown => "📄",
+        }
+    }
+
+    pub fn app_icon(&self) -> Option<AppIcon> {
+        match self {
+            Self::Video => Some(AppIcon::VideoFile),
+            Self::Image => Some(AppIcon::ImageFile),
+            Self::ImageSequence => Some(AppIcon::VideoFile),
+            Self::Audio => Some(AppIcon::AudioFile),
+            Self::Unknown => None,
         }
     }
 }
@@ -278,7 +289,12 @@ impl MediaBrowser {
     }
 
     /// Render the media browser UI
-    pub fn ui(&mut self, ui: &mut Ui, locale: &LocaleManager) -> Option<MediaBrowserAction> {
+    pub fn ui(
+        &mut self,
+        ui: &mut Ui,
+        locale: &LocaleManager,
+        icons: Option<&IconManager>,
+    ) -> Option<MediaBrowserAction> {
         let mut action = None;
 
         // Toolbar
@@ -404,10 +420,10 @@ impl MediaBrowser {
 
             match self.view_mode {
                 ViewMode::Grid => {
-                    action = self.render_grid_view(ui, &entry_indices);
+                    action = self.render_grid_view(ui, &entry_indices, icons);
                 }
                 ViewMode::List => {
-                    action = self.render_list_view(ui, &entry_indices);
+                    action = self.render_list_view(ui, &entry_indices, icons);
                 }
             }
         });
@@ -420,6 +436,7 @@ impl MediaBrowser {
         &mut self,
         ui: &mut Ui,
         entry_indices: &[usize],
+        _icons: Option<&IconManager>,
     ) -> Option<MediaBrowserAction> {
         let mut action = None;
         let item_size = Vec2::new(self.thumbnail_size, self.thumbnail_size + 40.0);
@@ -474,6 +491,7 @@ impl MediaBrowser {
         &mut self,
         ui: &mut Ui,
         entry_indices: &[usize],
+        icons: Option<&IconManager>,
     ) -> Option<MediaBrowserAction> {
         let mut action = None;
 
@@ -481,7 +499,19 @@ impl MediaBrowser {
             let entry = &self.entries[idx];
             ui.horizontal(|ui| {
                 // Icon
-                ui.label(entry.file_type.icon());
+                if let Some(mgr) = icons {
+                    if let Some(icon) = entry.file_type.app_icon() {
+                        if let Some(img) = mgr.image(icon, 16.0) {
+                            ui.add(img);
+                        } else {
+                            ui.label(entry.file_type.icon());
+                        }
+                    } else {
+                        ui.label(entry.file_type.icon());
+                    }
+                } else {
+                    ui.label(entry.file_type.icon());
+                }
 
                 // Color tag
                 if let Some(color) = entry.color_tag {

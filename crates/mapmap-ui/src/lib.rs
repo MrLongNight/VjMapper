@@ -195,6 +195,8 @@ pub struct AppUI {
     pub user_config: config::UserConfig,
     /// Show settings window
     pub show_settings: bool,
+    pub show_media_browser: bool,
+    pub media_browser: MediaBrowser,
 }
 
 impl Default for AppUI {
@@ -249,6 +251,8 @@ impl Default for AppUI {
             icon_demo_panel: icon_demo_panel::IconDemoPanel::default(),
             user_config: config::UserConfig::load(),
             show_settings: false,
+            show_media_browser: true,
+            media_browser: MediaBrowser::new(std::env::current_dir().unwrap_or_default()),
         }
     }
 }
@@ -277,6 +281,22 @@ impl AppUI {
     /// Toggle icon demo panel visibility
     pub fn toggle_icon_demo(&mut self) {
         self.icon_demo_panel.visible = !self.icon_demo_panel.visible;
+    }
+
+    /// Render the media browser
+    pub fn render_media_browser(&mut self, ctx: &egui::Context) {
+        if !self.show_media_browser {
+            return;
+        }
+
+        egui::Window::new("Media Browser")
+            .default_size([400.0, 300.0])
+            .open(&mut self.show_media_browser) // Allow closing it
+            .show(ctx, |ui| {
+                let _ = self
+                    .media_browser
+                    .ui(ui, &self.i18n, self.icon_manager.as_ref());
+            });
     }
 
     /// Render the control panel
