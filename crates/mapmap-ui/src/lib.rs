@@ -39,7 +39,7 @@ pub use asset_manager::{AssetManager, AssetManagerAction, EffectPreset, Transfor
 pub use audio_panel::AudioPanel;
 pub use config::UserConfig;
 pub use cue_panel::CuePanel;
-pub use dashboard::{Dashboard, DashboardAction, DashboardWidget, WidgetType};
+pub use dashboard::{Dashboard, DashboardAction};
 pub use edge_blend_panel::{EdgeBlendAction, EdgeBlendPanel};
 pub use effect_chain_panel::{
     EffectChainAction, EffectChainPanel, PresetEntry, UIEffect, UIEffectChain,
@@ -56,7 +56,6 @@ pub use theme::{Theme, ThemeConfig};
 pub use timeline_v2::{InterpolationType, TimelineAction as TimelineV2Action, TimelineV2};
 pub use transform_panel::{TransformAction, TransformPanel};
 pub use undo_redo::{Command, CommandError, EditorState, UndoManager};
-
 
 /// UI actions that can be triggered by the user interface
 #[derive(Debug, Clone)]
