@@ -71,6 +71,7 @@ pub struct TimestampedAnalysis {
 /// Audio pipeline that integrates with media processing
 pub struct AudioMediaPipeline {
     /// Audio analyzer for FFT and beat detection
+    #[allow(dead_code)]
     analyzer: Arc<RwLock<AudioAnalyzer>>,
 
     /// Audio-reactive controller for parameter mapping

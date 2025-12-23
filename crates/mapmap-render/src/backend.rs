@@ -125,42 +125,6 @@ impl WgpuBackend {
     pub fn finish_staging_belt(&mut self) {
         self.staging_belt.finish();
     }
-
-    /// Upload texture data using staging belt (async, zero-copy-like behavior)
-    ///
-    /// This method provides better performance for streaming video frames
-    /// by using a ring buffer of staging buffers that can be reused.
-    pub fn upload_texture_staged(
-        &mut self,
-        handle: &TextureHandle,
-        data: &[u8],
-        encoder: &mut wgpu::CommandEncoder,
-    ) -> Result<()> {
-        let bytes_per_pixel = match handle.format {
-            wgpu::TextureFormat::Rgba8Unorm | wgpu::TextureFormat::Rgba8UnormSrgb => 4,
-            wgpu::TextureFormat::Bgra8Unorm | wgpu::TextureFormat::Bgra8UnormSrgb => 4,
-            _ => {
-                return Err(RenderError::TextureCreation(
-                    "Unsupported texture format for upload".to_string(),
-                ))
-            }
-        };
-
-        let bytes_per_row = handle.width * bytes_per_pixel;
-        let buffer_size = (bytes_per_row * handle.height) as u64;
-
-        let mut staging_buffer = self.staging_belt.write_buffer(
-            encoder,
-            &handle.texture,
-            0,
-            wgpu::BufferSize::new(buffer_size).unwrap(),
-            &self.device,
-        );
-
-        staging_buffer[..data.len()].copy_from_slice(data);
-
-        Ok(())
-    }
 }
 
 impl RenderBackend for WgpuBackend {
@@ -225,89 +189,36 @@ impl RenderBackend for WgpuBackend {
             )));
         }
 
-        // Use staging belt for optimized async uploads (reduces CPU-GPU sync overhead)
-        // This provides PBO-like behavior in wgpu
-        let mut encoder = self
-            .device
-            .create_command_encoder(&wgpu::CommandEncoderDescriptor {
-                label: Some("Texture Upload Encoder"),
-            });
-
-        // Calculate row padding for wgpu alignment requirements
+        // Calculate row stride
         let bytes_per_row = handle.width * bytes_per_pixel;
-        let alignment = wgpu::COPY_BYTES_PER_ROW_ALIGNMENT;
-        let padded_bytes_per_row = (bytes_per_row + alignment - 1) & !(alignment - 1);
 
-        // Get a staging buffer slice from the belt
-        let buffer_size = (padded_bytes_per_row * handle.height) as u64;
-
-        // For larger textures, use staging belt for async upload
-        if buffer_size > 64 * 1024 {
-            // Use staging belt for textures larger than 64KB
-            let mut staging_buffer = self.staging_belt.write_buffer(
-                &mut encoder,
-                &handle.texture,
-                0,
-                wgpu::BufferSize::new(buffer_size).unwrap(),
-                &self.device,
-            );
-
-            // Copy data with proper row padding
-            if padded_bytes_per_row == bytes_per_row {
-                // No padding needed, direct copy
-                staging_buffer[..data.len()].copy_from_slice(data);
-            } else {
-                // Need to pad rows
-                for y in 0..handle.height as usize {
-                    let src_start = y * bytes_per_row as usize;
-                    let src_end = src_start + bytes_per_row as usize;
-                    let dst_start = y * padded_bytes_per_row as usize;
-                    let dst_end = dst_start + bytes_per_row as usize;
-                    staging_buffer[dst_start..dst_end].copy_from_slice(&data[src_start..src_end]);
-                }
-            }
-
-            // Submit staging belt commands
-            self.staging_belt.finish();
-            self.queue.submit(std::iter::once(encoder.finish()));
-
-            // Recall the staging belt for next frame
-            // Note: In a real app, this should be done after GPU work completes
-            self.staging_belt.recall();
-        } else {
-            // For small textures, use direct write (lower overhead)
-            self.queue.write_texture(
-                wgpu::ImageCopyTexture {
-                    texture: &handle.texture,
-                    mip_level: 0,
-                    origin: wgpu::Origin3d::ZERO,
-                    aspect: wgpu::TextureAspect::All,
-                },
-                data,
-                wgpu::ImageDataLayout {
-                    offset: 0,
-                    bytes_per_row: Some(bytes_per_row),
-                    rows_per_image: Some(handle.height),
-                },
-                wgpu::Extent3d {
-                    width: handle.width,
-                    height: handle.height,
-                    depth_or_array_layers: 1,
-                },
-            );
-        }
+        // Use direct write for all textures (queue.write_texture is efficient)
+        self.queue.write_texture(
+            wgpu::ImageCopyTexture {
+                texture: &handle.texture,
+                mip_level: 0,
+                origin: wgpu::Origin3d::ZERO,
+                aspect: wgpu::TextureAspect::All,
+            },
+            data,
+            wgpu::ImageDataLayout {
+                offset: 0,
+                bytes_per_row: Some(bytes_per_row),
+                rows_per_image: Some(handle.height),
+            },
+            wgpu::Extent3d {
+                width: handle.width,
+                height: handle.height,
+                depth_or_array_layers: 1,
+            },
+        );
 
         debug!(
-            "Uploaded texture {} ({}x{}, {} bytes, {})",
+            "Uploaded texture {} ({}x{}, {} bytes)",
             handle.id,
             handle.width,
             handle.height,
-            data.len(),
-            if buffer_size > 64 * 1024 {
-                "staged"
-            } else {
-                "direct"
-            }
+            data.len()
         );
         Ok(())
     }

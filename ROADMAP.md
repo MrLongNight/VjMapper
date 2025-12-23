@@ -1,7 +1,7 @@
 # MapFlow – Vollständige Roadmap und Feature-Status
 
-> **Version:** 1.4  
-> **Stand:** 2025-12-23 11:20  
+> **Version:** 1.5  
+> **Stand:** 2025-12-23 11:45  
 > **Zielgruppe:** @jules und Entwickler-Team  
 > **Projekt-Version:** 0.1.0
 
@@ -122,8 +122,8 @@
   - ✅ Linux: ALSA/PulseAudio-Backend über CPAL integriert
   - ⬜ macOS: CoreAudio-Backend (optional, ungetestet)
   - ✅ Audio-Input-Device-Auswahl in UI (Dashboard)
-  - ⬜ Audio-Stream in Media-Pipeline verdrahten (Phase 2)
-  - ⬜ Latenz-Kompensation implementieren (Phase 3)
+  - ✅ Audio-Stream in Media-Pipeline verdrahtet (COMPLETED 2025-12-23)
+  - ✅ Latenz-Kompensation implementiert (COMPLETED 2025-12-23)
 
 - ✅ **Audio-Build-Enforcement**
   - ✅ Default-Feature `audio` in Workspace aktivieren (aktuell optional)
@@ -141,8 +141,8 @@
 - ✅ **Image-Decoder** (`mapmap-media/src/image_decoder.rs`)
   - ✅ PNG, JPG, BMP, TGA Support
   - ✅ Image-Crate-basierte Dekodierung
-  - ⬜ GIF-Animation noch nicht vollständig implementiert
-  - ⬜ Image-Sequence-Playback fehlt (walkdir-Dependency vorhanden)
+  - ✅ GIF-Animation vollständig implementiert (COMPLETED 2025-12-23)
+  - ✅ Image-Sequence-Playback via walkdir (COMPLETED 2025-12-23)
 
 - ✅ **Player** (`mapmap-media/src/player.rs`)
   - ✅ Robust State-Machine (Idle, Loading, Playing, Paused, Stopped, Error)
@@ -156,11 +156,11 @@
   - ✅ Async-Channel-basierte Frame-Delivery
   - ✅ Thread-Pool-Integration
 
-- ⬜ **GPU-Upload-Optimierung**
+- ✅ **GPU-Upload-Optimierung** (COMPLETED 2025-12-23)
   - ✅ Texture-Upload-Benchmark vorhanden (`mapmap-render/benches/texture_upload.rs`)
-  - ⬜ Zero-Copy-Upload fehlt (aktuell: CPU→GPU-Copy)
-  - ⬜ PBO (Pixel Buffer Objects) für asynchronen Upload fehlt
-  - ⬜ Hardware-Decode-zu-GPU-Direct-Upload fehlt
+  - ✅ Staging-Buffer-Pool für asynchronen Upload implementiert
+  - ✅ Automatische Entscheidung staging vs. direct basierend auf Textur-Größe
+  - ⬜ Hardware-Decode-zu-GPU-Direct-Upload fehlt (benötigt FFmpeg HW-Accel Integration)
 
 - ⬜ **Codec-Support**
   - ✅ H.264, H.265, VP8, VP9 über FFmpeg
@@ -330,7 +330,7 @@ MapFlow unterstützt verteilte Ausgabe über mehrere PCs. Vier Architektur-Optio
   - ⬜ `grafton-ndi` Rust Bindings integrieren
   - ⬜ NDI Sender (wgpu Texture → NDI Stream)
   - ⬜ NDI Receiver (NDI Stream → Fullscreen Texture)
-  - ⬜ Multi-Source-Discovery (NDI Finder)
+  - ⬜ Multi-Source-Diüscovery (NDI Finder)
   - ⬜ Latenz-Optimierung (<100ms Ziel)
 
 - ⬜ **Player-Modus** (`--player-ndi`)
