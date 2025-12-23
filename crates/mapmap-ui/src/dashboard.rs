@@ -3,7 +3,7 @@
 //! Quick-access parameter controls for playback and audio analysis.
 
 use crate::i18n::LocaleManager;
-use egui::{Color32, Ui};
+use egui::Ui;
 use mapmap_core::AudioAnalysis;
 use mapmap_media::{LoopMode, PlaybackCommand, PlaybackState};
 use std::time::Duration;
@@ -173,106 +173,14 @@ impl Dashboard {
 
         ui.add_space(8.0);
 
-        // Audio visualization
-        if let Some(audio_action) = self.render_audio_visuals(ui, locale) {
-            action = Some(audio_action);
-        }
-
-        action
-    }
-
-    /// Render audio visualization
-    fn render_audio_visuals(
-        &mut self,
-        ui: &mut Ui,
-        locale: &LocaleManager,
-    ) -> Option<DashboardAction> {
-        let mut action = None;
+        // Audio controls
         ui.group(|ui| {
-            ui.collapsing(locale.t("dashboard-audio-analysis"), |ui| {
-                // Device selector
-                let no_device_text = locale.t("dashboard-no-device");
-                let selected_text = self
-                    .selected_audio_device
-                    .as_deref()
-                    .unwrap_or(&no_device_text);
-                let mut selected_device = self.selected_audio_device.clone();
-
-                egui::ComboBox::from_label(locale.t("dashboard-device"))
-                    .selected_text(selected_text)
-                    .show_ui(ui, |ui| {
-                        for device in &self.audio_devices {
-                            if ui
-                                .selectable_value(
-                                    &mut selected_device,
-                                    Some(device.clone()),
-                                    device,
-                                )
-                                .changed()
-                            {
-                                if let Some(new_device) = selected_device.clone() {
-                                    action = Some(DashboardAction::AudioDeviceChanged(new_device));
-                                }
-                            }
-                        }
-                    });
-                self.selected_audio_device = selected_device;
-
-                if let Some(analysis) = &self.audio_analysis {
-                    // RMS and Peak Volume Meters
-                    ui.label(locale.t("dashboard-volume"));
-                    ui.add(egui::ProgressBar::new(analysis.rms_volume).text(format!(
-                        "{}: {:.2}",
-                        locale.t("dashboard-rms"),
-                        analysis.rms_volume
-                    )));
-                    ui.add(egui::ProgressBar::new(analysis.peak_volume).text(format!(
-                        "{}: {:.2}",
-                        locale.t("dashboard-peak"),
-                        analysis.peak_volume
-                    )));
-
-                    ui.separator();
-
-                    // FFT Visualization
-                    ui.label(locale.t("dashboard-spectrum"));
-                    let painter = ui.painter();
-                    let rect = ui.available_rect_before_wrap();
-                    let plot_rect =
-                        egui::Rect::from_min_size(rect.min, egui::vec2(rect.width(), 80.0));
-                    painter.rect_filled(plot_rect, 3.0, Color32::from_rgb(20, 20, 20));
-
-                    let fft_magnitudes = &analysis.fft_magnitudes;
-                    let num_bars = (fft_magnitudes.len() / 2).min(256); // Display up to 256 bands for clarity
-                    if num_bars > 0 {
-                        let bar_width = plot_rect.width() / num_bars as f32;
-                        for (i, &magnitude) in fft_magnitudes.iter().take(num_bars).enumerate() {
-                            let bar_height = (magnitude.powf(0.5) * plot_rect.height())
-                                .min(plot_rect.height())
-                                .max(1.0);
-                            let x = plot_rect.min.x + i as f32 * bar_width;
-                            let y = plot_rect.max.y;
-                            let color = Color32::from_rgb(
-                                (magnitude * 200.0) as u8,
-                                255 - (magnitude * 200.0) as u8,
-                                50,
-                            );
-                            painter.rect_filled(
-                                egui::Rect::from_min_size(
-                                    egui::pos2(x, y - bar_height),
-                                    egui::vec2(bar_width - 1.0, bar_height),
-                                ),
-                                1.0,
-                                color,
-                            );
-                        }
-                    }
-                    ui.advance_cursor_after_rect(plot_rect);
-                } else {
-                    ui.label(locale.t("dashboard-no-audio-data"));
-                }
-            });
+            ui.label(locale.t("dashboard-audio-section"));
+            if ui.button(locale.t("dashboard-open-audio-panel")).clicked() {
+                action = Some(DashboardAction::ToggleAudioPanel);
+            }
         });
+
         action
     }
 
@@ -290,4 +198,5 @@ impl Dashboard {
 pub enum DashboardAction {
     SendCommand(PlaybackCommand),
     AudioDeviceChanged(String),
+    ToggleAudioPanel,
 }
