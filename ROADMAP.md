@@ -1,7 +1,7 @@
 # MapFlow – Vollständige Roadmap und Feature-Status
 
 > **Version:** 1.3  
-> **Stand:** 2025-12-22  
+> **Stand:** 2025-12-23  
 > **Zielgruppe:** @jules und Entwickler-Team  
 > **Projekt-Version:** 0.1.0
 
@@ -265,7 +265,7 @@
   - ✅ Audio Visualization (`audio_panel.rs`) – Migriert
   - ✅ Main Menu & Toolbar (`menu_bar.rs`) – Migriert
   - ⬜ Layer Manager (`render_layer_panel`) – Noch ImGui
-  - ⬜ Mapping Manager (`render_mapping_panel`) – Noch ImGui
+  - ✅ Mapping Manager (`render_mapping_panel`) – Migriert (COMPLETED PR #97, 2025-12-23)
   - ⬜ Output Configuration (`render_output_panel`) – Noch ImGui
   - ⬜ Edge Blend & Color Calibration (`render_edge_blend_panel`) – Noch ImGui
   - ⬜ Oscillator Control (`render_oscillator_panel`) – Noch ImGui
@@ -347,7 +347,7 @@
   - ✅ Audio-System-Tests mit Audio-Feature aktiviert (COMPLETED 2025-12-21, 16 Tests)
   - ✅ OSC-Integration-Tests (COMPLETED 2025-12-21, 19 Tests)
   - ✅ Project-Save/Load-Tests (COMPLETED PR #68, 2025-12-22)
-  - ⬜ Multi-Output-Rendering-Tests
+  - ✅ Multi-Output-Rendering-Tests (COMPLETED 2025-12-22)
   - ⬜ Effect-Chain-Tests
   - ⬜ End-to-End-Tests
 
