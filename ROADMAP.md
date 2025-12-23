@@ -1,7 +1,7 @@
 # MapFlow – Vollständige Roadmap und Feature-Status
 
-> **Version:** 1.3  
-> **Stand:** 2025-12-23  
+> **Version:** 1.4  
+> **Stand:** 2025-12-23 11:20  
 > **Zielgruppe:** @jules und Entwickler-Team  
 > **Projekt-Version:** 0.1.0
 
@@ -23,10 +23,10 @@
 ## Feature-Status-Übersicht
 
 ### General Updates
-- 🟡 **Rebranding: MapFlow -> MapFlow**
+- ✅ **Rebranding: VjMapper -> MapFlow** (COMPLETED 2025-12-22)
   - ✅ Rename Project (2025-12-22)
-  - 🟡 Update UI Strings & Docs (In Progress)
-  - 🟡 Rename WiX Installer Config (In Progress)
+  - ✅ Update UI Strings & Docs (2025-12-22)
+  - ✅ Rename WiX Installer Config (2025-12-22)
 
 ### Core / Layer / Mapping System
 
