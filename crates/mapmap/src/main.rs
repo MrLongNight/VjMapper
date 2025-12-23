@@ -643,6 +643,15 @@ impl App {
                         &self.ui_state.i18n,
                     );
 
+                    // Render Output Panel
+                    self.ui_state.output_panel.show(
+                        ctx,
+                        &mut self.state.output_manager,
+                        &mut self.ui_state.selected_output_id,
+                        &mut self.ui_state.actions,
+                        &self.ui_state.i18n,
+                    );
+
                     // Update and render Transform Panel
                     if let Some(selected_id) = self.ui_state.selected_layer_id {
                         if let Some(layer) = self.state.layer_manager.get_layer(selected_id) {
