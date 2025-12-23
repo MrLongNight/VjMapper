@@ -41,8 +41,7 @@ jobs:
       (github.event.workflow_run &&
        github.event.workflow_run.conclusion != 'skipped') ||
       github.event_name == 'workflow_dispatch'
-    
-    
+
     steps:
     - name: Find Jules PR for workflow run
       id: find-pr
@@ -74,7 +73,6 @@ jobs:
             core.exportVariable('HAS_PR', 'true');
             core.setOutput('pr_number', pr.number);
             core.setOutput('has_pr', 'true');
-          } else {
           } else {
             core.exportVariable('HAS_PR', 'false');
           }
@@ -142,9 +140,9 @@ jobs:
               }
               // Basic solution suggestions based on common Rust/CI issues
               if (failure.name.includes('test') && failure.output.summary.includes('failed')) {
-                analysis += `**Lösungsansatz:** Überprüfe die Testfälle auf Assertions-Fehler. Führe \`cargo test -- --nocapture\` lokal aus, um detaillierte Ausgaben zu sehen. Stelle sicher, dass alle Abhängigkeiten korrekt installiert sind.\n\n`;
+                analysis += `**Lösungsansatz:** Überprüfe die Testfälle auf Assertions-Fehler. Führe \`cargo test -- --nocapture\` lokal aus, um detaillierte Ausgaben zu sehen. Stelle sicher, dass alle Inputs valide sind und keine Nebenwirkungen auftreten.\n\n`;
               } else if (failure.name.includes('clippy') && failure.output.summary.includes('warning')) {
-                analysis += `**Lösungsansatz:** Clippy-Warnungen beheben. Führe \`cargo clippy --fix\` aus, um automatische Korrekturen anzuwenden. Überprüfe Rust-API-Guidelines für Stil-Konformität.\n\n`;
+                analysis += `**Lösungsansatz:** Clippy-Warnungen beheben. Führe \`cargo clippy --fix\` aus, um automatische Korrekturen anzuwenden. Überprüfe Rust-API-Guidelines für Stil-Konventionen.\n\n`;
               } else if (failure.name.includes('fmt') && failure.output.summary.includes('format')) {
                 analysis += `**Lösungsansatz:** Code-Formatierung anpassen. Führe \`cargo fmt\` aus, um den Code automatisch zu formatieren.\n\n`;
               } else {
