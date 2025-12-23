@@ -195,6 +195,8 @@ pub struct AppUI {
     pub user_config: config::UserConfig,
     /// Show settings window
     pub show_settings: bool,
+    pub show_media_browser: bool,
+    pub media_browser: MediaBrowser,
 }
 
 impl Default for AppUI {
@@ -249,6 +251,8 @@ impl Default for AppUI {
             icon_demo_panel: icon_demo_panel::IconDemoPanel::default(),
             user_config: config::UserConfig::load(),
             show_settings: false,
+            show_media_browser: true,
+            media_browser: MediaBrowser::new(std::env::current_dir().unwrap_or_default()),
         }
     }
 }
