@@ -274,6 +274,11 @@
   - ✅ OSC Panel (`osc_panel.rs`) – Migriert (COMPLETED 2025-12-23)
   - ✅ ImGui Removal (Code Cleanup) – COMPLETED (2025-12-23)
 
+- 🟡 **UI Redesign (Resolume Style)**
+  - 🔄 Cyber Dark Theme (Jules Session: 15619292958684189574)
+  - ⬜ Docking Layout & Unified Inspector
+  - ⬜ Icon System (Streamline Ultimate)
+
 - 🟡 **Internationalisierung (i18n) – NEU**
   - ✅ Sprachauswahl UI (Deutsch / Englisch)
   - ✅ `fluent` oder `rust-i18n` Crate integrieren
