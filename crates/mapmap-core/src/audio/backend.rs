@@ -208,6 +208,14 @@ pub mod cpal_backend {
             self.sample_receiver.try_iter().flatten().collect()
         }
     }
+
+    impl Drop for CpalBackend {
+        fn drop(&mut self) {
+            // Dropping command_sender will close the channel and
+            // the command thread will exit its recv() loop
+            // Stream will be dropped automatically
+        }
+    }
 }
 
 /// A mock audio backend for testing without native audio dependencies
