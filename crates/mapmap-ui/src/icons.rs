@@ -27,6 +27,12 @@ pub enum AppIcon {
     AppWindow,
     InfoCircle,
     Hand,
+    ButtonPause,
+    Repeat,
+    Eye,
+    EyeSlash,
+    Lock,
+    LockOpen,
 }
 
 impl AppIcon {
@@ -51,6 +57,12 @@ impl AppIcon {
             Self::AppWindow => "ultimate_app_window.svg",
             Self::InfoCircle => "ultimate_info_circle.svg",
             Self::Hand => "ultimate_hand.svg",
+            Self::ButtonPause => "ultimate_button_pause.svg",
+            Self::Repeat => "ultimate_repeat.svg",
+            Self::Eye => "ultimate_eye.svg",
+            Self::EyeSlash => "ultimate_eye_slash.svg",
+            Self::Lock => "ultimate_lock.svg",
+            Self::LockOpen => "ultimate_lock_open.svg",
         }
     }
 
@@ -61,6 +73,8 @@ impl AppIcon {
             Self::AudioFile,
             Self::MusicNote,
             Self::ButtonStop,
+            Self::ButtonPause,
+            Self::Repeat,
             Self::VinylRecord,
             Self::VideoFile,
             Self::Cog,
@@ -75,6 +89,10 @@ impl AppIcon {
             Self::AppWindow,
             Self::InfoCircle,
             Self::Hand,
+            Self::Eye,
+            Self::EyeSlash,
+            Self::Lock,
+            Self::LockOpen,
         ]
     }
 }

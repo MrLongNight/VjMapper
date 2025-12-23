@@ -133,7 +133,10 @@ impl Dashboard {
                     action = Some(DashboardAction::SendCommand(PlaybackCommand::Play));
                 }
                 // Pause (No icon yet, use text or maybe a placeholder)
-                if icon_btn(None, &locale.t("btn-pause")) {
+                if icon_btn(
+                    Some(crate::icons::AppIcon::ButtonPause),
+                    &locale.t("btn-pause"),
+                ) {
                     action = Some(DashboardAction::SendCommand(PlaybackCommand::Pause));
                 }
                 // Stop

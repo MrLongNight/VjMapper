@@ -165,9 +165,7 @@ impl AudioPanel {
             match self.view_mode {
                 ViewMode::Spectrum => self.render_spectrum(ui, analysis),
                 ViewMode::Bars => self.render_frequency_bands(ui, locale, &analysis.band_energies),
-                ViewMode::Waveform => {
-                    ui.label("Waveform view not implemented yet");
-                }
+                ViewMode::Waveform => self.render_waveform(ui, &analysis.waveform),
             }
         } else {
             ui.label(locale.t("audio-panel-no-data"));
@@ -290,5 +288,35 @@ impl AudioPanel {
                 Stroke::new(2.0, Color32::from_rgb(255, 100, 100)),
             );
         }
+    }
+
+    /// Renders the audio waveform
+    fn render_waveform(&self, ui: &mut Ui, waveform: &[f32]) {
+        let (rect, _response) =
+            ui.allocate_exact_size(Vec2::new(ui.available_width(), 150.0), Sense::hover());
+        let painter = ui.painter();
+        painter.rect_filled(rect, 3.0, Color32::from_rgb(20, 20, 20));
+
+        if waveform.is_empty() {
+            return;
+        }
+
+        let center_y = rect.center().y;
+        let points: Vec<Pos2> = waveform
+            .iter()
+            .enumerate()
+            .map(|(i, &sample)| {
+                let x = rect.min.x + (i as f32 / waveform.len() as f32) * rect.width();
+                // Clamp sample to -1.0..1.0 range and scale to fit height
+                let y = center_y - (sample.clamp(-1.0, 1.0) * rect.height() * 0.5);
+                Pos2::new(x, y)
+            })
+            .collect();
+
+        // Draw the waveform line
+        painter.add(egui::Shape::line(
+            points,
+            Stroke::new(1.5, Color32::from_rgb(100, 200, 255)),
+        ));
     }
 }

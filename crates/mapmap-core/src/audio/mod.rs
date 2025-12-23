@@ -122,6 +122,9 @@ pub struct AudioAnalysis {
 
     /// Tempo (BPM) estimate
     pub tempo_bpm: Option<f32>,
+
+    /// Raw waveform data (latest samples, for visualization)
+    pub waveform: Vec<f32>,
 }
 
 impl Default for AudioAnalysis {
@@ -136,6 +139,7 @@ impl Default for AudioAnalysis {
             beat_strength: 0.0,
             onset_detected: false,
             tempo_bpm: None,
+            waveform: vec![0.0; 512],
         }
     }
 }
@@ -311,6 +315,12 @@ impl AudioAnalyzer {
             beat_strength,
             onset_detected,
             tempo_bpm,
+            waveform: self
+                .input_buffer
+                .iter()
+                .take(self.config.fft_size)
+                .copied()
+                .collect(),
         }
     }
 

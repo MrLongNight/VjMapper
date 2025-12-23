@@ -205,6 +205,11 @@ btn-duplicate = Duplizieren
 btn-remove = Entfernen
 btn-add-layer = Ebene hinzufügen
 btn-eject-all = Alle auswerfen (X)
+tooltip-remove-layer = Ausgewählte Ebene entfernen
+tooltip-duplicate-layer = Ausgewählte Ebene duplizieren
+tooltip-eject-all = Alle Ebenen löschen
+tooltip-solo = Solo (Nur diese Ebene anzeigen)
+tooltip-bypass = Bypass (Ebene deaktivieren)
 
 # Paints
 panel-paints = Farben/Medien

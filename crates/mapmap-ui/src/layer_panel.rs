@@ -33,6 +33,7 @@ impl LayerPanel {
         selected_layer_id: &mut Option<u64>,
         actions: &mut Vec<UIAction>,
         i18n: &LocaleManager,
+        icon_manager: Option<&crate::icons::IconManager>,
     ) {
         if !self.visible {
             return;
@@ -49,7 +50,10 @@ impl LayerPanel {
                         actions.push(UIAction::AddLayer);
                     }
                     if ui
-                        .add_enabled(selected_layer_id.is_some(), egui::Button::new("Remove"))
+                        .add_enabled(
+                            selected_layer_id.is_some(),
+                            egui::Button::new(i18n.t("btn-remove")),
+                        )
                         .on_hover_text(i18n.t("tooltip-remove-layer"))
                         .clicked()
                     {
@@ -59,7 +63,10 @@ impl LayerPanel {
                         }
                     }
                     if ui
-                        .add_enabled(selected_layer_id.is_some(), egui::Button::new("Duplicate"))
+                        .add_enabled(
+                            selected_layer_id.is_some(),
+                            egui::Button::new(i18n.t("btn-duplicate")),
+                        )
                         .on_hover_text(i18n.t("tooltip-duplicate-layer"))
                         .clicked()
                     {
@@ -69,7 +76,7 @@ impl LayerPanel {
                     }
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
                         if ui
-                            .button("Eject All")
+                            .button(i18n.t("btn-eject-all"))
                             .on_hover_text(i18n.t("tooltip-eject-all"))
                             .clicked()
                         {
@@ -123,7 +130,23 @@ impl LayerPanel {
                                 .show(ui, |ui| {
                                     ui.horizontal(|ui| {
                                         // Visibility Toggle
-                                        ui.checkbox(&mut layer.visible, "");
+                                        let mut icon_processed = false;
+                                        if let Some(mgr) = icon_manager {
+                                            let icon = if layer.visible {
+                                                crate::icons::AppIcon::Eye
+                                            } else {
+                                                crate::icons::AppIcon::EyeSlash
+                                            };
+                                            if let Some(img) = mgr.image(icon, 16.0) {
+                                                if ui.add(egui::ImageButton::new(img)).clicked() {
+                                                    layer.visible = !layer.visible;
+                                                }
+                                                icon_processed = true;
+                                            }
+                                        }
+                                        if !icon_processed {
+                                            ui.checkbox(&mut layer.visible, "");
+                                        }
 
                                         // Layer Name
                                         ui.label(&layer.name);
@@ -164,7 +187,7 @@ impl LayerPanel {
                                                 if solo_button.clicked() {
                                                     layer.solo = !layer.solo;
                                                 }
-                                                solo_button.on_hover_text("Solo");
+                                                solo_button.on_hover_text(i18n.t("tooltip-solo"));
 
                                                 // TODO: Icon
                                                 // Bypass Button
@@ -174,7 +197,8 @@ impl LayerPanel {
                                                 if bypass_button.clicked() {
                                                     layer.bypass = !layer.bypass;
                                                 }
-                                                bypass_button.on_hover_text("Bypass");
+                                                bypass_button
+                                                    .on_hover_text(i18n.t("tooltip-bypass"));
                                             },
                                         );
                                     });

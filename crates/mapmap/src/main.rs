@@ -808,6 +808,7 @@ impl App {
                         &mut self.ui_state.selected_layer_id,
                         &mut self.ui_state.actions,
                         &self.ui_state.i18n,
+                        self.ui_state.icon_manager.as_ref(),
                     );
 
                     // Render Paint Panel
