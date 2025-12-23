@@ -259,7 +259,7 @@
   - ✅ Asset-Manager (`asset_manager.rs`)
   - ✅ Theme (`theme.rs`)
 
-- 🟡 **UI Panel Migration Status (egui)** – COMPLETED PR #78 (2025-12-22)
+- ✅ **UI Panel Migration Status (egui)** – COMPLETED (2025-12-23)
   - ✅ Transform Controls (`transform_panel.rs`) – Migriert
   - ✅ Paint Manager (`paint_panel.rs`) – Migriert
   - ✅ Audio Visualization (`audio_panel.rs`) – Migriert
@@ -270,6 +270,9 @@
   - ✅ Edge Blend & Color Calibration (`edge_blend_panel.rs`) – Migriert (COMPLETED Verified 2025-12-23)
   - ✅ Oscillator Control (`oscillator_panel.rs`) – Migriert (COMPLETED Verified 2025-12-23)
   - ✅ Shader Graph Editor (`node_editor.rs`) – Migriert (COMPLETED 2025-12-23)
+  - ✅ Cue List (`cue_panel.rs`) – Migriert (COMPLETED 2025-12-23)
+  - ✅ OSC Panel (`osc_panel.rs`) – Migriert (COMPLETED 2025-12-23)
+  - ✅ ImGui Removal (Code Cleanup) – COMPLETED (2025-12-23)
 
 - 🟡 **Internationalisierung (i18n) – NEU**
   - ✅ Sprachauswahl UI (Deutsch / Englisch)

@@ -187,12 +187,6 @@ impl App {
         elwt: &winit::event_loop::EventLoopWindowTarget<()>,
     ) -> Result<()> {
         // Pass event to UI first (needs reference to full event)
-        if let Event::WindowEvent { window_id, .. } = &event {
-            let output_id = self
-                .window_manager
-                .get_output_id_from_window_id(*window_id)
-                .unwrap_or(0);
-        }
 
         if let Event::WindowEvent { event, window_id } = &event {
             if let Some(main_window) = self.window_manager.get(0) {
