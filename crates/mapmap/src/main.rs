@@ -629,6 +629,7 @@ impl App {
 
                     // Render Timeline
                     egui::Window::new("Timeline")
+                        .open(&mut self.ui_state.show_timeline)
                         .default_size([800.0, 300.0])
                         .show(ctx, |ui| {
                             let _ = self.ui_state.timeline_panel.ui(ui);
@@ -636,6 +637,7 @@ impl App {
 
                     // Render Shader Graph
                     egui::Window::new("Shader Graph")
+                        .open(&mut self.ui_state.show_shader_graph)
                         .default_size([800.0, 600.0])
                         .show(ctx, |ui| {
                             let _ = self.ui_state.node_editor_panel.ui(ui, &self.ui_state.i18n);

@@ -156,6 +156,9 @@ pub struct AppUI {
     pub show_controls: bool,
     pub show_stats: bool,
     pub show_layers: bool,
+
+    pub show_timeline: bool,
+    pub show_shader_graph: bool,
     pub layer_panel: LayerPanel,
     pub show_mappings: bool,
     pub mapping_panel: MappingPanel,
@@ -232,6 +235,8 @@ impl Default for AppUI {
             effect_chain_panel: EffectChainPanel::default(),
             cue_panel: CuePanel::default(),
             timeline_panel: timeline_v2::TimelineV2::default(),
+            show_timeline: true,
+            show_shader_graph: true,
             node_editor_panel: node_editor::NodeEditor::default(),
             transform_panel: TransformPanel::default(),
             user_config: config::UserConfig::load(),
