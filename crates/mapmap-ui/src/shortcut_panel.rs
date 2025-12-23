@@ -196,6 +196,9 @@ impl ShortcutPanel {
                     let mut pending_record = None;
                     let mut pending_reset = None;
 
+                    let mut pending_record = None;
+                    let mut pending_reset = None;
+
                     for (idx, shortcut) in self.shortcuts.iter().enumerate() {
                         // Apply filters
                         if !self.search_filter.is_empty() {
