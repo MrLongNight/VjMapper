@@ -649,6 +649,9 @@ impl App {
             let (tris, screen_descriptor) = {
                 let raw_input = self.egui_state.take_egui_input(&window_context.window);
                 let full_output = self.egui_context.run(raw_input, |ctx| {
+                    // Apply the theme at the beginning of each UI render pass
+                    self.ui_state.user_config.theme.apply(ctx);
+
                     let menu_actions = menu_bar::show(ctx, &mut self.ui_state);
                     self.ui_state.actions.extend(menu_actions);
 
@@ -744,6 +747,12 @@ impl App {
                     // Render Icon Gallery
                     self.ui_state.render_icon_demo(ctx);
 
+<<<<<<< HEAD
+                    // Render Media Browser
+                    self.ui_state.render_media_browser(ctx);
+
+=======
+>>>>>>> origin/main
                     // Render Timeline
                     egui::Window::new("Timeline")
                         .open(&mut self.ui_state.show_timeline)
