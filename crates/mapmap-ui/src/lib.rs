@@ -10,7 +10,6 @@
 
 // Phase 3: Effects Pipeline UI (ImGui-based)
 pub mod shader_graph_editor;
-pub mod timeline;
 
 // Phase 6: Advanced Authoring UI (egui-based)
 pub mod asset_manager;
@@ -39,7 +38,6 @@ pub mod undo_redo;
 pub use i18n::LocaleManager;
 
 pub use shader_graph_editor::{ShaderGraphAction, ShaderGraphEditor};
-pub use timeline::{TimelineAction, TimelineEditor};
 
 // Phase 6 exports
 pub use asset_manager::{AssetManager, AssetManagerAction, EffectPreset, TransformPreset};
@@ -307,6 +305,7 @@ pub struct AppUI {
     pub i18n: LocaleManager,
     pub effect_chain_panel: EffectChainPanel,
     pub cue_panel: CuePanel,
+    pub timeline_panel: timeline_v2::TimelineV2,
     pub transform_panel: TransformPanel,
     pub user_config: config::UserConfig,
     /// Show settings window
@@ -355,6 +354,7 @@ impl Default for AppUI {
             },
             effect_chain_panel: EffectChainPanel::default(),
             cue_panel: CuePanel::default(),
+            timeline_panel: timeline_v2::TimelineV2::default(),
             transform_panel: TransformPanel::default(),
             user_config: config::UserConfig::load(),
             show_settings: false,

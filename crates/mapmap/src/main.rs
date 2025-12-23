@@ -652,6 +652,13 @@ impl App {
                         &self.ui_state.i18n,
                     );
 
+                    // Render Timeline
+                    egui::Window::new("Timeline")
+                        .default_size([800.0, 300.0])
+                        .show(ctx, |ui| {
+                            let _ = self.ui_state.timeline_panel.ui(ui);
+                        });
+
                     // Update and render Transform Panel
                     if let Some(selected_id) = self.ui_state.selected_layer_id {
                         if let Some(layer) = self.state.layer_manager.get_layer(selected_id) {
