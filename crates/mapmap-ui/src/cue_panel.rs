@@ -122,7 +122,11 @@ impl CuePanel {
         if let Some(selected_id) = self.selected_cue_id {
             // We clone the cue to edit it without holding a mutable borrow on the cue_list,
             // which would prevent us from using cue_list for other things inside the editor.
-            if let Some(cue_to_edit) = cue_list.cues().iter().find(|c| c.id == selected_id).cloned()
+            if let Some(cue_to_edit) = cue_list
+                .cues()
+                .iter()
+                .find(|c| c.id == selected_id)
+                .cloned()
             {
                 ui.group(|ui| {
                     ui.heading(i18n.t("header-cue-editor"));
