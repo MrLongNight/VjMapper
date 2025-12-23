@@ -39,11 +39,7 @@ pub fn colored_progress_bar(ui: &mut Ui, value: f32) -> Response {
     ui.add(bar)
 }
 
-pub fn styled_slider(
-    ui: &mut Ui,
-    value: &mut f32,
-    range: std::ops::RangeInclusive<f32>,
-) -> Response {
+pub fn styled_slider(ui: &mut Ui, value: &mut f32, range: std::ops::RangeInclusive<f32>) -> Response {
     let desired_size = ui.spacing().slider_width * Vec2::new(1.0, 0.5);
     let (rect, response) = ui.allocate_at_least(desired_size, Sense::click_and_drag());
     let visuals = ui.style().interact(&response);
@@ -67,10 +63,7 @@ pub fn styled_slider(
     let fill_rect = Rect::from_min_max(
         rect.min,
         Pos2::new(
-            lerp(
-                (rect.left())..=(rect.right()),
-                (*value - *range.start()) / (*range.end() - *range.start()),
-            ),
+            lerp((rect.left())..=(rect.right()), (*value - *range.start()) / (*range.end() - *range.start())),
             rect.max.y,
         ),
     );
@@ -78,9 +71,47 @@ pub fn styled_slider(
     ui.painter().rect(
         fill_rect,
         visuals.rounding,
-        ui.visuals().widgets.active.bg_fill,
+        Color32::from_rgb(157, 78, 221),
         Stroke::new(0.0, Color32::TRANSPARENT),
     );
+
+    response
+}
+
+pub fn styled_knob(ui: &mut Ui, value: &mut f32, range: std::ops::RangeInclusive<f32>) -> Response {
+    let desired_size = Vec2::new(48.0, 48.0);
+    let (rect, response) = ui.allocate_at_least(desired_size, Sense::click_and_drag());
+    let visuals = ui.style().interact(&response);
+
+    if response.dragged() {
+        let center = rect.center();
+        let mouse_pos = response.interact_pointer_pos().unwrap();
+        let angle = (mouse_pos - center).angle();
+        let new_value = egui::remap_clamp(angle, -std::f32::consts::PI..=std::f32::consts::PI, *range.start()..=*range.end());
+        *value = new_value;
+    }
+
+    let painter = ui.painter();
+    painter.circle(
+        rect.center(),
+        rect.width() / 2.0,
+        visuals.bg_fill,
+        visuals.bg_stroke,
+    );
+
+    let angle = egui::remap_clamp(*value, *range.start()..=*range.end(), -std::f32::consts::PI..=std::f32::consts::PI);
+    let points: Vec<Pos2> = (0..=100)
+        .map(|i| {
+            let t = i as f32 / 100.0;
+            let angle = lerp(-std::f32::consts::PI..=angle, t);
+            rect.center() + Vec2::new(angle.cos(), angle.sin()) * rect.width() / 2.0
+        })
+        .collect();
+
+    painter.add(egui::epaint::Shape::line(
+        points,
+        Stroke::new(2.0, Color32::from_rgb(157, 78, 221)),
+    ));
 
     response
 }
@@ -97,8 +128,12 @@ pub fn bypass_button(ui: &mut Ui, active: bool) -> Response {
         visuals.bg_fill
     };
 
-    ui.painter()
-        .rect(rect, visuals.rounding, bg_fill, visuals.bg_stroke);
+    ui.painter().rect(
+        rect,
+        visuals.rounding,
+        bg_fill,
+        visuals.bg_stroke,
+    );
 
     let text_pos = rect.center();
     ui.painter().text(
@@ -106,9 +141,7 @@ pub fn bypass_button(ui: &mut Ui, active: bool) -> Response {
         egui::Align2::CENTER_CENTER,
         text,
         egui::FontId::proportional(14.0),
-        ui.visuals()
-            .override_text_color
-            .unwrap_or(visuals.fg_stroke.color),
+        ui.visuals().override_text_color.unwrap_or(visuals.fg_stroke.color),
     );
 
     response
@@ -126,8 +159,12 @@ pub fn param_button(ui: &mut Ui) -> Response {
         visuals.bg_fill
     };
 
-    ui.painter()
-        .rect(rect, visuals.rounding, bg_fill, visuals.bg_stroke);
+    ui.painter().rect(
+        rect,
+        visuals.rounding,
+        bg_fill,
+        visuals.bg_stroke,
+    );
 
     let text_pos = rect.center();
     ui.painter().text(
@@ -135,9 +172,7 @@ pub fn param_button(ui: &mut Ui) -> Response {
         egui::Align2::CENTER_CENTER,
         text,
         egui::FontId::proportional(14.0),
-        ui.visuals()
-            .override_text_color
-            .unwrap_or(visuals.fg_stroke.color),
+        ui.visuals().override_text_color.unwrap_or(visuals.fg_stroke.color),
     );
 
     response
@@ -155,8 +190,12 @@ pub fn delete_button(ui: &mut Ui) -> Response {
         visuals.bg_fill
     };
 
-    ui.painter()
-        .rect(rect, visuals.rounding, bg_fill, visuals.bg_stroke);
+    ui.painter().rect(
+        rect,
+        visuals.rounding,
+        bg_fill,
+        visuals.bg_stroke,
+    );
 
     let text_pos = rect.center();
     ui.painter().text(
@@ -164,9 +203,7 @@ pub fn delete_button(ui: &mut Ui) -> Response {
         egui::Align2::CENTER_CENTER,
         text,
         egui::FontId::proportional(14.0),
-        ui.visuals()
-            .override_text_color
-            .unwrap_or(visuals.fg_stroke.color),
+        ui.visuals().override_text_color.unwrap_or(visuals.fg_stroke.color),
     );
 
     response

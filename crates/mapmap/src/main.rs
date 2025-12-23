@@ -563,18 +563,25 @@ impl App {
             let (tris, screen_descriptor) = {
                 let raw_input = self.egui_state.take_egui_input(&window_context.window);
                 let full_output = self.egui_context.run(raw_input, |ctx| {
-                    let menu_actions = menu_bar::show(ctx, &mut self.ui_state, 60.0, 16.0); // TODO: pass real stats
+                    // TODO: This is a hack to get some stats. A proper FPS counter should be implemented.
+                    let now = std::time::Instant::now();
+                    let frame_time = now.duration_since(self.last_autosave).as_secs_f32();
+                    self.last_autosave = now;
+                    let fps = 1.0 / frame_time;
+
+                    let menu_actions = menu_bar::show(ctx, &mut self.ui_state, fps, frame_time * 1000.0);
                     self.ui_state.actions.extend(menu_actions);
 
                     // Docked Layout
                     self.ui_state.render_docked_layout(
                         ctx,
                         &mut self.state.layer_manager,
-                        60.0,
-                        16.0,
+                        fps,
+                        frame_time * 1000.0,
                     );
 
-                    self.ui_state.render_performance_panel(ctx, 60.0, 16.0);
+                    self.ui_state
+                        .render_performance_panel(ctx, fps, frame_time * 1000.0);
 
                     // Update and show the edge blend panel
                     if let Some(output_id) = self.ui_state.selected_output_id {

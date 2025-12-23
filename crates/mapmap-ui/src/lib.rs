@@ -58,7 +58,6 @@ pub use timeline_v2::{InterpolationType, TimelineAction as TimelineV2Action, Tim
 pub use transform_panel::{TransformAction, TransformPanel};
 pub use undo_redo::{Command, CommandError, EditorState, UndoManager};
 
-use egui;
 use sysinfo::{CpuExt, System, SystemExt};
 
 /// UI actions that can betriggered by the user interface
@@ -486,10 +485,10 @@ impl AppUI {
         // Dashboard
         widgets::render_header(ui, "Dashboard");
         ui.add_space(4.0);
-        if let Some(action) = self.dashboard.ui_embedded(ui, &self.i18n) {
-            if let crate::dashboard::DashboardAction::AudioDeviceChanged(device) = action {
-                self.actions.push(UIAction::SelectAudioDevice(device));
-            }
+        if let Some(crate::dashboard::DashboardAction::AudioDeviceChanged(device)) =
+            self.dashboard.ui_embedded(ui, &self.i18n)
+        {
+            self.actions.push(UIAction::SelectAudioDevice(device));
             // TODO: Map other dashboard actions
         }
 
@@ -523,10 +522,13 @@ impl AppUI {
         let composition = &mut layer_manager.composition;
         ui.horizontal(|ui| {
             ui.label(self.i18n.t("label-master-opacity"));
-            if widgets::styled_slider(ui, &mut composition.master_opacity, 0.0..=1.0).changed() {
+            if widgets::styled_slider(ui, &mut composition.master_opacity, 0.0..=1.0)
+                .changed()
+            {
                 self.actions
                     .push(UIAction::SetMasterOpacity(composition.master_opacity));
             }
+            widgets::styled_knob(ui, &mut composition.master_opacity, 0.0..=1.0);
         });
         ui.add_space(4.0);
 

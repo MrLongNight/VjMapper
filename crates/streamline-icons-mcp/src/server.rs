@@ -98,10 +98,7 @@ impl McpServer {
         let tools = vec![
             Tool {
                 name: "search".to_string(),
-                description: Some(
-                    "Search for icons, illustrations, emojis, or elements from all families."
-                        .to_string(),
-                ),
+                description: Some("Search for icons, illustrations, emojis, or elements from all families.".to_string()),
                 input_schema: json!({
                     "type": "object",
                     "properties": {
@@ -168,9 +165,7 @@ impl McpServer {
             },
             Tool {
                 name: "get_icon_by_hash".to_string(),
-                description: Some(
-                    "Retrieve detailed information about a specific icon by its hash.".to_string(),
-                ),
+                description: Some("Retrieve detailed information about a specific icon by its hash.".to_string()),
                 input_schema: json!({
                     "type": "object",
                     "properties": {
@@ -184,9 +179,7 @@ impl McpServer {
             },
             Tool {
                 name: "download_svg".to_string(),
-                description: Some(
-                    "Download an icon as SVG with optional modifications.".to_string(),
-                ),
+                description: Some("Download an icon as SVG with optional modifications.".to_string()),
                 input_schema: json!({
                     "type": "object",
                     "properties": {
@@ -232,9 +225,7 @@ impl McpServer {
             },
             Tool {
                 name: "download_png".to_string(),
-                description: Some(
-                    "Download an icon as PNG with optional modifications.".to_string(),
-                ),
+                description: Some("Download an icon as PNG with optional modifications.".to_string()),
                 input_schema: json!({
                     "type": "object",
                     "properties": {
@@ -340,15 +331,9 @@ impl McpServer {
         let params = SearchParams {
             product_type,
             query,
-            offset: args
-                .get("offset")
-                .and_then(|v| v.as_u64())
-                .map(|v| v as u32),
+            offset: args.get("offset").and_then(|v| v.as_u64()).map(|v| v as u32),
             limit: args.get("limit").and_then(|v| v.as_u64()).map(|v| v as u32),
-            product_tier: args
-                .get("productTier")
-                .and_then(|v| v.as_str())
-                .map(String::from),
+            product_tier: args.get("productTier").and_then(|v| v.as_str()).map(String::from),
             style: args.get("style").and_then(|v| v.as_str()).map(String::from),
         };
 
@@ -372,10 +357,7 @@ impl McpServer {
         let params = FamilySearchParams {
             family_slug,
             query,
-            offset: args
-                .get("offset")
-                .and_then(|v| v.as_u64())
-                .map(|v| v as u32),
+            offset: args.get("offset").and_then(|v| v.as_u64()).map(|v| v as u32),
             limit: args.get("limit").and_then(|v| v.as_u64()).map(|v| v as u32),
         };
 
@@ -403,28 +385,24 @@ impl McpServer {
         let size = args
             .get("size")
             .and_then(|v| v.as_u64())
-            .ok_or_else(|| anyhow::anyhow!("Missing required parameter: size"))?
-            as u32;
+            .ok_or_else(|| anyhow::anyhow!("Missing required parameter: size"))? as u32;
 
-        let colors = args.get("colors").and_then(|v| v.as_array()).map(|arr| {
-            arr.iter()
-                .filter_map(|v| v.as_str().map(String::from))
-                .collect()
-        });
+        let colors = args
+            .get("colors")
+            .and_then(|v| v.as_array())
+            .map(|arr| {
+                arr.iter()
+                    .filter_map(|v| v.as_str().map(String::from))
+                    .collect()
+            });
 
         let params = DownloadSvgParams {
             icon_hash,
             size,
             colors,
-            background_color: args
-                .get("backgroundColor")
-                .and_then(|v| v.as_str())
-                .map(String::from),
+            background_color: args.get("backgroundColor").and_then(|v| v.as_str()).map(String::from),
             responsive: args.get("responsive").and_then(|v| v.as_bool()),
-            stroke_width: args
-                .get("strokeWidth")
-                .and_then(|v| v.as_f64())
-                .map(|v| v as f32),
+            stroke_width: args.get("strokeWidth").and_then(|v| v.as_f64()).map(|v| v as f32),
             stroke_to_fill: args.get("strokeToFill").and_then(|v| v.as_bool()),
             base64: args.get("base64").and_then(|v| v.as_bool()),
         };
@@ -442,27 +420,23 @@ impl McpServer {
         let size = args
             .get("size")
             .and_then(|v| v.as_u64())
-            .ok_or_else(|| anyhow::anyhow!("Missing required parameter: size"))?
-            as u32;
+            .ok_or_else(|| anyhow::anyhow!("Missing required parameter: size"))? as u32;
 
-        let colors = args.get("colors").and_then(|v| v.as_array()).map(|arr| {
-            arr.iter()
-                .filter_map(|v| v.as_str().map(String::from))
-                .collect()
-        });
+        let colors = args
+            .get("colors")
+            .and_then(|v| v.as_array())
+            .map(|arr| {
+                arr.iter()
+                    .filter_map(|v| v.as_str().map(String::from))
+                    .collect()
+            });
 
         let params = DownloadPngParams {
             icon_hash,
             size,
             colors,
-            background_color: args
-                .get("backgroundColor")
-                .and_then(|v| v.as_str())
-                .map(String::from),
-            stroke_width: args
-                .get("strokeWidth")
-                .and_then(|v| v.as_f64())
-                .map(|v| v as f32),
+            background_color: args.get("backgroundColor").and_then(|v| v.as_str()).map(String::from),
+            stroke_width: args.get("strokeWidth").and_then(|v| v.as_f64()).map(|v| v as f32),
         };
 
         let bytes = self.client.download_png(params).await?;
@@ -488,6 +462,7 @@ impl Base64Encoder {
     }
 
     fn finish(self) -> String {
+        use std::fmt::Write;
         const ALPHABET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
         let mut result = String::new();
 
@@ -496,17 +471,17 @@ impl Base64Encoder {
             let b1 = chunk.get(1).copied().unwrap_or(0) as usize;
             let b2 = chunk.get(2).copied().unwrap_or(0) as usize;
 
-            result.push(ALPHABET[(b0 >> 2) & 0x3F] as char);
-            result.push(ALPHABET[((b0 << 4) | (b1 >> 4)) & 0x3F] as char);
+            let _ = write!(result, "{}", ALPHABET[(b0 >> 2) & 0x3F] as char);
+            let _ = write!(result, "{}", ALPHABET[((b0 << 4) | (b1 >> 4)) & 0x3F] as char);
 
             if chunk.len() > 1 {
-                result.push(ALPHABET[((b1 << 2) | (b2 >> 6)) & 0x3F] as char);
+                let _ = write!(result, "{}", ALPHABET[((b1 << 2) | (b2 >> 6)) & 0x3F] as char);
             } else {
                 result.push('=');
             }
 
             if chunk.len() > 2 {
-                result.push(ALPHABET[b2 & 0x3F] as char);
+                let _ = write!(result, "{}", ALPHABET[b2 & 0x3F] as char);
             } else {
                 result.push('=');
             }
