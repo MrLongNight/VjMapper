@@ -1,15 +1,42 @@
 (
     version: "1.0.0",
     metadata: (
-        created_at: "2025-12-23T20:18:07.304118800Z",
-        modified_at: "2025-12-23T20:18:07.304121900Z",
+        created_at: "2025-12-24T22:30:04.416720500Z",
+        modified_at: "2025-12-24T22:30:04.416722100Z",
     ),
     app_state: (
         name: "New Project",
         version: "0.1.0",
         paint_manager: (
-            paints: [],
-            next_id: 1,
+            paints: [
+                (
+                    id: 1,
+                    name: "New Color",
+                    paint_type: Color,
+                    source_path: None,
+                    rate: 1.0,
+                    is_playing: false,
+                    loop_playback: true,
+                    opacity: 1.0,
+                    color: (0.31342134, 0.03222089, 0.8055218, 1.0),
+                    lock_aspect: true,
+                    dimensions: (1920.0, 1080.0),
+                ),
+                (
+                    id: 2,
+                    name: "New Color",
+                    paint_type: Color,
+                    source_path: None,
+                    rate: 1.0,
+                    is_playing: false,
+                    loop_playback: true,
+                    opacity: 1.0,
+                    color: (1.0, 1.0, 1.0, 1.0),
+                    lock_aspect: true,
+                    dimensions: (1920.0, 1080.0),
+                ),
+            ],
+            next_id: 3,
         ),
         mapping_manager: (
             mappings: [],
@@ -37,6 +64,8 @@
             fft_size: 1024,
             overlap: 0.5,
             smoothing: 0.8,
+            gain: 1.0,
+            noise_gate: 0.01,
         ),
         oscillator_config: (
             simulation_resolution: Medium,

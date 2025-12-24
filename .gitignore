@@ -50,3 +50,6 @@
 
 # vcpkg (local only, not tracked)
 /vcpkg/
+.mapmap_autosave
+project.mflow
+.mapmap_autosave
