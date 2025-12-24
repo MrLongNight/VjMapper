@@ -764,10 +764,16 @@ impl App {
                         self.ui_state.icon_manager.as_ref(),
                     );
 
-                    // Migrated Panels Integration (Controls, Stats, Master, Cue)
-                    self.ui_state.render_controls(ctx);
+                    // === UNIFIED LEFT SIDEBAR (Layers + Properties + Media) ===
+                    self.ui_state
+                        .render_left_sidebar(ctx, &mut self.state.layer_manager);
+
+                    // Performance overlay (top-right)
                     self.ui_state
                         .render_stats(ctx, self.current_fps, self.current_frame_time_ms);
+
+                    // Legacy panels (Controls, Master, Cue) - keep for compatibility
+                    self.ui_state.render_controls(ctx);
                     self.ui_state
                         .render_master_controls(ctx, &mut self.state.layer_manager);
                     self.ui_state.cue_panel.show(
@@ -838,15 +844,8 @@ impl App {
                         .effect_chain_panel
                         .ui(ctx, &self.ui_state.i18n);
 
-                    // Render Layer Panel
-                    self.ui_state.layer_panel.show(
-                        ctx,
-                        &mut self.state.layer_manager,
-                        &mut self.ui_state.selected_layer_id,
-                        &mut self.ui_state.actions,
-                        &self.ui_state.i18n,
-                        self.ui_state.icon_manager.as_ref(),
-                    );
+                    // Layer Panel disabled - now integrated in left sidebar
+                    // self.ui_state.layer_panel.show(...);
 
                     // Render Paint Panel
                     self.ui_state.paint_panel.render(
@@ -875,19 +874,38 @@ impl App {
                     // Render Icon Gallery
                     self.ui_state.render_icon_demo(ctx);
 
-                    // Render Media Browser
-                    self.ui_state.render_media_browser(ctx);
+                    // Media Browser disabled - now integrated in left sidebar
+                    // self.ui_state.render_media_browser(ctx);
 
-                    // Render Timeline as bottom panel
+                    // === BOTTOM PANEL (Timeline + Audio Waveform) ===
                     if self.ui_state.show_timeline {
+                        let analysis = self.audio_analyzer.get_latest_analysis();
+
                         egui::TopBottomPanel::bottom("timeline_panel")
                             .resizable(true)
-                            .default_height(200.0)
-                            .min_height(100.0)
-                            .max_height(400.0)
+                            .default_height(250.0)
+                            .min_height(120.0)
+                            .max_height(450.0)
                             .show(ctx, |ui| {
+                                // Timeline Header with controls
                                 ui.horizontal(|ui| {
                                     ui.heading("Timeline");
+                                    ui.separator();
+                                    // Simple audio level indicator
+                                    let audio_level = analysis.rms_volume.min(1.0);
+                                    let level_color = if audio_level > 0.7 {
+                                        egui::Color32::from_rgb(255, 100, 100)
+                                    } else if audio_level > 0.3 {
+                                        egui::Color32::from_rgb(100, 255, 100)
+                                    } else {
+                                        egui::Color32::from_rgb(100, 100, 255)
+                                    };
+                                    ui.add(
+                                        egui::ProgressBar::new(audio_level)
+                                            .fill(level_color)
+                                            .desired_width(60.0),
+                                    );
+
                                     ui.with_layout(
                                         egui::Layout::right_to_left(egui::Align::Center),
                                         |ui| {
@@ -897,8 +915,42 @@ impl App {
                                         },
                                     );
                                 });
+
                                 ui.separator();
+
+                                // Main timeline content
                                 let _ = self.ui_state.timeline_panel.ui(ui);
+
+                                ui.separator();
+
+                                // Audio waveform section at bottom
+                                ui.horizontal(|ui| {
+                                    ui.label("Audio:");
+                                    // Show frequency bands as mini-visualizer
+                                    let band_width = 8.0;
+                                    let max_height = 30.0;
+                                    for (i, &band) in
+                                        analysis.band_energies.iter().take(8).enumerate()
+                                    {
+                                        let height = (band * max_height).min(max_height);
+                                        let hue = i as f32 / 8.0;
+                                        let color =
+                                            egui::ecolor::Hsva::new(hue * 0.3 + 0.5, 0.8, 0.9, 1.0);
+                                        let rect = ui.available_rect_before_wrap();
+                                        ui.allocate_space(egui::vec2(band_width, max_height));
+                                        ui.painter().rect_filled(
+                                            egui::Rect::from_min_size(
+                                                egui::pos2(
+                                                    rect.min.x + i as f32 * (band_width + 2.0),
+                                                    rect.min.y + max_height - height,
+                                                ),
+                                                egui::vec2(band_width, height),
+                                            ),
+                                            2.0,
+                                            color,
+                                        );
+                                    }
+                                });
                             });
                     }
 

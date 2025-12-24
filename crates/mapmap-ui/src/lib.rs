@@ -292,6 +292,125 @@ impl AppUI {
         self.icon_demo_panel.visible = !self.icon_demo_panel.visible;
     }
 
+    /// Render unified left sidebar with Layers hierarchy and Properties
+    pub fn render_left_sidebar(
+        &mut self,
+        ctx: &egui::Context,
+        layer_manager: &mut mapmap_core::LayerManager,
+    ) {
+        egui::SidePanel::left("left_sidebar")
+            .resizable(true)
+            .default_width(280.0)
+            .min_width(200.0)
+            .max_width(450.0)
+            .show(ctx, |ui| {
+                // === SURFACES / LAYERS SECTION (Top) ===
+                egui::CollapsingHeader::new(self.i18n.t("panel-layers"))
+                    .default_open(true)
+                    .show(ui, |ui| {
+                        // Toolbar
+                        ui.horizontal(|ui| {
+                            if ui.button(self.i18n.t("btn-add-layer")).clicked() {
+                                self.actions.push(UIAction::AddLayer);
+                            }
+                            if ui
+                                .add_enabled(
+                                    self.selected_layer_id.is_some(),
+                                    egui::Button::new("−"),
+                                )
+                                .on_hover_text(self.i18n.t("tooltip-remove-layer"))
+                                .clicked()
+                            {
+                                if let Some(id) = self.selected_layer_id {
+                                    self.actions.push(UIAction::RemoveLayer(id));
+                                    self.selected_layer_id = None;
+                                }
+                            }
+                        });
+
+                        ui.separator();
+
+                        // Layer list
+                        egui::ScrollArea::vertical()
+                            .max_height(200.0)
+                            .show(ui, |ui| {
+                                let layer_ids: Vec<u64> =
+                                    layer_manager.layers().iter().map(|l| l.id).collect();
+
+                                for layer_id in layer_ids {
+                                    if let Some(layer) = layer_manager.get_layer_mut(layer_id) {
+                                        let is_selected = self.selected_layer_id == Some(layer_id);
+
+                                        let response =
+                                            ui.selectable_label(is_selected, &layer.name);
+                                        if response.clicked() {
+                                            self.selected_layer_id = Some(layer_id);
+                                        }
+                                    }
+                                }
+                            });
+                    });
+
+                ui.separator();
+
+                // === PROPERTIES SECTION (Bottom) ===
+                egui::CollapsingHeader::new("Properties")
+                    .default_open(true)
+                    .show(ui, |ui| {
+                        if let Some(layer_id) = self.selected_layer_id {
+                            if let Some(layer) = layer_manager.get_layer_mut(layer_id) {
+                                // Opacity slider
+                                ui.horizontal(|ui| {
+                                    ui.label("Opacity:");
+                                    ui.add(
+                                        egui::Slider::new(&mut layer.opacity, 0.0..=1.0)
+                                            .show_value(true),
+                                    );
+                                });
+
+                                // Blend mode
+                                ui.horizontal(|ui| {
+                                    ui.label("Blend:");
+                                    egui::ComboBox::from_id_source("blend_mode")
+                                        .selected_text(format!("{:?}", layer.blend_mode))
+                                        .show_ui(ui, |ui| {
+                                            for mode in mapmap_core::BlendMode::all() {
+                                                ui.selectable_value(
+                                                    &mut layer.blend_mode,
+                                                    *mode,
+                                                    format!("{:?}", mode),
+                                                );
+                                            }
+                                        });
+                                });
+
+                                ui.separator();
+
+                                // Visibility toggles
+                                ui.horizontal(|ui| {
+                                    ui.checkbox(&mut layer.visible, "Visible");
+                                    ui.checkbox(&mut layer.solo, "Solo");
+                                    ui.checkbox(&mut layer.bypass, "Bypass");
+                                });
+                            }
+                        } else {
+                            ui.label(self.i18n.t("transform-no-layer"));
+                        }
+                    });
+
+                ui.separator();
+
+                // === MEDIA SECTION ===
+                egui::CollapsingHeader::new(self.i18n.t("media-browser-title"))
+                    .default_open(true)
+                    .show(ui, |ui| {
+                        let _ = self
+                            .media_browser
+                            .ui(ui, &self.i18n, self.icon_manager.as_ref());
+                    });
+            });
+    }
+
     /// Render the media browser as left side panel
     pub fn render_media_browser(&mut self, ctx: &egui::Context) {
         if !self.show_media_browser {
