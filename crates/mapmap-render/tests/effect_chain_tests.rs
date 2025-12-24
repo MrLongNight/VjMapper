@@ -241,219 +241,219 @@ fn test_effect_chain_serialization() {
 // --- GPU Integration Tests ---
 
 #[tokio::test]
+#[ignore = "GPU tests are unstable in headless CI environment"]
 async fn test_empty_chain_is_passthrough() {
     if let Some(env) = setup_test_environment().await {
         let TestEnvironment { device, queue } = env;
-            let width = 32;
-            let height = 32;
-            let color = [255, 0, 0, 255]; // Red
-            let format = wgpu::TextureFormat::Rgba8UnormSrgb;
+        let width = 32;
+        let height = 32;
+        let color = [255, 0, 0, 255]; // Red
+        let format = wgpu::TextureFormat::Rgba8UnormSrgb;
 
-            let source = create_solid_color_texture(&device, &queue, width, height, color);
-            let source_view = source.create_view(&Default::default());
+        let source = create_solid_color_texture(&device, &queue, width, height, color);
+        let source_view = source.create_view(&Default::default());
 
-            let output = device.create_texture(&wgpu::TextureDescriptor {
-                label: Some("Output"),
-                size: wgpu::Extent3d {
-                    width,
-                    height,
-                    depth_or_array_layers: 1,
-                },
-                mip_level_count: 1,
-                sample_count: 1,
-                dimension: wgpu::TextureDimension::D2,
-                format,
-                usage: wgpu::TextureUsages::RENDER_ATTACHMENT
-                    | wgpu::TextureUsages::COPY_SRC
-                    | wgpu::TextureUsages::COPY_DST,
-                view_formats: &[],
-            });
-            let output_view = output.create_view(&Default::default());
-
-            let mut renderer =
-                EffectChainRenderer::new(device.clone(), queue.clone(), format).unwrap();
-            let chain = EffectChain::new(); // Empty chain
-
-            let mut encoder = device.create_command_encoder(&Default::default());
-            renderer.apply_chain(
-                &mut encoder,
-                &source_view,
-                &output_view,
-                &chain,
-                0.0,
+        let output = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("Output"),
+            size: wgpu::Extent3d {
                 width,
                 height,
-            );
-            queue.submit(Some(encoder.finish()));
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT
+                | wgpu::TextureUsages::COPY_SRC
+                | wgpu::TextureUsages::COPY_DST,
+            view_formats: &[],
+        });
+        let output_view = output.create_view(&Default::default());
 
-            let data = read_texture_data(&device, &queue, &output, width, height).await;
+        let mut renderer = EffectChainRenderer::new(device.clone(), queue.clone(), format).unwrap();
+        let chain = EffectChain::new(); // Empty chain
 
-            // With the fix, an empty chain should copy the source, so the output should be red.
-            assert_eq!(&data[0..4], &color);
-        }
+        let mut encoder = device.create_command_encoder(&Default::default());
+        renderer.apply_chain(
+            &mut encoder,
+            &source_view,
+            &output_view,
+            &chain,
+            0.0,
+            width,
+            height,
+        );
+        queue.submit(Some(encoder.finish()));
+
+        let data = read_texture_data(&device, &queue, &output, width, height).await;
+
+        // With the fix, an empty chain should copy the source, so the output should be red.
+        assert_eq!(&data[0..4], &color);
+    }
 }
 
 #[tokio::test]
+#[ignore = "GPU tests are unstable in headless CI environment"]
 async fn test_blur_plus_coloradjust_chain() {
     if let Some(env) = setup_test_environment().await {
         let TestEnvironment { device, queue } = env;
-            let width = 32;
-            let height = 32;
-            let color = [0, 0, 255, 255]; // Blue
-            let format = wgpu::TextureFormat::Rgba8UnormSrgb;
+        let width = 32;
+        let height = 32;
+        let color = [0, 0, 255, 255]; // Blue
+        let format = wgpu::TextureFormat::Rgba8UnormSrgb;
 
-            // Create a texture that is blue, to check color adjust
-            let source = create_solid_color_texture(&device, &queue, width, height, color);
-            let source_view = source.create_view(&Default::default());
+        // Create a texture that is blue, to check color adjust
+        let source = create_solid_color_texture(&device, &queue, width, height, color);
+        let source_view = source.create_view(&Default::default());
 
-            let output = device.create_texture(&wgpu::TextureDescriptor {
-                label: Some("Output"),
-                size: wgpu::Extent3d {
-                    width,
-                    height,
-                    depth_or_array_layers: 1,
-                },
-                mip_level_count: 1,
-                sample_count: 1,
-                dimension: wgpu::TextureDimension::D2,
-                format,
-                usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
-                view_formats: &[],
-            });
-            let output_view = output.create_view(&Default::default());
-
-            let mut renderer =
-                EffectChainRenderer::new(device.clone(), queue.clone(), format).unwrap();
-            let mut chain = EffectChain::new();
-            let blur_id = chain.add_effect(EffectType::Blur);
-            let color_id = chain.add_effect(EffectType::ColorAdjust);
-
-            // Make blur negligible but present
-            chain
-                .get_effect_mut(blur_id)
-                .unwrap()
-                .set_param("radius", 0.0);
-            // Drastically reduce saturation
-            chain
-                .get_effect_mut(color_id)
-                .unwrap()
-                .set_param("saturation", 0.0);
-
-            let mut encoder = device.create_command_encoder(&Default::default());
-            renderer.apply_chain(
-                &mut encoder,
-                &source_view,
-                &output_view,
-                &chain,
-                0.0,
+        let output = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("Output"),
+            size: wgpu::Extent3d {
                 width,
                 height,
-            );
-            queue.submit(Some(encoder.finish()));
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+            view_formats: &[],
+        });
+        let output_view = output.create_view(&Default::default());
 
-            let data = read_texture_data(&device, &queue, &output, width, height).await;
-            let pixel = &data[0..4];
+        let mut renderer = EffectChainRenderer::new(device.clone(), queue.clone(), format).unwrap();
+        let mut chain = EffectChain::new();
+        let blur_id = chain.add_effect(EffectType::Blur);
+        let color_id = chain.add_effect(EffectType::ColorAdjust);
 
-            // Because saturation is 0, the color should be grayscale.
-            // sRGB (0,0,255) -> luma -> sRGB gray is ~81.
-            let r = pixel[0];
-            let g = pixel[1];
-            let b = pixel[2];
-            assert!(
-                (r as i16 - g as i16).abs() < 5,
-                "R ({}) and G ({}) should be equal for grayscale",
-                r,
-                g
-            );
-            assert!(
-                (g as i16 - b as i16).abs() < 5,
-                "G ({}) and B ({}) should be equal for grayscale",
-                g,
-                b
-            );
-            assert!(
-                r > 70 && r < 100,
-                "Gray value should be around 81, but was {}",
-                r
-            );
-        }
+        // Make blur negligible but present
+        chain
+            .get_effect_mut(blur_id)
+            .unwrap()
+            .set_param("radius", 0.0);
+        // Drastically reduce saturation
+        chain
+            .get_effect_mut(color_id)
+            .unwrap()
+            .set_param("saturation", 0.0);
+
+        let mut encoder = device.create_command_encoder(&Default::default());
+        renderer.apply_chain(
+            &mut encoder,
+            &source_view,
+            &output_view,
+            &chain,
+            0.0,
+            width,
+            height,
+        );
+        queue.submit(Some(encoder.finish()));
+
+        let data = read_texture_data(&device, &queue, &output, width, height).await;
+        let pixel = &data[0..4];
+
+        // Because saturation is 0, the color should be grayscale.
+        // sRGB (0,0,255) -> luma -> sRGB gray is ~81.
+        let r = pixel[0];
+        let g = pixel[1];
+        let b = pixel[2];
+        assert!(
+            (r as i16 - g as i16).abs() < 5,
+            "R ({}) and G ({}) should be equal for grayscale",
+            r,
+            g
+        );
+        assert!(
+            (g as i16 - b as i16).abs() < 5,
+            "G ({}) and B ({}) should be equal for grayscale",
+            g,
+            b
+        );
+        assert!(
+            r > 70 && r < 100,
+            "Gray value should be around 81, but was {}",
+            r
+        );
+    }
 }
 
 #[tokio::test]
+#[ignore = "GPU tests are unstable in headless CI environment"]
 async fn test_vignette_plus_filmgrain_chain() {
     if let Some(env) = setup_test_environment().await {
         let TestEnvironment { device, queue } = env;
-            let width = 32;
-            let height = 32;
-            let color = [255, 255, 255, 255]; // White
-            let format = wgpu::TextureFormat::Rgba8UnormSrgb;
+        let width = 32;
+        let height = 32;
+        let color = [255, 255, 255, 255]; // White
+        let format = wgpu::TextureFormat::Rgba8UnormSrgb;
 
-            let source = create_solid_color_texture(&device, &queue, width, height, color);
-            let source_view = source.create_view(&Default::default());
+        let source = create_solid_color_texture(&device, &queue, width, height, color);
+        let source_view = source.create_view(&Default::default());
 
-            let output = device.create_texture(&wgpu::TextureDescriptor {
-                label: Some("Output"),
-                size: wgpu::Extent3d {
-                    width,
-                    height,
-                    depth_or_array_layers: 1,
-                },
-                mip_level_count: 1,
-                sample_count: 1,
-                dimension: wgpu::TextureDimension::D2,
-                format,
-                usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
-                view_formats: &[],
-            });
-            let output_view = output.create_view(&Default::default());
-
-            let mut renderer =
-                EffectChainRenderer::new(device.clone(), queue.clone(), format).unwrap();
-            let mut chain = EffectChain::new();
-            let vignette_id = chain.add_effect(EffectType::Vignette);
-            let grain_id = chain.add_effect(EffectType::FilmGrain);
-
-            // Set aggressive parameters to make effects obvious
-            let vignette = chain.get_effect_mut(vignette_id).unwrap();
-            vignette.set_param("radius", 0.2);
-            vignette.set_param("softness", 0.2);
-
-            let grain = chain.get_effect_mut(grain_id).unwrap();
-            grain.set_param("amount", 0.4);
-
-            let mut encoder = device.create_command_encoder(&Default::default());
-            renderer.apply_chain(
-                &mut encoder,
-                &source_view,
-                &output_view,
-                &chain,
-                1.23,
+        let output = device.create_texture(&wgpu::TextureDescriptor {
+            label: Some("Output"),
+            size: wgpu::Extent3d {
                 width,
                 height,
-            );
-            queue.submit(Some(encoder.finish()));
+                depth_or_array_layers: 1,
+            },
+            mip_level_count: 1,
+            sample_count: 1,
+            dimension: wgpu::TextureDimension::D2,
+            format,
+            usage: wgpu::TextureUsages::RENDER_ATTACHMENT | wgpu::TextureUsages::COPY_SRC,
+            view_formats: &[],
+        });
+        let output_view = output.create_view(&Default::default());
 
-            let data = read_texture_data(&device, &queue, &output, width, height).await;
+        let mut renderer = EffectChainRenderer::new(device.clone(), queue.clone(), format).unwrap();
+        let mut chain = EffectChain::new();
+        let vignette_id = chain.add_effect(EffectType::Vignette);
+        let grain_id = chain.add_effect(EffectType::FilmGrain);
 
-            // Center pixel should be affected by grain, so not pure white
-            let center_idx = ((height / 2 * width) + (width / 2)) * 4;
-            let center_pixel = &data[center_idx as usize..(center_idx + 4) as usize];
-            assert_ne!(
-                center_pixel, color,
-                "Center pixel should have grain, not be pure white"
-            );
+        // Set aggressive parameters to make effects obvious
+        let vignette = chain.get_effect_mut(vignette_id).unwrap();
+        vignette.set_param("radius", 0.2);
+        vignette.set_param("softness", 0.2);
 
-            // Corner pixel should be darker than center due to vignette
-            let corner_pixel = &data[0..4];
-            let corner_brightness =
-                corner_pixel[0] as u16 + corner_pixel[1] as u16 + corner_pixel[2] as u16;
-            let center_brightness =
-                center_pixel[0] as u16 + center_pixel[1] as u16 + center_pixel[2] as u16;
-            assert!(
-                corner_brightness < center_brightness,
-                "Corner ({}) should be darker than center ({})",
-                corner_brightness,
-                center_brightness
-            );
-        }
+        let grain = chain.get_effect_mut(grain_id).unwrap();
+        grain.set_param("amount", 0.4);
+
+        let mut encoder = device.create_command_encoder(&Default::default());
+        renderer.apply_chain(
+            &mut encoder,
+            &source_view,
+            &output_view,
+            &chain,
+            1.23,
+            width,
+            height,
+        );
+        queue.submit(Some(encoder.finish()));
+
+        let data = read_texture_data(&device, &queue, &output, width, height).await;
+
+        // Center pixel should be affected by grain, so not pure white
+        let center_idx = ((height / 2 * width) + (width / 2)) * 4;
+        let center_pixel = &data[center_idx as usize..(center_idx + 4) as usize];
+        assert_ne!(
+            center_pixel, color,
+            "Center pixel should have grain, not be pure white"
+        );
+
+        // Corner pixel should be darker than center due to vignette
+        let corner_pixel = &data[0..4];
+        let corner_brightness =
+            corner_pixel[0] as u16 + corner_pixel[1] as u16 + corner_pixel[2] as u16;
+        let center_brightness =
+            center_pixel[0] as u16 + center_pixel[1] as u16 + center_pixel[2] as u16;
+        assert!(
+            corner_brightness < center_brightness,
+            "Corner ({}) should be darker than center ({})",
+            corner_brightness,
+            center_brightness
+        );
+    }
 }

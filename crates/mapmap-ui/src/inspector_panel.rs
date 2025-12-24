@@ -17,6 +17,7 @@ pub struct InspectorPanel {
     /// Whether the inspector is visible
     pub visible: bool,
     /// Internal transform panel for layer properties
+    #[allow(dead_code)]
     transform_panel: TransformPanel,
 }
 
@@ -116,10 +117,10 @@ impl InspectorPanel {
         ui: &mut Ui,
         layer: &Layer,
         transform: &Transform,
-        i18n: &LocaleManager,
+        _i18n: &LocaleManager,
         _icon_manager: Option<&IconManager>,
     ) -> Option<InspectorAction> {
-        let mut action = None;
+        let action = None;
 
         // Layer header with icon
         ui.horizontal(|ui| {
