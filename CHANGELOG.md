@@ -5,10 +5,34 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.2.0] - 2025-12-22: MapFlow Rebranding
-- 2025-12-23: Fix: Resize-Prozess bei Fenstergrößenanpassung robust gegen fehlende Größenangaben gemacht (siehe PR #104)
-- **REBRANDING:** Das Projekt wurde von **MapFlow** in **MapFlow** umbenannt.
-## [0.2.0] - 2025-12-23: MapFlow & UI Modernization
+## [0.2.0] - 2025-12-24: MapFlow & UI Modernization
+
+### UI Layout & Design (2025-12-24)
+- **Zone-Based Layout**: Professionelles DAW-Style Layout implementiert
+  - Linkes Panel: MediaBrowser und Layer-Hierarchie
+  - Rechtes Panel: Context-Sensitive Inspector (Layer/Output Properties)
+  - Unteres Panel: Timeline mit Audio-Waveform
+  - Zentrales Panel: Hauptviewport/Canvas
+- **Inspector Panel**: Context-Sensitive Properties Panel
+  - Automatische Kontexterkennung (Layer vs. Output)
+  - Layer-Properties: Transform, Blend Mode, Opacity
+  - Output-Properties: Resolution, Edge Blend, Color Calibration
+- **Performance Overlay**: Real-time FPS-Anzeige oben rechts
+- **Icon System Integration (Phase 6.5)**: Dashboard & Media Browser Icons
+
+### Audio Dashboard Improvements (2025-12-24)
+- **Gain/Gate Controls**: Neue Steuerelemente für Audio-Analyse
+- **Audio Panel View Modes**: Verschiedene Visualisierungsoptionen
+- **Audio Analysis Persistence**: Einstellungen werden gespeichert
+- **German Localization**: Verbesserte deutsche Übersetzungen
+
+### Bugfixes (2025-12-24)
+- fix: CpalBackend Drop-Implementation für sauberen App-Exit
+- fix: Hash-Funktion im Shader (dot() returns scalar not vector)
+- fix: OscillatorRenderer Import und last_update Feld
+- fix: Clippy-Warnungen in audio_media_pipeline und shortcut_panel
+
+## [0.2.0] - 2025-12-23: MapFlow & UI Migration
 
 ### Rebranding
 - **REBRANDING:** Das Projekt wurde von **VjMapper** in **MapFlow** umbenannt.

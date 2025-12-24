@@ -1,9 +1,9 @@
 # MapFlow – Vollständige Roadmap und Feature-Status
 
-> **Version:** 1.5  
-> **Stand:** 2025-12-23 11:45  
+> **Version:** 1.6  
+> **Stand:** 2025-12-24 21:30  
 > **Zielgruppe:** @jules und Entwickler-Team  
-> **Projekt-Version:** 0.1.0
+> **Projekt-Version:** 0.2.0
 
 ---
 
@@ -280,7 +280,8 @@
   - ✅ Zone-Based Layout (Left MediaBrowser, Right Inspector, Bottom Timeline) - COMPLETED 2025-12-24
   - ✅ Performance Overlay (Top-Right, Real FPS) - COMPLETED 2025-12-24
   - ✅ Inspector Panel (Context-Sensitive: Layer/Output properties) - COMPLETED 2025-12-24
-  - ⬜ Icon System (Streamline Ultimate) - Partial
+  - ✅ Icon System Integration (Phase 6.5: Dashboard & Media Browser) - COMPLETED 2025-12-24
+  - ✅ Audio Dashboard Refactor (Gain/Gate Controls, View Modes, Persistence) - COMPLETED 2025-12-24
 
 - 🟡 **Internationalisierung (i18n) – NEU**
   - ✅ Sprachauswahl UI (Deutsch / Englisch)
