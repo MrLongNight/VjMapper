@@ -20,6 +20,19 @@ pub enum AppIcon {
     ImageFile,
     Screen,
     Monitor,
+    FloppyDisk,
+    ArrowLeft,
+    ArrowRight,
+    Pencil,
+    AppWindow,
+    InfoCircle,
+    Hand,
+    ButtonPause,
+    Repeat,
+    Eye,
+    EyeSlash,
+    Lock,
+    LockOpen,
 }
 
 impl AppIcon {
@@ -37,6 +50,19 @@ impl AppIcon {
             Self::ImageFile => "ultimate_image_file.svg",
             Self::Screen => "ultimate_screen.svg",
             Self::Monitor => "ultimate_monitor.svg",
+            Self::FloppyDisk => "ultimate_floppy_disk.svg",
+            Self::ArrowLeft => "ultimate_arrow_left.svg",
+            Self::ArrowRight => "ultimate_arrow_right.svg",
+            Self::Pencil => "ultimate_pencil.svg",
+            Self::AppWindow => "ultimate_app_window.svg",
+            Self::InfoCircle => "ultimate_info_circle.svg",
+            Self::Hand => "ultimate_hand.svg",
+            Self::ButtonPause => "ultimate_button_pause.svg",
+            Self::Repeat => "ultimate_repeat.svg",
+            Self::Eye => "ultimate_eye.svg",
+            Self::EyeSlash => "ultimate_eye_slash.svg",
+            Self::Lock => "ultimate_lock.svg",
+            Self::LockOpen => "ultimate_lock_open.svg",
         }
     }
 
@@ -47,6 +73,8 @@ impl AppIcon {
             Self::AudioFile,
             Self::MusicNote,
             Self::ButtonStop,
+            Self::ButtonPause,
+            Self::Repeat,
             Self::VinylRecord,
             Self::VideoFile,
             Self::Cog,
@@ -54,6 +82,17 @@ impl AppIcon {
             Self::ImageFile,
             Self::Screen,
             Self::Monitor,
+            Self::FloppyDisk,
+            Self::ArrowLeft,
+            Self::ArrowRight,
+            Self::Pencil,
+            Self::AppWindow,
+            Self::InfoCircle,
+            Self::Hand,
+            Self::Eye,
+            Self::EyeSlash,
+            Self::Lock,
+            Self::LockOpen,
         ]
     }
 }

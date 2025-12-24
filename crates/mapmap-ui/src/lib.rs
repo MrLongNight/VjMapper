@@ -19,6 +19,7 @@ pub mod effect_chain_panel;
 pub mod i18n;
 pub mod icon_demo_panel;
 pub mod icons;
+pub mod inspector_panel;
 pub mod layer_panel;
 pub mod mapping_panel;
 pub mod media_browser;
@@ -48,6 +49,7 @@ pub use effect_chain_panel::{
     EffectChainAction, EffectChainPanel, PresetEntry, UIEffect, UIEffectChain,
 };
 
+pub use inspector_panel::{InspectorAction, InspectorContext, InspectorPanel};
 pub use layer_panel::{LayerPanel, LayerPanelAction};
 pub use mapping_panel::MappingPanel;
 pub use media_browser::{MediaBrowser, MediaBrowserAction, MediaEntry, MediaType};
@@ -134,6 +136,8 @@ pub enum UIAction {
 
     // Audio actions
     SelectAudioDevice(String),
+    UpdateAudioConfig(mapmap_core::audio::AudioConfig),
+    ToggleAudioPanel,
 
     // Settings
     SetLanguage(String),
@@ -158,6 +162,7 @@ pub struct AppUI {
     pub show_controls: bool,
     pub show_stats: bool,
     pub show_layers: bool,
+    pub show_toolbar: bool,
 
     pub show_timeline: bool,
     pub show_shader_graph: bool,
@@ -197,6 +202,9 @@ pub struct AppUI {
     pub show_settings: bool,
     pub show_media_browser: bool,
     pub media_browser: MediaBrowser,
+    /// Inspector panel for context-sensitive properties
+    pub inspector_panel: InspectorPanel,
+    pub show_inspector: bool,
 }
 
 impl Default for AppUI {
@@ -205,25 +213,25 @@ impl Default for AppUI {
             menu_bar: menu_bar::MenuBar::default(),
             dashboard: Dashboard::default(),
             paint_panel: PaintPanel::default(),
-            show_osc_panel: true,
+            show_osc_panel: false, // Hide by default - advanced feature
             selected_control_target: ControlTarget::Custom("".to_string()),
             osc_port_input: "8000".to_string(),
             osc_client_input: "127.0.0.1:9000".to_string(),
-            show_controls: true,
-            show_stats: true,
+            show_controls: false, // Hide by default - use Dashboard instead
+            show_stats: true,     // Keep performance overlay
             show_layers: true,
             layer_panel: LayerPanel { visible: true },
-            show_mappings: true,
-            mapping_panel: MappingPanel { visible: true },
-            show_transforms: true,
-            show_master_controls: true,
-            show_outputs: true,
-            output_panel: output_panel::OutputPanel { visible: true },
+            show_mappings: false, // Hide by default - use Inspector when ready
+            mapping_panel: MappingPanel { visible: false },
+            show_transforms: false,     // Hide - will move to Inspector
+            show_master_controls: true, // Keep visible
+            show_outputs: false,        // Hide by default
+            output_panel: output_panel::OutputPanel { visible: false },
             edge_blend_panel: EdgeBlendPanel::default(),
-            oscillator_panel: OscillatorPanel { visible: true },
-            show_audio: true,
+            oscillator_panel: OscillatorPanel { visible: false }, // Hide by default
+            show_audio: false, // Hide by default - use Dashboard toggle
             audio_panel: AudioPanel::default(),
-            show_cue_panel: true,
+            show_cue_panel: false, // Hide by default
             playback_speed: 1.0,
             loop_mode: mapmap_media::LoopMode::Loop,
             selected_layer_id: None,
@@ -242,17 +250,20 @@ impl Default for AppUI {
             effect_chain_panel: EffectChainPanel::default(),
             cue_panel: CuePanel::default(),
             timeline_panel: timeline_v2::TimelineV2::default(),
-            show_timeline: true,
-            show_shader_graph: true,
+            show_timeline: true,      // Essential panel
+            show_shader_graph: false, // Advanced - hide by default
             node_editor_panel: node_editor::NodeEditor::default(),
             transform_panel: TransformPanel::default(),
             shortcut_panel: ShortcutPanel::new(),
+            show_toolbar: true,
             icon_manager: None, // Will be initialized with egui context
             icon_demo_panel: icon_demo_panel::IconDemoPanel::default(),
             user_config: config::UserConfig::load(),
             show_settings: false,
-            show_media_browser: true,
+            show_media_browser: true, // Essential panel
             media_browser: MediaBrowser::new(std::env::current_dir().unwrap_or_default()),
+            inspector_panel: InspectorPanel::default(),
+            show_inspector: true, // Essential panel
         }
     }
 }
@@ -281,16 +292,27 @@ impl AppUI {
         self.icon_demo_panel.visible = !self.icon_demo_panel.visible;
     }
 
-    /// Render the media browser
+    /// Render the media browser as left side panel
     pub fn render_media_browser(&mut self, ctx: &egui::Context) {
         if !self.show_media_browser {
             return;
         }
 
-        egui::Window::new("Media Browser")
-            .default_size([400.0, 300.0])
-            .open(&mut self.show_media_browser) // Allow closing it
+        egui::SidePanel::left("media_browser_panel")
+            .resizable(true)
+            .default_width(280.0)
+            .min_width(200.0)
+            .max_width(400.0)
             .show(ctx, |ui| {
+                ui.horizontal(|ui| {
+                    ui.heading(self.i18n.t("panel-media-browser"));
+                    ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+                        if ui.button("✕").clicked() {
+                            self.show_media_browser = false;
+                        }
+                    });
+                });
+                ui.separator();
                 let _ = self
                     .media_browser
                     .ui(ui, &self.i18n, self.icon_manager.as_ref());
@@ -368,22 +390,44 @@ impl AppUI {
             });
     }
 
-    /// Render performance stats (Phase 6 Migration)
-    pub fn render_stats(&mut self, ctx: &egui::Context, fps: f32, frame_time_ms: f32) {
+    /// Render performance stats as top-right overlay (Phase 6 Migration)
+    pub fn render_stats_overlay(&mut self, ctx: &egui::Context, fps: f32, frame_time_ms: f32) {
         if !self.show_stats {
             return;
         }
 
-        egui::Window::new(self.i18n.t("panel-performance"))
-            .default_size([250.0, 120.0])
+        // Use Area with anchor to position in top-right corner
+        egui::Area::new(egui::Id::new("performance_overlay"))
+            .anchor(egui::Align2::RIGHT_TOP, [-10.0, 50.0]) // Offset from menu bar
+            .order(egui::Order::Foreground)
+            .interactable(false)
             .show(ctx, |ui| {
-                ui.label(format!("{}: {:.1}", self.i18n.t("label-fps"), fps));
-                ui.label(format!(
-                    "{}: {:.2} ms",
-                    self.i18n.t("label-frame-time"),
-                    frame_time_ms
-                ));
+                egui::Frame::popup(ui.style())
+                    .fill(egui::Color32::from_rgba_unmultiplied(20, 20, 30, 220))
+                    .rounding(4.0)
+                    .stroke(egui::Stroke::new(1.0, egui::Color32::from_rgb(60, 60, 80)))
+                    .inner_margin(8.0)
+                    .show(ui, |ui| {
+                        ui.horizontal(|ui| {
+                            ui.label(
+                                egui::RichText::new(format!("FPS: {:.0}", fps))
+                                    .color(egui::Color32::from_rgb(100, 200, 100))
+                                    .strong(),
+                            );
+                            ui.separator();
+                            ui.label(
+                                egui::RichText::new(format!("{:.1}ms", frame_time_ms))
+                                    .color(egui::Color32::from_rgb(150, 150, 200)),
+                            );
+                        });
+                    });
             });
+    }
+
+    /// Legacy floating window version (deprecated)
+    pub fn render_stats(&mut self, ctx: &egui::Context, fps: f32, frame_time_ms: f32) {
+        // Redirect to overlay version
+        self.render_stats_overlay(ctx, fps, frame_time_ms);
     }
 
     /// Render master controls panel (Phase 6 Migration)

@@ -71,7 +71,6 @@ pub struct TimestampedAnalysis {
 /// Audio pipeline that integrates with media processing
 pub struct AudioMediaPipeline {
     /// Audio analyzer for FFT and beat detection
-    #[allow(dead_code)]
     analyzer: Arc<RwLock<AudioAnalyzer>>,
 
     /// Audio-reactive controller for parameter mapping
@@ -169,6 +168,11 @@ impl AudioMediaPipeline {
             is_running,
             last_analysis_time: None,
         }
+    }
+
+    /// Update the audio analyzer configuration
+    pub fn update_audio_config(&self, config: AudioConfig) {
+        self.analyzer.write().update_config(config);
     }
 
     /// Send audio samples to the pipeline
@@ -304,6 +308,16 @@ impl AudioMediaPipeline {
     pub fn seek(&mut self, position: f64) {
         self.audio_position = position;
         self.analysis_buffer.clear();
+    }
+
+    /// Get total dropped samples
+    pub fn dropped_samples(&self) -> u64 {
+        self.dropped_samples.load(Ordering::Relaxed)
+    }
+
+    /// Get reference to the audio analyzer
+    pub fn analyzer(&self) -> &Arc<RwLock<AudioAnalyzer>> {
+        &self.analyzer
     }
 
     /// Check if pipeline is active

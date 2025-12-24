@@ -91,6 +91,12 @@ struct App {
     dummy_texture: Option<wgpu::Texture>,
     /// A view of the dummy texture.
     dummy_view: Option<wgpu::TextureView>,
+    /// FPS calculation: accumulated frame times
+    fps_samples: Vec<f32>,
+    /// Current calculated FPS
+    current_fps: f32,
+    /// Current frame time in ms
+    current_frame_time_ms: f32,
 }
 
 impl App {
@@ -272,6 +278,9 @@ impl App {
             oscillator_renderer,
             dummy_texture: None,
             dummy_view: None,
+            fps_samples: Vec::with_capacity(60),
+            current_fps: 60.0,
+            current_frame_time_ms: 16.6,
         };
 
         // Create initial dummy texture
@@ -413,7 +422,17 @@ impl App {
                 if let Some(backend) = &mut self.audio_backend {
                     let samples = backend.get_samples();
                     if !samples.is_empty() {
-                        let analysis = self.audio_analyzer.process_samples(&samples, 0.0);
+                        let timestamp = self.start_time.elapsed().as_secs_f64();
+                        let analysis = self.audio_analyzer.process_samples(&samples, timestamp);
+                        // Log periodically (every ~5 seconds based on timestamp)
+                        if (timestamp as i64) % 5 == 0 {
+                            tracing::debug!(
+                                "Audio: {} samples, RMS={:.3}, Peak={:.3}",
+                                samples.len(),
+                                analysis.rms_volume,
+                                analysis.peak_volume
+                            );
+                        }
                         self.ui_state.dashboard.set_audio_analysis(analysis);
                     }
                 }
@@ -685,6 +704,23 @@ impl App {
         let delta_time = now.duration_since(self.last_update).as_secs_f32();
         self.last_update = now;
 
+        // Calculate FPS with smoothing (rolling average of last 60 frames)
+        let frame_time_ms = delta_time * 1000.0;
+        self.fps_samples.push(frame_time_ms);
+        if self.fps_samples.len() > 60 {
+            self.fps_samples.remove(0);
+        }
+        if !self.fps_samples.is_empty() {
+            let avg_frame_time: f32 =
+                self.fps_samples.iter().sum::<f32>() / self.fps_samples.len() as f32;
+            self.current_frame_time_ms = avg_frame_time;
+            self.current_fps = if avg_frame_time > 0.0 {
+                1000.0 / avg_frame_time
+            } else {
+                0.0
+            };
+        }
+
         if let Some(renderer) = &mut self.oscillator_renderer {
             if self.state.oscillator_config.enabled {
                 renderer.update(delta_time, &self.state.oscillator_config);
@@ -722,11 +758,16 @@ impl App {
                     self.ui_state.actions.extend(menu_actions);
 
                     // Render Dashboard
-                    dashboard_action = self.ui_state.dashboard.ui(ctx, &self.ui_state.i18n);
+                    dashboard_action = self.ui_state.dashboard.ui(
+                        ctx,
+                        &self.ui_state.i18n,
+                        self.ui_state.icon_manager.as_ref(),
+                    );
 
                     // Migrated Panels Integration (Controls, Stats, Master, Cue)
                     self.ui_state.render_controls(ctx);
-                    self.ui_state.render_stats(ctx, 60.0, 16.6);
+                    self.ui_state
+                        .render_stats(ctx, self.current_fps, self.current_frame_time_ms);
                     self.ui_state
                         .render_master_controls(ctx, &mut self.state.layer_manager);
                     self.ui_state.cue_panel.show(
@@ -746,25 +787,45 @@ impl App {
                                     ui,
                                     &self.ui_state.i18n,
                                     Some(&analysis),
+                                    &self.state.audio_config,
                                     &self.audio_devices,
                                     &mut self.ui_state.selected_audio_device,
                                 ) {
-                                    // Handle device change
-                                    if let Some(backend) = &mut self.audio_backend {
-                                        backend.stop();
-                                    }
-                                    self.audio_backend = None;
+                                    match action {
+                                        mapmap_ui::audio_panel::AudioPanelAction::DeviceChanged(
+                                            new_device,
+                                        ) => {
+                                            // Handle device change
+                                            if let Some(backend) = &mut self.audio_backend {
+                                                backend.stop();
+                                            }
+                                            self.audio_backend = None;
 
-                                    match CpalBackend::new(Some(action)) {
-                                        Ok(mut backend) => {
-                                            if let Err(e) = backend.start() {
-                                                error!("Failed to start audio stream: {}", e);
-                                            } else {
-                                                self.audio_backend = Some(backend);
+                                            match CpalBackend::new(Some(new_device)) {
+                                                Ok(mut backend) => {
+                                                    if let Err(e) = backend.start() {
+                                                        error!(
+                                                            "Failed to start audio stream: {}",
+                                                            e
+                                                        );
+                                                    } else {
+                                                        self.audio_backend = Some(backend);
+                                                    }
+                                                }
+                                                Err(e) => {
+                                                    error!(
+                                                        "Failed to initialize audio backend: {}",
+                                                        e
+                                                    );
+                                                }
                                             }
                                         }
-                                        Err(e) => {
-                                            error!("Failed to initialize audio backend: {}", e);
+                                        mapmap_ui::audio_panel::AudioPanelAction::ConfigChanged(
+                                            new_config,
+                                        ) => {
+                                            self.audio_analyzer.update_config(new_config.clone());
+                                            self.state.audio_config = new_config;
+                                            self.state.dirty = true;
                                         }
                                     }
                                 }
@@ -784,6 +845,7 @@ impl App {
                         &mut self.ui_state.selected_layer_id,
                         &mut self.ui_state.actions,
                         &self.ui_state.i18n,
+                        self.ui_state.icon_manager.as_ref(),
                     );
 
                     // Render Paint Panel
@@ -816,13 +878,29 @@ impl App {
                     // Render Media Browser
                     self.ui_state.render_media_browser(ctx);
 
-                    // Render Timeline
-                    egui::Window::new("Timeline")
-                        .open(&mut self.ui_state.show_timeline)
-                        .default_size([800.0, 300.0])
-                        .show(ctx, |ui| {
-                            let _ = self.ui_state.timeline_panel.ui(ui);
-                        });
+                    // Render Timeline as bottom panel
+                    if self.ui_state.show_timeline {
+                        egui::TopBottomPanel::bottom("timeline_panel")
+                            .resizable(true)
+                            .default_height(200.0)
+                            .min_height(100.0)
+                            .max_height(400.0)
+                            .show(ctx, |ui| {
+                                ui.horizontal(|ui| {
+                                    ui.heading("Timeline");
+                                    ui.with_layout(
+                                        egui::Layout::right_to_left(egui::Align::Center),
+                                        |ui| {
+                                            if ui.button("✕").clicked() {
+                                                self.ui_state.show_timeline = false;
+                                            }
+                                        },
+                                    );
+                                });
+                                ui.separator();
+                                let _ = self.ui_state.timeline_panel.ui(ui);
+                            });
+                    }
 
                     // Render Shader Graph
                     egui::Window::new("Shader Graph")
@@ -831,6 +909,37 @@ impl App {
                         .show(ctx, |ui| {
                             let _ = self.ui_state.node_editor_panel.ui(ui, &self.ui_state.i18n);
                         });
+
+                    // Render Inspector Panel (context-sensitive right sidebar)
+                    if self.ui_state.show_inspector {
+                        let inspector_context = if let Some(layer_id) =
+                            self.ui_state.selected_layer_id
+                        {
+                            if let Some(layer) = self.state.layer_manager.get_layer(layer_id) {
+                                mapmap_ui::InspectorContext::Layer {
+                                    layer,
+                                    transform: &layer.transform,
+                                }
+                            } else {
+                                mapmap_ui::InspectorContext::None
+                            }
+                        } else if let Some(output_id) = self.ui_state.selected_output_id {
+                            if let Some(output) = self.state.output_manager.get_output(output_id) {
+                                mapmap_ui::InspectorContext::Output(output)
+                            } else {
+                                mapmap_ui::InspectorContext::None
+                            }
+                        } else {
+                            mapmap_ui::InspectorContext::None
+                        };
+
+                        self.ui_state.inspector_panel.show(
+                            ctx,
+                            inspector_context,
+                            &self.ui_state.i18n,
+                            self.ui_state.icon_manager.as_ref(),
+                        );
+                    }
 
                     // Update and render Transform Panel
                     if let Some(selected_id) = self.ui_state.selected_layer_id {
@@ -949,6 +1058,23 @@ impl App {
                 (tris, screen_descriptor)
             };
 
+            // Handle Dashboard actions
+            if let Some(action) = dashboard_action {
+                match action {
+                    mapmap_ui::DashboardAction::ToggleAudioPanel => {
+                        self.ui_state.show_audio = !self.ui_state.show_audio;
+                    }
+                    mapmap_ui::DashboardAction::AudioDeviceChanged(_device) => {}
+                    mapmap_ui::DashboardAction::SendCommand(_cmd) => {
+                        // TODO: Implement playback commands if not handled elsewhere
+                        // Currently PlaybackCommand handling seems missing in main.rs or handled via Mcp?
+                        // "McpAction::MediaPlay" has TODO.
+                        // This suggests buttons in Dashboard might do nothing currently!
+                        // But fixing playback is not my task.
+                    }
+                }
+            }
+
             // Handle TransformPanel actions
             if let Some(action) = self.ui_state.transform_panel.take_action() {
                 if let Some(selected_id) = self.ui_state.selected_layer_id {
@@ -1003,25 +1129,6 @@ impl App {
             }
 
             // Post-render logic for egui actions
-            if let Some(mapmap_ui::DashboardAction::AudioDeviceChanged(device)) = dashboard_action {
-                if let Some(backend) = &mut self.audio_backend {
-                    backend.stop();
-                }
-                self.audio_backend = None;
-
-                match CpalBackend::new(Some(device)) {
-                    Ok(mut backend) => {
-                        if let Err(e) = backend.start() {
-                            error!("Failed to start audio stream: {}", e);
-                        } else {
-                            self.audio_backend = Some(backend);
-                        }
-                    }
-                    Err(e) => {
-                        error!("Failed to initialize audio backend: {}", e);
-                    }
-                }
-            }
         } else {
             // Ensure textures are the correct size
             self.texture_pool.resize_if_needed(

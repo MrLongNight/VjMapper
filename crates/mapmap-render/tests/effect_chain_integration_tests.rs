@@ -2,11 +2,11 @@
 
 use mapmap_core::{EffectChain, EffectType};
 use mapmap_render::{EffectChainRenderer, WgpuBackend};
+use wgpu::util::DeviceExt;
 use wgpu::{
     CommandEncoderDescriptor, Extent3d, ImageCopyBuffer, ImageDataLayout, TextureDescriptor,
     TextureUsages,
 };
-use wgpu::util::DeviceExt;
 
 // Helper function to run a test with a given texture setup
 async fn run_test_with_texture<F>(
