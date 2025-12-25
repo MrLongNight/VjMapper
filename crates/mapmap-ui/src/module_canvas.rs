@@ -40,6 +40,24 @@ pub struct ModuleCanvas {
     undo_stack: Vec<CanvasAction>,
     /// Redo history stack
     redo_stack: Vec<CanvasAction>,
+    /// Saved module presets
+    presets: Vec<ModulePreset>,
+    /// Whether preset panel is visible
+    show_presets: bool,
+    /// New preset name input
+    new_preset_name: String,
+}
+
+/// A saved module preset/template
+#[derive(Debug, Clone)]
+pub struct ModulePreset {
+    pub name: String,
+    pub parts: Vec<(
+        mapmap_core::module::ModulePartType,
+        (f32, f32),
+        Option<(f32, f32)>,
+    )>,
+    pub connections: Vec<(usize, usize, usize, usize)>, // from_idx, from_socket, to_idx, to_socket
 }
 
 /// Actions that can be undone/redone
@@ -80,6 +98,9 @@ impl Default for ModuleCanvas {
             show_search: false,
             undo_stack: Vec::new(),
             redo_stack: Vec::new(),
+            presets: Self::default_presets(),
+            show_presets: false,
+            new_preset_name: String::new(),
         }
     }
 }
@@ -328,6 +349,15 @@ impl ModuleCanvas {
                     if let Some(module) = manager.get_module_mut(module_id) {
                         Self::auto_layout_parts(&mut module.parts);
                     }
+                }
+
+                // Presets button
+                if ui
+                    .button("📋")
+                    .on_hover_text("Load preset template")
+                    .clicked()
+                {
+                    self.show_presets = !self.show_presets;
                 }
             }
 
@@ -1802,5 +1832,152 @@ impl ModuleCanvas {
                 pos.0 += node_width + 20.0;
             }
         }
+    }
+
+    /// Create default presets/templates
+    fn default_presets() -> Vec<ModulePreset> {
+        use mapmap_core::module::*;
+
+        vec![
+            ModulePreset {
+                name: "Simple Media Chain".to_string(),
+                parts: vec![
+                    (
+                        ModulePartType::Trigger(TriggerType::Beat),
+                        (50.0, 100.0),
+                        None,
+                    ),
+                    (
+                        ModulePartType::Source(SourceType::MediaFile {
+                            path: String::new(),
+                        }),
+                        (250.0, 100.0),
+                        None,
+                    ),
+                    (
+                        ModulePartType::Output(OutputType::Projector {
+                            id: 0,
+                            name: "Projector 1".to_string(),
+                        }),
+                        (450.0, 100.0),
+                        None,
+                    ),
+                ],
+                connections: vec![
+                    (0, 0, 1, 0), // Trigger -> Source
+                ],
+            },
+            ModulePreset {
+                name: "Effect Chain".to_string(),
+                parts: vec![
+                    (
+                        ModulePartType::Trigger(TriggerType::Beat),
+                        (50.0, 100.0),
+                        None,
+                    ),
+                    (
+                        ModulePartType::Source(SourceType::MediaFile {
+                            path: String::new(),
+                        }),
+                        (250.0, 100.0),
+                        None,
+                    ),
+                    (
+                        ModulePartType::Modulizer(ModulizerType::Effect(EffectType::Blur)),
+                        (450.0, 100.0),
+                        None,
+                    ),
+                    (
+                        ModulePartType::Output(OutputType::Projector {
+                            id: 0,
+                            name: "Projector 1".to_string(),
+                        }),
+                        (650.0, 100.0),
+                        None,
+                    ),
+                ],
+                connections: vec![
+                    (0, 0, 1, 0), // Trigger -> Source
+                    (1, 0, 2, 0), // Source -> Effect
+                ],
+            },
+            ModulePreset {
+                name: "Audio Reactive".to_string(),
+                parts: vec![
+                    (
+                        ModulePartType::Trigger(TriggerType::AudioFFT {
+                            band: AudioBand::Bass,
+                            threshold: 0.5,
+                        }),
+                        (50.0, 100.0),
+                        None,
+                    ),
+                    (
+                        ModulePartType::Source(SourceType::MediaFile {
+                            path: String::new(),
+                        }),
+                        (250.0, 100.0),
+                        None,
+                    ),
+                    (
+                        ModulePartType::Modulizer(ModulizerType::Effect(EffectType::Glitch)),
+                        (450.0, 100.0),
+                        None,
+                    ),
+                    (
+                        ModulePartType::LayerAssignment(LayerAssignmentType::AllLayers),
+                        (650.0, 100.0),
+                        None,
+                    ),
+                    (
+                        ModulePartType::Output(OutputType::Projector {
+                            id: 0,
+                            name: "Projector 1".to_string(),
+                        }),
+                        (850.0, 100.0),
+                        None,
+                    ),
+                ],
+                connections: vec![
+                    (0, 0, 1, 0), // Audio -> Source
+                    (1, 0, 2, 0), // Source -> Effect
+                    (2, 0, 3, 0), // Effect -> Layer
+                ],
+            },
+            ModulePreset {
+                name: "Masked Media".to_string(),
+                parts: vec![
+                    (
+                        ModulePartType::Trigger(TriggerType::Beat),
+                        (50.0, 100.0),
+                        None,
+                    ),
+                    (
+                        ModulePartType::Source(SourceType::MediaFile {
+                            path: String::new(),
+                        }),
+                        (250.0, 100.0),
+                        None,
+                    ),
+                    (
+                        ModulePartType::Mask(MaskType::Shape(MaskShape::Circle)),
+                        (450.0, 100.0),
+                        None,
+                    ),
+                    (
+                        ModulePartType::Output(OutputType::Projector {
+                            id: 0,
+                            name: "Projector 1".to_string(),
+                        }),
+                        (650.0, 100.0),
+                        None,
+                    ),
+                ],
+                connections: vec![
+                    (0, 0, 1, 0), // Trigger -> Source
+                    (1, 0, 2, 0), // Source -> Mask
+                ],
+            },
+        ]
     }
 }
