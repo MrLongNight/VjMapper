@@ -1,42 +1,15 @@
 (
     version: "1.0.0",
     metadata: (
-        created_at: "2025-12-24T23:45:04.678526800Z",
-        modified_at: "2025-12-24T23:45:04.678528700Z",
+        created_at: "2025-12-25T00:40:28.496126200Z",
+        modified_at: "2025-12-25T00:40:28.496129200Z",
     ),
     app_state: (
         name: "New Project",
         version: "0.1.0",
         paint_manager: (
-            paints: [
-                (
-                    id: 1,
-                    name: "New Color",
-                    paint_type: Color,
-                    source_path: None,
-                    rate: 1.0,
-                    is_playing: false,
-                    loop_playback: true,
-                    opacity: 1.0,
-                    color: (0.31342134, 0.03222089, 0.8055218, 1.0),
-                    lock_aspect: true,
-                    dimensions: (1920.0, 1080.0),
-                ),
-                (
-                    id: 2,
-                    name: "New Color",
-                    paint_type: Color,
-                    source_path: None,
-                    rate: 1.0,
-                    is_playing: false,
-                    loop_playback: true,
-                    opacity: 1.0,
-                    color: (1.0, 1.0, 1.0, 1.0),
-                    lock_aspect: true,
-                    dimensions: (1920.0, 1080.0),
-                ),
-            ],
-            next_id: 3,
+            paints: [],
+            next_id: 1,
         ),
         mapping_manager: (
             mappings: [],
@@ -103,7 +76,13 @@
             master_volume: 1.0,
             dark_mode: true,
             ui_scale: 1.0,
-            language: "en",
+            language: "de",
+            log_config: (
+                level: Info,
+                log_directory: "logs",
+                max_log_files: 10,
+                console_output: true,
+            ),
         ),
     ),
 )

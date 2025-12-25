@@ -387,3 +387,15 @@ panel-edge-blend-color = Edge Blend & Color Calibration
 edge-blend-no-output = Select an output from the Output panel to configure its edge blend and color settings.
 header-edge-blend = Edge Blending
 header-color-calibration = Color Calibration
+
+# Project Settings
+settings-project = Project Settings
+settings-frame-rate = Frame Rate
+settings-output-projectors = Output Projectors
+settings-add-output = Add Output
+settings-remove-output = Remove
+
+# App Settings
+settings-app = App Settings
+settings-language = Language
+settings-theme = Theme

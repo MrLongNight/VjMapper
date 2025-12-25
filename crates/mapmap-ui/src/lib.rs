@@ -205,6 +205,14 @@ pub struct AppUI {
     /// Inspector panel for context-sensitive properties
     pub inspector_panel: InspectorPanel,
     pub show_inspector: bool,
+    /// Left sidebar visibility (collapsible)
+    pub show_left_sidebar: bool,
+    /// Current audio level (0.0-1.0) for toolbar display
+    pub current_audio_level: f32,
+    /// Current FPS for toolbar display
+    pub current_fps: f32,
+    /// Current frame time in ms for toolbar display
+    pub current_frame_time_ms: f32,
 }
 
 impl Default for AppUI {
@@ -263,7 +271,11 @@ impl Default for AppUI {
             show_media_browser: true, // Essential panel
             media_browser: MediaBrowser::new(std::env::current_dir().unwrap_or_default()),
             inspector_panel: InspectorPanel::default(),
-            show_inspector: true, // Essential panel
+            show_inspector: true,    // Essential panel
+            show_left_sidebar: true, // Essential panel - collapsible
+            current_audio_level: 0.0,
+            current_fps: 60.0,
+            current_frame_time_ms: 16.67,
         }
     }
 }
@@ -298,12 +310,34 @@ impl AppUI {
         ctx: &egui::Context,
         layer_manager: &mut mapmap_core::LayerManager,
     ) {
+        // Collapsed state - show only a thin bar with expand button
+        if !self.show_left_sidebar {
+            egui::SidePanel::left("left_sidebar_collapsed")
+                .resizable(false)
+                .exact_width(28.0)
+                .show(ctx, |ui| {
+                    if ui.button("▶").on_hover_text("Expand Sidebar").clicked() {
+                        self.show_left_sidebar = true;
+                    }
+                });
+            return;
+        }
+
         egui::SidePanel::left("left_sidebar")
             .resizable(true)
             .default_width(300.0)
             .min_width(250.0)
             .max_width(500.0)
             .show(ctx, |ui| {
+                // Sidebar header with collapse button
+                ui.horizontal(|ui| {
+                    if ui.button("◀").on_hover_text("Collapse Sidebar").clicked() {
+                        self.show_left_sidebar = false;
+                    }
+                    ui.heading("MapFlow");
+                });
+                ui.separator();
+
                 // === DASHBOARD SECTION (Top - Transport Controls) ===
                 egui::CollapsingHeader::new("Dashboard")
                     .default_open(true)

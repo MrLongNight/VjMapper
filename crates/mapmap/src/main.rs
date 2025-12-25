@@ -66,6 +66,7 @@ struct App {
     /// The audio analyzer.
     audio_analyzer: AudioAnalyzer,
     /// List of available audio devices.
+    #[allow(dead_code)]
     audio_devices: Vec<String>,
     /// The egui context.
     egui_context: egui::Context,
@@ -753,6 +754,14 @@ impl App {
                     // Apply the theme at the beginning of each UI render pass
                     self.ui_state.user_config.theme.apply(ctx);
 
+                    // Update performance and audio values for toolbar display
+                    self.ui_state.current_fps = self.current_fps;
+                    self.ui_state.current_frame_time_ms = self.current_frame_time_ms;
+
+                    // Update audio level from analyzer
+                    let audio_analysis = self.audio_analyzer.get_latest_analysis();
+                    self.ui_state.current_audio_level = audio_analysis.rms_volume;
+
                     let menu_actions = menu_bar::show(ctx, &mut self.ui_state);
                     self.ui_state.actions.extend(menu_actions);
 
@@ -785,9 +794,8 @@ impl App {
                     self.ui_state
                         .render_left_sidebar(ctx, &mut self.state.layer_manager);
 
-                    // Performance overlay (top-right)
-                    self.ui_state
-                        .render_stats(ctx, self.current_fps, self.current_frame_time_ms);
+                    // Performance stats now in toolbar (see menu_bar.rs)
+                    // self.ui_state.render_stats(ctx, ...);
 
                     // All legacy/redundant panels disabled - clean central area
 
@@ -809,38 +817,154 @@ impl App {
                         egui::Window::new(self.ui_state.i18n.t("menu-file-settings"))
                             .collapsible(false)
                             .resizable(true)
-                            .default_size([400.0, 300.0])
+                            .default_size([500.0, 450.0])
                             .anchor(egui::Align2::CENTER_CENTER, [0.0, 0.0])
                             .show(ctx, |ui| {
-                                ui.heading(self.ui_state.i18n.t("menu-file-settings"));
-                                ui.separator();
-
-                                // Language selection
                                 ui.horizontal(|ui| {
-                                    ui.label("Language / Sprache:");
-                                    if ui.button("English").clicked() {
-                                        self.ui_state.actions.push(
-                                            mapmap_ui::UIAction::SetLanguage("en".to_string()),
-                                        );
-                                    }
-                                    if ui.button("Deutsch").clicked() {
-                                        self.ui_state.actions.push(
-                                            mapmap_ui::UIAction::SetLanguage("de".to_string()),
-                                        );
+                                    ui.with_layout(
+                                        egui::Layout::right_to_left(egui::Align::Center),
+                                        |ui| {
+                                            if ui.button("✕").clicked() {
+                                                close_settings = true;
+                                            }
+                                        },
+                                    );
+                                });
+
+                                // === PROJECT SETTINGS ===
+                                egui::CollapsingHeader::new(format!(
+                                    "🎬 {}",
+                                    self.ui_state.i18n.t("settings-project")
+                                ))
+                                .default_open(true)
+                                .show(ui, |ui| {
+                                    // Frame Rate Selection
+                                    ui.horizontal(|ui| {
+                                        ui.label(format!(
+                                            "{}:",
+                                            self.ui_state.i18n.t("settings-frame-rate")
+                                        ));
+                                        let fps_options: [(f32, &str); 6] = [
+                                            (24.0, "24 FPS (Film)"),
+                                            (25.0, "25 FPS (PAL)"),
+                                            (30.0, "30 FPS (NTSC)"),
+                                            (50.0, "50 FPS"),
+                                            (60.0, "60 FPS"),
+                                            (120.0, "120 FPS"),
+                                        ];
+
+                                        // Default to 60 FPS if not set
+                                        let current_target =
+                                            self.ui_state.user_config.target_fps.unwrap_or(60.0);
+
+                                        egui::ComboBox::from_id_source("fps_selector")
+                                            .selected_text(format!("{:.0} FPS", current_target))
+                                            .show_ui(ui, |ui| {
+                                                for (fps, label) in fps_options {
+                                                    if ui
+                                                        .selectable_label(
+                                                            (current_target - fps).abs() < 0.1,
+                                                            label,
+                                                        )
+                                                        .clicked()
+                                                    {
+                                                        self.ui_state.user_config.target_fps =
+                                                            Some(fps);
+                                                        let _ = self.ui_state.user_config.save();
+                                                    }
+                                                }
+                                            });
+                                    });
+
+                                    ui.add_space(5.0);
+
+                                    // Output Projectors
+                                    ui.horizontal(|ui| {
+                                        ui.label(format!(
+                                            "{}:",
+                                            self.ui_state.i18n.t("settings-output-projectors")
+                                        ));
+                                        let output_count =
+                                            self.state.output_manager.outputs().len();
+                                        ui.label(format!("{}", output_count));
+
+                                        if ui
+                                            .button("+")
+                                            .on_hover_text(
+                                                self.ui_state.i18n.t("settings-add-output"),
+                                            )
+                                            .clicked()
+                                        {
+                                            // Add a new output with default config
+                                            let new_name = format!("Output {}", output_count + 1);
+                                            self.state.output_manager.add_output(
+                                                new_name,
+                                                mapmap_core::CanvasRegion::new(0.0, 0.0, 1.0, 1.0),
+                                                (1920, 1080),
+                                            );
+                                            self.state.dirty = true;
+                                        }
+                                    });
+
+                                    // List existing outputs with remove buttons
+                                    if !self.state.output_manager.outputs().is_empty() {
+                                        ui.separator();
+                                        let outputs: Vec<_> = self
+                                            .state
+                                            .output_manager
+                                            .outputs()
+                                            .iter()
+                                            .map(|o| (o.id, o.name.clone()))
+                                            .collect();
+
+                                        for (id, name) in outputs {
+                                            ui.horizontal(|ui| {
+                                                ui.label(format!("  • {}", name));
+                                                if ui
+                                                    .small_button("✕")
+                                                    .on_hover_text(
+                                                        self.ui_state
+                                                            .i18n
+                                                            .t("settings-remove-output"),
+                                                    )
+                                                    .clicked()
+                                                {
+                                                    self.state.output_manager.remove_output(id);
+                                                    self.state.dirty = true;
+                                                }
+                                            });
+                                        }
                                     }
                                 });
 
+                                ui.add_space(10.0);
                                 ui.separator();
 
-                                // Close button
-                                ui.with_layout(
-                                    egui::Layout::right_to_left(egui::Align::TOP),
-                                    |ui| {
-                                        if ui.button("✕ Close / Schließen").clicked() {
-                                            close_settings = true;
+                                // === APP SETTINGS ===
+                                egui::CollapsingHeader::new(format!(
+                                    "⚙️ {}",
+                                    self.ui_state.i18n.t("settings-app")
+                                ))
+                                .default_open(true)
+                                .show(ui, |ui| {
+                                    // Language
+                                    ui.horizontal(|ui| {
+                                        ui.label(format!(
+                                            "{}:",
+                                            self.ui_state.i18n.t("settings-language")
+                                        ));
+                                        if ui.button("English").clicked() {
+                                            self.ui_state.actions.push(
+                                                mapmap_ui::UIAction::SetLanguage("en".to_string()),
+                                            );
                                         }
-                                    },
-                                );
+                                        if ui.button("Deutsch").clicked() {
+                                            self.ui_state.actions.push(
+                                                mapmap_ui::UIAction::SetLanguage("de".to_string()),
+                                            );
+                                        }
+                                    });
+                                });
                             });
 
                         if close_settings {

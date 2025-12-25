@@ -403,3 +403,15 @@ panel-edge-blend-color = Kantenüberblendung & Farbkalibrierung
 edge-blend-no-output = Wählen Sie einen Ausgang im Ausgabe-Panel, um dessen Kantenüberblendungs- und Farbeinstellungen zu konfigurieren.
 header-edge-blend = Kantenüberblendung
 header-color-calibration = Farbkalibrierung
+
+# Project Settings
+settings-project = Projekt-Einstellungen
+settings-frame-rate = Bildrate
+settings-output-projectors = Ausgabe-Projektoren
+settings-add-output = Ausgang hinzufügen
+settings-remove-output = Entfernen
+
+# App Settings
+settings-app = App-Einstellungen
+settings-language = Sprache
+settings-theme = Erscheinungsbild
