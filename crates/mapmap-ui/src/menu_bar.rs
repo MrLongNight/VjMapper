@@ -351,14 +351,16 @@ pub fn show(ctx: &egui::Context, ui_state: &mut AppUI) -> Vec<UIAction> {
                         ui.add_space(spacer_width);
                     }
 
-                    ui.add(
-                        AudioMeter::new(
-                            ui_state.user_config.meter_style,
-                            db,
-                            db
-                        )
-                        .desired_size(egui::vec2(meter_width, meter_height)),
+                    // Create the meter widget with explicit sizing logic
+                    let meter_size = egui::Vec2::new(meter_width as f32, meter_height as f32);
+                    let mut meter = AudioMeter::new(
+                        ui_state.user_config.meter_style,
+                        db,
+                        db
                     );
+                    meter = meter.desired_size(meter_size);
+
+                    ui.add(meter);
 
                     // === SPACER - push performance to right ===
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
