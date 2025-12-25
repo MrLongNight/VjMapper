@@ -641,6 +641,19 @@ impl ModuleCanvas {
             Color32::from_rgba_unmultiplied(255, 100, 100, 200),
         );
 
+        // Draw property display based on part type
+        let property_y = rect.min.y + title_height + 8.0 * self.zoom;
+        let property_text = Self::get_part_property_text(&part.part_type);
+        if !property_text.is_empty() {
+            painter.text(
+                Pos2::new(rect.center().x, property_y),
+                egui::Align2::CENTER_TOP,
+                property_text,
+                egui::FontId::proportional(10.0 * self.zoom),
+                Color32::from_gray(160),
+            );
+        }
+
         // Draw input sockets (left side)
         let socket_start_y = rect.min.y + title_height + 10.0 * self.zoom;
         for (i, socket) in part.inputs.iter().enumerate() {
@@ -737,6 +750,62 @@ impl ModuleCanvas {
             ModuleSocketType::Effect => Color32::from_rgb(220, 180, 100),
             ModuleSocketType::Layer => Color32::from_rgb(100, 220, 140),
             ModuleSocketType::Output => Color32::from_rgb(220, 100, 100),
+        }
+    }
+
+    fn get_part_property_text(part_type: &mapmap_core::module::ModulePartType) -> String {
+        use mapmap_core::module::{
+            MaskType, ModulePartType, ModulizerType, OutputType, SourceType, TriggerType,
+        };
+        match part_type {
+            ModulePartType::Trigger(trigger_type) => match trigger_type {
+                TriggerType::AudioFFT { band, .. } => format!("🔊 Audio: {:?}", band),
+                TriggerType::Random { .. } => "🎲 Random".to_string(),
+                TriggerType::Fixed { interval_ms, .. } => format!("⏱️ {}ms", interval_ms),
+                TriggerType::Midi { channel, note } => format!("🎹 Ch{} N{}", channel, note),
+                TriggerType::Osc { address } => format!("📡 {}", address),
+                TriggerType::Shortcut { key_code, .. } => format!("⌨️ {}", key_code),
+                TriggerType::Beat => "🥁 Beat".to_string(),
+            },
+            ModulePartType::Source(source_type) => match source_type {
+                SourceType::MediaFile { path } => {
+                    if path.is_empty() {
+                        "📁 Select file...".to_string()
+                    } else {
+                        format!("📁 {}", path.split(['/', '\\']).last().unwrap_or(path))
+                    }
+                }
+                SourceType::Shader { name, .. } => format!("🎨 {}", name),
+                SourceType::LiveInput { device_id } => format!("📹 Device {}", device_id),
+            },
+            ModulePartType::Mask(mask_type) => match mask_type {
+                MaskType::File { path } => {
+                    if path.is_empty() {
+                        "📁 Select mask...".to_string()
+                    } else {
+                        format!("📁 {}", path.split(['/', '\\']).last().unwrap_or(path))
+                    }
+                }
+                MaskType::Shape(shape) => format!("🔷 {:?}", shape),
+                MaskType::Gradient { angle, .. } => format!("🌈 Gradient {}°", *angle as i32),
+            },
+            ModulePartType::Modulizer(modulizer_type) => match modulizer_type {
+                ModulizerType::Effect(effect) => format!("✨ {}", effect.name()),
+                ModulizerType::BlendMode(blend) => format!("🔀 {}", blend.name()),
+                ModulizerType::AudioReactive { source } => format!("🔊 {}", source),
+            },
+            ModulePartType::LayerAssignment(layer_type) => {
+                use mapmap_core::module::LayerAssignmentType;
+                match layer_type {
+                    LayerAssignmentType::SingleLayer { name, .. } => format!("📑 {}", name),
+                    LayerAssignmentType::Group { name } => format!("📁 {}", name),
+                    LayerAssignmentType::AllLayers => "📑 All Layers".to_string(),
+                }
+            }
+            ModulePartType::Output(output_type) => match output_type {
+                OutputType::Projector { name, .. } => format!("📺 {}", name),
+                OutputType::Preview { window_id } => format!("👁 Preview {}", window_id),
+            },
         }
     }
 }
