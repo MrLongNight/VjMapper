@@ -1,3 +1,4 @@
+#![allow(clippy::type_complexity)]
 //! MapFlow UI - ImGui and egui Integration
 //!
 //! This crate provides the user interface layer using ImGui (legacy) and egui (Phase 6+), including:
