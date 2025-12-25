@@ -24,6 +24,10 @@ pub struct ModuleCanvas {
     zoom: f32,
     /// Part being dragged
     dragging_part: Option<(ModulePartId, Vec2)>,
+    /// Part being resized: (part_id, original_size)
+    resizing_part: Option<(ModulePartId, (f32, f32))>,
+    /// Box selection start position (screen coords)
+    box_select_start: Option<Pos2>,
     /// Connection being created: (from_part, from_socket_idx, is_output, socket_type, start_pos)
     creating_connection: Option<(ModulePartId, usize, bool, ModuleSocketType, Pos2)>,
     /// Part ID pending deletion (set when X button clicked)
@@ -46,6 +50,10 @@ pub struct ModuleCanvas {
     show_presets: bool,
     /// New preset name input
     new_preset_name: String,
+    /// Context menu position
+    context_menu_pos: Option<Pos2>,
+    /// Context menu target (connection index or None)
+    context_menu_connection: Option<usize>,
 }
 
 /// A saved module preset/template
@@ -90,6 +98,8 @@ impl Default for ModuleCanvas {
             pan_offset: Vec2::ZERO,
             zoom: 1.0,
             dragging_part: None,
+            resizing_part: None,
+            box_select_start: None,
             creating_connection: None,
             pending_delete: None,
             selected_parts: Vec::new(),
@@ -101,6 +111,8 @@ impl Default for ModuleCanvas {
             presets: Self::default_presets(),
             show_presets: false,
             new_preset_name: String::new(),
+            context_menu_pos: None,
+            context_menu_connection: None,
         }
     }
 }
@@ -717,6 +729,86 @@ impl ModuleCanvas {
             self.creating_connection = None;
         }
 
+        // Handle right-click for context menu
+        let right_clicked = ui.input(|i| i.pointer.button_clicked(egui::PointerButton::Secondary));
+        if right_clicked {
+            if let Some(pos) = pointer_pos {
+                // Check if clicking near a connection line
+                for (conn_idx, conn) in module.connections.iter().enumerate() {
+                    // Find positions of connected sockets
+                    if let (Some(from_part), Some(to_part)) = (
+                        module.parts.iter().find(|p| p.id == conn.from_part),
+                        module.parts.iter().find(|p| p.id == conn.to_part),
+                    ) {
+                        let from_screen = to_screen(Pos2::new(
+                            from_part.position.0 + 180.0,
+                            from_part.position.1 + 50.0,
+                        ));
+                        let to_screen_pos =
+                            to_screen(Pos2::new(to_part.position.0, to_part.position.1 + 50.0));
+
+                        // Simple distance check to bezier curve (approximate with line)
+                        let mid = Pos2::new(
+                            (from_screen.x + to_screen_pos.x) / 2.0,
+                            (from_screen.y + to_screen_pos.y) / 2.0,
+                        );
+                        if pos.distance(mid) < 20.0 * self.zoom {
+                            self.context_menu_pos = Some(pos);
+                            self.context_menu_connection = Some(conn_idx);
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+
+        // Handle box selection start (on empty canvas)
+        if clicked && self.creating_connection.is_none() && self.dragging_part.is_none() {
+            if let Some(pos) = pointer_pos {
+                // Check if not clicking on any part
+                let on_part = part_rects.iter().any(|(_, rect)| rect.contains(pos));
+                if !on_part && canvas_rect.contains(pos) {
+                    self.box_select_start = Some(pos);
+                }
+            }
+        }
+
+        // Handle box selection drag
+        if let Some(start_pos) = self.box_select_start {
+            if let Some(current_pos) = pointer_pos {
+                // Draw selection rectangle
+                let select_rect = Rect::from_two_pos(start_pos, current_pos);
+                painter.rect_stroke(
+                    select_rect,
+                    0.0,
+                    Stroke::new(2.0, Color32::from_rgb(100, 200, 255)),
+                );
+                painter.rect_filled(
+                    select_rect,
+                    0.0,
+                    Color32::from_rgba_unmultiplied(100, 200, 255, 30),
+                );
+            }
+
+            if released {
+                // Select all parts within the box
+                if let Some(current_pos) = pointer_pos {
+                    let select_rect = Rect::from_two_pos(start_pos, current_pos);
+                    if !shift_held {
+                        self.selected_parts.clear();
+                    }
+                    for (part_id, part_rect) in &part_rects {
+                        if select_rect.intersects(*part_rect)
+                            && !self.selected_parts.contains(part_id)
+                        {
+                            self.selected_parts.push(*part_id);
+                        }
+                    }
+                }
+                self.box_select_start = None;
+            }
+        }
+
         // Handle part dragging and delete buttons
         let mut delete_part_id: Option<ModulePartId> = None;
 
@@ -917,6 +1009,43 @@ impl ModuleCanvas {
         if self.show_search {
             self.draw_search_popup(ui, canvas_rect, module);
         }
+
+        // Draw presets popup if visible
+        if self.show_presets {
+            self.draw_presets_popup(ui, canvas_rect, module);
+        }
+
+        // Draw context menu for connections
+        if let Some(menu_pos) = self.context_menu_pos {
+            let menu_rect = Rect::from_min_size(menu_pos, Vec2::new(120.0, 30.0));
+            let painter = ui.painter();
+            painter.rect_filled(menu_rect, 4.0, Color32::from_rgb(50, 50, 60));
+            painter.rect_stroke(
+                menu_rect,
+                4.0,
+                Stroke::new(1.0, Color32::from_rgb(100, 100, 120)),
+            );
+
+            ui.allocate_ui_at_rect(menu_rect.shrink(4.0), |ui| {
+                if ui.button("🗑 Delete Connection").clicked() {
+                    if let Some(conn_idx) = self.context_menu_connection {
+                        if conn_idx < module.connections.len() {
+                            module.connections.remove(conn_idx);
+                        }
+                    }
+                    self.context_menu_pos = None;
+                    self.context_menu_connection = None;
+                }
+            });
+
+            // Close menu on click elsewhere
+            if ui.input(|i| i.pointer.any_click())
+                && !menu_rect.contains(ui.input(|i| i.pointer.hover_pos()).unwrap_or(Pos2::ZERO))
+            {
+                self.context_menu_pos = None;
+                self.context_menu_connection = None;
+            }
+        }
     }
 
     fn draw_search_popup(&mut self, ui: &mut Ui, canvas_rect: Rect, module: &mut MapFlowModule) {
@@ -997,6 +1126,181 @@ impl ModuleCanvas {
                     });
             });
         });
+    }
+
+    fn draw_presets_popup(&mut self, ui: &mut Ui, canvas_rect: Rect, module: &mut MapFlowModule) {
+        // Presets popup in top-center
+        let popup_width = 280.0;
+        let popup_height = 220.0;
+        let popup_rect = Rect::from_min_size(
+            Pos2::new(
+                canvas_rect.center().x - popup_width / 2.0,
+                canvas_rect.min.y + 50.0,
+            ),
+            Vec2::new(popup_width, popup_height),
+        );
+
+        // Draw popup background
+        let painter = ui.painter();
+        painter.rect_filled(
+            popup_rect,
+            8.0,
+            Color32::from_rgba_unmultiplied(30, 35, 45, 245),
+        );
+        painter.rect_stroke(
+            popup_rect,
+            8.0,
+            Stroke::new(2.0, Color32::from_rgb(100, 180, 80)),
+        );
+
+        // Popup content
+        let inner_rect = popup_rect.shrink(12.0);
+        ui.allocate_ui_at_rect(inner_rect, |ui| {
+            ui.vertical(|ui| {
+                ui.heading("📋 Presets / Templates");
+                ui.add_space(8.0);
+
+                egui::ScrollArea::vertical()
+                    .max_height(150.0)
+                    .show(ui, |ui| {
+                        let presets = self.presets.clone();
+                        for preset in &presets {
+                            ui.horizontal(|ui| {
+                                if ui.button(&preset.name).clicked() {
+                                    // Clear current and load preset
+                                    module.parts.clear();
+                                    module.connections.clear();
+
+                                    // Add parts from preset
+                                    let mut part_ids = Vec::new();
+                                    let mut next_id =
+                                        module.parts.iter().map(|p| p.id).max().unwrap_or(0) + 1;
+                                    for (part_type, position, size) in &preset.parts {
+                                        let id = next_id;
+                                        next_id += 1;
+
+                                        let (inputs, outputs) =
+                                            Self::get_sockets_for_part_type(part_type);
+
+                                        module.parts.push(mapmap_core::module::ModulePart {
+                                            id,
+                                            part_type: part_type.clone(),
+                                            position: *position,
+                                            size: *size,
+                                            inputs,
+                                            outputs,
+                                        });
+                                        part_ids.push(id);
+                                    }
+
+                                    // Add connections
+                                    for (from_idx, from_socket, to_idx, to_socket) in
+                                        &preset.connections
+                                    {
+                                        if *from_idx < part_ids.len() && *to_idx < part_ids.len() {
+                                            module.connections.push(
+                                                mapmap_core::module::ModuleConnection {
+                                                    from_part: part_ids[*from_idx],
+                                                    from_socket: *from_socket,
+                                                    to_part: part_ids[*to_idx],
+                                                    to_socket: *to_socket,
+                                                },
+                                            );
+                                        }
+                                    }
+
+                                    self.show_presets = false;
+                                }
+                                ui.label(format!("({} nodes)", preset.parts.len()));
+                            });
+                        }
+                    });
+
+                ui.add_space(8.0);
+                if ui.button("Close").clicked() {
+                    self.show_presets = false;
+                }
+            });
+        });
+    }
+
+    /// Get default sockets for a part type
+    fn get_sockets_for_part_type(
+        part_type: &mapmap_core::module::ModulePartType,
+    ) -> (
+        Vec<mapmap_core::module::ModuleSocket>,
+        Vec<mapmap_core::module::ModuleSocket>,
+    ) {
+        use mapmap_core::module::{ModulePartType, ModuleSocket, ModuleSocketType};
+
+        match part_type {
+            ModulePartType::Trigger(_) => (
+                vec![],
+                vec![ModuleSocket {
+                    name: "Trigger Out".to_string(),
+                    socket_type: ModuleSocketType::Trigger,
+                }],
+            ),
+            ModulePartType::Source(_) => (
+                vec![ModuleSocket {
+                    name: "Trigger In".to_string(),
+                    socket_type: ModuleSocketType::Trigger,
+                }],
+                vec![ModuleSocket {
+                    name: "Media Out".to_string(),
+                    socket_type: ModuleSocketType::Media,
+                }],
+            ),
+            ModulePartType::Mask(_) => (
+                vec![
+                    ModuleSocket {
+                        name: "Media In".to_string(),
+                        socket_type: ModuleSocketType::Media,
+                    },
+                    ModuleSocket {
+                        name: "Mask In".to_string(),
+                        socket_type: ModuleSocketType::Media,
+                    },
+                ],
+                vec![ModuleSocket {
+                    name: "Media Out".to_string(),
+                    socket_type: ModuleSocketType::Media,
+                }],
+            ),
+            ModulePartType::Modulizer(_) => (
+                vec![
+                    ModuleSocket {
+                        name: "Media In".to_string(),
+                        socket_type: ModuleSocketType::Media,
+                    },
+                    ModuleSocket {
+                        name: "Trigger In".to_string(),
+                        socket_type: ModuleSocketType::Trigger,
+                    },
+                ],
+                vec![ModuleSocket {
+                    name: "Media Out".to_string(),
+                    socket_type: ModuleSocketType::Media,
+                }],
+            ),
+            ModulePartType::LayerAssignment(_) => (
+                vec![ModuleSocket {
+                    name: "Media In".to_string(),
+                    socket_type: ModuleSocketType::Media,
+                }],
+                vec![ModuleSocket {
+                    name: "Layer Out".to_string(),
+                    socket_type: ModuleSocketType::Layer,
+                }],
+            ),
+            ModulePartType::Output(_) => (
+                vec![ModuleSocket {
+                    name: "Layer In".to_string(),
+                    socket_type: ModuleSocketType::Layer,
+                }],
+                vec![],
+            ),
+        }
     }
 
     fn draw_mini_map(&self, painter: &egui::Painter, canvas_rect: Rect, module: &MapFlowModule) {
