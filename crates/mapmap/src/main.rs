@@ -1055,6 +1055,24 @@ impl App {
                                                 self.ui_state.actions.push(mapmap_ui::UIAction::SetLanguage("de".to_string()));
                                             }
                                         });
+
+                                        ui.horizontal(|ui| {
+                                            ui.label("Audio Meter:");
+                                            let current = self.ui_state.user_config.meter_style;
+                                            egui::ComboBox::from_id_source("meter_style_select")
+                                                .selected_text(format!("{}", current))
+                                                .show_ui(ui, |ui| {
+                                                    let styles = [
+                                                        mapmap_ui::config::AudioMeterStyle::Retro,
+                                                        mapmap_ui::config::AudioMeterStyle::Digital,
+                                                    ];
+                                                    for style in styles {
+                                                        if ui.selectable_value(&mut self.ui_state.user_config.meter_style, style, format!("{}", style)).clicked() {
+                                                            let _ = self.ui_state.user_config.save();
+                                                        }
+                                                    }
+                                                });
+                                        });
                                     });
                                 
                                 ui.separator();
