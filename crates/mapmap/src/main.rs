@@ -914,15 +914,21 @@ impl App {
                             });
                     }
 
-                    // Render Module Canvas
+                    // Render Module Canvas as a window
                     if self.ui_state.show_module_canvas {
-                        egui::CentralPanel::default().show(ctx, |ui| {
-                            self.ui_state.module_canvas.show(
-                                ui,
-                                &mut self.state.module_manager,
-                                &self.ui_state.i18n,
-                            );
-                        });
+                        let mut show = self.ui_state.show_module_canvas;
+                        egui::Window::new("Module Canvas")
+                            .open(&mut show)
+                            .default_size([800.0, 600.0])
+                            .resizable(true)
+                            .show(ctx, |ui| {
+                                self.ui_state.module_canvas.show(
+                                    ui,
+                                    &mut self.state.module_manager,
+                                    &self.ui_state.i18n,
+                                );
+                            });
+                        self.ui_state.show_module_canvas = show;
                     }
 
                     // Render Media Browser
