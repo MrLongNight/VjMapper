@@ -276,47 +276,99 @@ pub fn show(ctx: &egui::Context, ui_state: &mut AppUI) -> Vec<UIAction> {
 
                     ui.separator();
 
-                    // === AUDIO LEVEL (from audio analysis) ===
+                    // === AUDIO LEVEL METER (with dB scale) ===
                     let audio_level = ui_state.current_audio_level;
-                    let audio_color = if audio_level > 0.8 {
-                        egui::Color32::from_rgb(255, 80, 80) // Red - clipping
-                    } else if audio_level > 0.5 {
-                        egui::Color32::from_rgb(255, 200, 80) // Yellow
+                    // Convert to dB (approximate, -60 to 0 dB range)
+                    let db = if audio_level > 0.0001 {
+                        20.0 * audio_level.log10()
                     } else {
-                        egui::Color32::from_rgb(80, 200, 80) // Green
+                        -60.0
                     };
+                    let db_normalized = ((db + 60.0) / 60.0).clamp(0.0, 1.0);
+
+                    let audio_color = if db > -6.0 {
+                        egui::Color32::from_rgb(255, 50, 50) // Red - clipping
+                    } else if db > -12.0 {
+                        egui::Color32::from_rgb(255, 200, 50) // Yellow - hot
+                    } else {
+                        egui::Color32::from_rgb(50, 200, 50) // Green - normal
+                    };
+
                     ui.label("🔊");
                     ui.add(
-                        egui::ProgressBar::new(audio_level)
+                        egui::ProgressBar::new(db_normalized)
                             .fill(audio_color)
-                            .desired_width(60.0),
+                            .desired_width(120.0)
+                            .text(format!("{:.0} dB", db)),
                     );
 
                     // === SPACER - push performance to right ===
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
-                        // === PERFORMANCE INDICATORS (Traffic Light) ===
+                        // === PERFORMANCE INDICATORS ===
                         let fps = ui_state.current_fps;
+                        let target_fps = ui_state.target_fps;
                         let frame_time = ui_state.current_frame_time_ms;
+                        let cpu = ui_state.cpu_usage;
+                        let gpu = ui_state.gpu_usage;
+                        let ram = ui_state.ram_usage_mb;
 
-                        // Traffic light based on FPS
-                        let perf_color = if fps >= 55.0 {
-                            egui::Color32::from_rgb(80, 200, 80) // Green - good
-                        } else if fps >= 30.0 {
-                            egui::Color32::from_rgb(255, 200, 80) // Yellow - warning
-                        } else {
-                            egui::Color32::from_rgb(255, 80, 80) // Red - bad
+                        // Helper for traffic light color
+                        let traffic_light = |value: f32, warn: f32, crit: f32| -> egui::Color32 {
+                            if value >= crit {
+                                egui::Color32::from_rgb(255, 50, 50) // Red
+                            } else if value >= warn {
+                                egui::Color32::from_rgb(255, 200, 50) // Yellow
+                            } else {
+                                egui::Color32::from_rgb(50, 200, 50) // Green
+                            }
                         };
 
-                        // Traffic light indicator
+                        // FPS traffic light (based on target)
+                        let fps_ratio = fps / target_fps;
+                        let fps_color = if fps_ratio >= 0.95 {
+                            egui::Color32::from_rgb(50, 200, 50) // Green - meeting target
+                        } else if fps_ratio >= 0.8 {
+                            egui::Color32::from_rgb(255, 200, 50) // Yellow - slightly below
+                        } else {
+                            egui::Color32::from_rgb(255, 50, 50) // Red - significantly below
+                        };
+
+                        // Overall status indicator (worst of all)
+                        let overall_color = if cpu >= 90.0 || gpu >= 90.0 || fps_ratio < 0.8 {
+                            egui::Color32::from_rgb(255, 50, 50)
+                        } else if cpu >= 70.0 || gpu >= 70.0 || fps_ratio < 0.95 {
+                            egui::Color32::from_rgb(255, 200, 50)
+                        } else {
+                            egui::Color32::from_rgb(50, 200, 50)
+                        };
+
+                        // Traffic light circle
                         let (rect, _) =
-                            ui.allocate_exact_size(egui::vec2(12.0, 12.0), egui::Sense::hover());
-                        ui.painter().circle_filled(rect.center(), 6.0, perf_color);
+                            ui.allocate_exact_size(egui::vec2(14.0, 14.0), egui::Sense::hover());
+                        ui.painter()
+                            .circle_filled(rect.center(), 7.0, overall_color);
 
-                        // Frame time
-                        ui.label(format!("{:.1}ms", frame_time));
+                        // RAM
+                        ui.label(format!("RAM: {:.0}MB", ram));
 
-                        // FPS
-                        ui.colored_label(perf_color, format!("{:.0} FPS", fps));
+                        ui.separator();
+
+                        // GPU
+                        let gpu_color = traffic_light(gpu, 70.0, 90.0);
+                        ui.colored_label(gpu_color, format!("GPU: {:.0}%", gpu));
+
+                        // CPU
+                        let cpu_color = traffic_light(cpu, 70.0, 90.0);
+                        ui.colored_label(cpu_color, format!("CPU: {:.0}%", cpu));
+
+                        ui.separator();
+
+                        // Frame time (ms per frame)
+                        ui.label(format!("{:.1}ms/f", frame_time))
+                            .on_hover_text("Millisekunden pro Frame (niedriger = besser)");
+
+                        // FPS vs Target
+                        ui.colored_label(fps_color, format!("{:.0}/{:.0} FPS", fps, target_fps));
                     });
                 });
             }

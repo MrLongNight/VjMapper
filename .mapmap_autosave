@@ -1,8 +1,8 @@
 (
     version: "1.0.0",
     metadata: (
-        created_at: "2025-12-25T00:40:28.496126200Z",
-        modified_at: "2025-12-25T00:40:28.496129200Z",
+        created_at: "2025-12-25T01:15:23.520459400Z",
+        modified_at: "2025-12-25T01:15:23.520462300Z",
     ),
     app_state: (
         name: "New Project",
@@ -28,9 +28,96 @@
             ),
         ),
         output_manager: (
-            outputs: [],
+            outputs: [
+                (
+                    id: 2,
+                    name: "Output 1",
+                    canvas_region: (
+                        x: 0.0,
+                        y: 0.0,
+                        width: 1.0,
+                        height: 1.0,
+                    ),
+                    resolution: (1920, 1080),
+                    edge_blend: (
+                        left: (
+                            enabled: false,
+                            width: 0.1,
+                            offset: 0.0,
+                        ),
+                        right: (
+                            enabled: false,
+                            width: 0.1,
+                            offset: 0.0,
+                        ),
+                        top: (
+                            enabled: false,
+                            width: 0.1,
+                            offset: 0.0,
+                        ),
+                        bottom: (
+                            enabled: false,
+                            width: 0.1,
+                            offset: 0.0,
+                        ),
+                        gamma: 2.2,
+                    ),
+                    color_calibration: (
+                        brightness: 0.0,
+                        contrast: 1.0,
+                        gamma: (1.0, 1.0),
+                        gamma_b: 1.0,
+                        color_temp: 6500.0,
+                        saturation: 1.0,
+                    ),
+                    fullscreen: false,
+                ),
+                (
+                    id: 3,
+                    name: "Output 2",
+                    canvas_region: (
+                        x: 0.0,
+                        y: 0.0,
+                        width: 1.0,
+                        height: 1.0,
+                    ),
+                    resolution: (1920, 1080),
+                    edge_blend: (
+                        left: (
+                            enabled: false,
+                            width: 0.1,
+                            offset: 0.0,
+                        ),
+                        right: (
+                            enabled: false,
+                            width: 0.1,
+                            offset: 0.0,
+                        ),
+                        top: (
+                            enabled: false,
+                            width: 0.1,
+                            offset: 0.0,
+                        ),
+                        bottom: (
+                            enabled: false,
+                            width: 0.1,
+                            offset: 0.0,
+                        ),
+                        gamma: 2.2,
+                    ),
+                    color_calibration: (
+                        brightness: 0.0,
+                        contrast: 1.0,
+                        gamma: (1.0, 1.0),
+                        gamma_b: 1.0,
+                        color_temp: 6500.0,
+                        saturation: 1.0,
+                    ),
+                    fullscreen: false,
+                ),
+            ],
             canvas_size: (1920, 1080),
-            next_id: 1,
+            next_id: 4,
         ),
         audio_config: (
             sample_rate: 44100,

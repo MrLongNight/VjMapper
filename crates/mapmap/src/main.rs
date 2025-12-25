@@ -98,6 +98,10 @@ struct App {
     current_fps: f32,
     /// Current frame time in ms
     current_frame_time_ms: f32,
+    /// System info for CPU/RAM monitoring
+    sys_info: sysinfo::System,
+    /// Last system refresh time
+    last_sysinfo_refresh: std::time::Instant,
 }
 
 impl App {
@@ -409,7 +413,7 @@ impl App {
                 if self.state.dirty
                     && self.last_autosave.elapsed() >= std::time::Duration::from_secs(300)
                 {
-                    let autosave_path = PathBuf::from(".mapmap_autosave");
+                    let autosave_path = PathBuf::from(".MapFlowAutoSave");
                     if let Err(e) = save_project(&self.state, &autosave_path) {
                         error!("Autosave failed: {}", e);
                     } else {
@@ -1339,6 +1343,44 @@ fn cleanup_old_logs(log_dir: &PathBuf, max_files: usize) {
                 }
             }
             files.remove(0);
+        }
+    }
+}
+
+/// Remove old log files, keeping only the most recent ones.
+fn cleanup_old_logs(log_dir: &PathBuf, max_files: usize) {
+    if let Ok(entries) = std::fs::read_dir(log_dir) {
+        let mut files: Vec<_> = entries
+            .filter_map(|e| e.ok())
+            .filter(|e| e.path().extension().map_or(false, |ext| ext == "log"))
+            .filter(|e| {
+                e.path()
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .map_or(false, |n| n.starts_with("mapflow_"))
+            })
+            .collect();
+
+        // Sort by modification time (oldest first)
+        files.sort_by(|a, b| {
+            let time_a = a.metadata().and_then(|m| m.modified()).ok();
+            let time_b = b.metadata().and_then(|m| m.modified()).ok();
+            time_a.cmp(&time_b)
+        });
+
+        // Remove oldest files if we exceed max
+        while files.len() > max_files {
+            if let Some(oldest) = files.first() {
+                if let Err(e) = std::fs::remove_file(oldest.path()) {
+                    tracing::warn!("Could not remove old log file {:?}: {}", oldest.path(), e);
+                } else {
+                    tracing::debug!("Removed old log file: {:?}", oldest.path());
+                }
+            }
+            files.remove(0);
+        }
+    }
+}
         }
     }
 }

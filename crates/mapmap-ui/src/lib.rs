@@ -213,6 +213,14 @@ pub struct AppUI {
     pub current_fps: f32,
     /// Current frame time in ms for toolbar display
     pub current_frame_time_ms: f32,
+    /// Target FPS from settings
+    pub target_fps: f32,
+    /// CPU usage percentage (0.0-100.0)
+    pub cpu_usage: f32,
+    /// GPU usage percentage (0.0-100.0)  
+    pub gpu_usage: f32,
+    /// RAM usage in MB
+    pub ram_usage_mb: f32,
 }
 
 impl Default for AppUI {
@@ -276,6 +284,10 @@ impl Default for AppUI {
             current_audio_level: 0.0,
             current_fps: 60.0,
             current_frame_time_ms: 16.67,
+            target_fps: 60.0,
+            cpu_usage: 0.0,
+            gpu_usage: 0.0,
+            ram_usage_mb: 0.0,
         }
     }
 }
