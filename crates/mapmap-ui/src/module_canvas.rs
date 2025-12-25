@@ -795,8 +795,14 @@ impl ModuleCanvas {
         // Draw parts (nodes) with delete buttons and selection highlight
         for part in &module.parts {
             let part_screen_pos = to_screen(Pos2::new(part.position.0, part.position.1));
-            let part_height = 80.0 + (part.inputs.len().max(part.outputs.len()) as f32) * 20.0;
-            let part_size = Vec2::new(180.0, part_height);
+
+            // Use custom size or calculate default
+            let (part_width, part_height) = part.size.unwrap_or_else(|| {
+                let default_height =
+                    80.0 + (part.inputs.len().max(part.outputs.len()) as f32) * 20.0;
+                (180.0, default_height)
+            });
+            let part_size = Vec2::new(part_width, part_height);
             let part_screen_rect = Rect::from_min_size(part_screen_pos, part_size * self.zoom);
 
             // Draw selection highlight if selected
@@ -806,6 +812,25 @@ impl ModuleCanvas {
                     highlight_rect,
                     8.0 * self.zoom,
                     Stroke::new(3.0 * self.zoom, Color32::from_rgb(100, 200, 255)),
+                );
+
+                // Draw resize handle at bottom-right corner
+                let handle_size = 12.0 * self.zoom;
+                let handle_rect = Rect::from_min_size(
+                    Pos2::new(
+                        part_screen_rect.max.x - handle_size,
+                        part_screen_rect.max.y - handle_size,
+                    ),
+                    Vec2::splat(handle_size),
+                );
+                painter.rect_filled(handle_rect, 2.0, Color32::from_rgb(100, 200, 255));
+                // Draw diagonal lines for resize indicator
+                painter.line_segment(
+                    [
+                        handle_rect.min + Vec2::new(3.0, handle_size - 3.0),
+                        handle_rect.min + Vec2::new(handle_size - 3.0, 3.0),
+                    ],
+                    Stroke::new(1.5, Color32::from_gray(40)),
                 );
             }
 
