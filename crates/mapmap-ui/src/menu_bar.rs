@@ -332,13 +332,13 @@ pub fn show(ctx: &egui::Context, ui_state: &mut AppUI) -> Vec<UIAction> {
                     };
 
                     // Choose width based on style
-                    let meter_width = match ui_state.user_config.meter_style {
+                    let meter_width: f32 = match ui_state.user_config.meter_style {
                         crate::config::AudioMeterStyle::Retro => 260.0,   // Wide Retro Stereo
                         crate::config::AudioMeterStyle::Digital => 360.0, // Wide Digital Stereo
                     };
 
-                    // Use all available height in the toolbar row
-                    let meter_height = ui.available_height();
+                    // Use all available height in the toolbar row, but clamp to avoid infinite expansion
+                    let meter_height = ui.available_height().clamp(40.0, 120.0);
 
                     // Reserve space for Right-side stats panel (approximate width)
                     let right_panel_width = 320.0;
@@ -354,8 +354,8 @@ pub fn show(ctx: &egui::Context, ui_state: &mut AppUI) -> Vec<UIAction> {
                     ui.add(
                         AudioMeter::new(
                             ui_state.user_config.meter_style,
-                            db, // Left (Duplicate mono)
-                            db  // Right (Duplicate mono)
+                            db,
+                            db
                         )
                         .desired_size(egui::vec2(meter_width, meter_height)),
                     );
