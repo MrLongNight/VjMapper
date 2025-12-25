@@ -96,7 +96,8 @@ impl ModuleCanvas {
                 {
                     if let Some(id) = self.active_module_id {
                         if let Some(module) = manager.get_module_mut(id) {
-                            module.add_part(mapmap_core::module::PartType::Trigger, (100.0, 100.0));
+                            let pos = Self::find_free_position(&module.parts, (100.0, 100.0));
+                            module.add_part(mapmap_core::module::PartType::Trigger, pos);
                         }
                     }
                 }
@@ -108,7 +109,8 @@ impl ModuleCanvas {
                 {
                     if let Some(id) = self.active_module_id {
                         if let Some(module) = manager.get_module_mut(id) {
-                            module.add_part(mapmap_core::module::PartType::Source, (200.0, 100.0));
+                            let pos = Self::find_free_position(&module.parts, (200.0, 100.0));
+                            module.add_part(mapmap_core::module::PartType::Source, pos);
                         }
                     }
                 }
@@ -120,7 +122,8 @@ impl ModuleCanvas {
                 {
                     if let Some(id) = self.active_module_id {
                         if let Some(module) = manager.get_module_mut(id) {
-                            module.add_part(mapmap_core::module::PartType::Mask, (300.0, 100.0));
+                            let pos = Self::find_free_position(&module.parts, (300.0, 100.0));
+                            module.add_part(mapmap_core::module::PartType::Mask, pos);
                         }
                     }
                 }
@@ -132,8 +135,8 @@ impl ModuleCanvas {
                 {
                     if let Some(id) = self.active_module_id {
                         if let Some(module) = manager.get_module_mut(id) {
-                            module
-                                .add_part(mapmap_core::module::PartType::Modulator, (400.0, 100.0));
+                            let pos = Self::find_free_position(&module.parts, (400.0, 100.0));
+                            module.add_part(mapmap_core::module::PartType::Modulator, pos);
                         }
                     }
                 }
@@ -145,7 +148,8 @@ impl ModuleCanvas {
                 {
                     if let Some(id) = self.active_module_id {
                         if let Some(module) = manager.get_module_mut(id) {
-                            module.add_part(mapmap_core::module::PartType::Layer, (500.0, 100.0));
+                            let pos = Self::find_free_position(&module.parts, (500.0, 100.0));
+                            module.add_part(mapmap_core::module::PartType::Layer, pos);
                         }
                     }
                 }
@@ -157,7 +161,8 @@ impl ModuleCanvas {
                 {
                     if let Some(id) = self.active_module_id {
                         if let Some(module) = manager.get_module_mut(id) {
-                            module.add_part(mapmap_core::module::PartType::Output, (600.0, 100.0));
+                            let pos = Self::find_free_position(&module.parts, (600.0, 100.0));
+                            module.add_part(mapmap_core::module::PartType::Output, pos);
                         }
                     }
                 }
@@ -308,7 +313,34 @@ impl ModuleCanvas {
             .and_then(|id| manager.get_module_mut(id));
 
         if let Some(module) = active_module {
-            self.render_canvas(ui, module, locale);
+            // Split view: canvas on left, inspector on right if node selected
+            if !self.selected_parts.is_empty() {
+                ui.horizontal(|ui| {
+                    // Canvas area (left side - takes most space)
+                    let canvas_width = ui.available_width() - 220.0;
+                    ui.allocate_ui(Vec2::new(canvas_width, ui.available_height()), |ui| {
+                        self.render_canvas(ui, module, locale);
+                    });
+
+                    ui.separator();
+
+                    // Inspector panel (right side - 200px width)
+                    ui.vertical(|ui| {
+                        ui.set_min_width(200.0);
+                        ui.heading("📋 Node Inspector");
+                        ui.separator();
+
+                        // Get first selected part
+                        if let Some(part_id) = self.selected_parts.first().copied() {
+                            if let Some(part) = module.parts.iter_mut().find(|p| p.id == part_id) {
+                                Self::render_node_inspector(ui, part);
+                            }
+                        }
+                    });
+                });
+            } else {
+                self.render_canvas(ui, module, locale);
+            }
         } else {
             // Show a message if no module is selected
             ui.centered_and_justified(|ui| {
@@ -794,6 +826,349 @@ impl ModuleCanvas {
         painter.rect_stroke(viewport_rect, 0.0, Stroke::new(1.5, Color32::WHITE));
     }
 
+    fn render_node_inspector(ui: &mut Ui, part: &mut mapmap_core::module::ModulePart) {
+        use mapmap_core::module::{
+            BlendModeType, EffectType, LayerAssignmentType, MaskShape, MaskType, ModulePartType,
+            ModulizerType, OutputType, SourceType, TriggerType,
+        };
+
+        let (_, _, icon, type_name) = Self::get_part_style(&part.part_type);
+        ui.label(format!("{} {} Node", icon, type_name));
+        ui.add_space(8.0);
+
+        match &mut part.part_type {
+            ModulePartType::Trigger(trigger_type) => {
+                ui.label("Trigger Type:");
+                let current = match trigger_type {
+                    TriggerType::Beat => "Beat",
+                    TriggerType::AudioFFT { .. } => "Audio FFT",
+                    TriggerType::Random { .. } => "Random",
+                    TriggerType::Fixed { .. } => "Fixed Timer",
+                    TriggerType::Midi { .. } => "MIDI",
+                    TriggerType::Osc { .. } => "OSC",
+                    TriggerType::Shortcut { .. } => "Shortcut",
+                };
+                egui::ComboBox::from_id_source("trigger_type")
+                    .selected_text(current)
+                    .show_ui(ui, |ui| {
+                        if ui
+                            .selectable_label(matches!(trigger_type, TriggerType::Beat), "Beat")
+                            .clicked()
+                        {
+                            *trigger_type = TriggerType::Beat;
+                        }
+                        if ui
+                            .selectable_label(
+                                matches!(trigger_type, TriggerType::AudioFFT { .. }),
+                                "Audio FFT",
+                            )
+                            .clicked()
+                        {
+                            *trigger_type = TriggerType::AudioFFT {
+                                band: mapmap_core::module::AudioBand::Bass,
+                                threshold: 0.5,
+                            };
+                        }
+                        if ui
+                            .selectable_label(
+                                matches!(trigger_type, TriggerType::Random { .. }),
+                                "Random",
+                            )
+                            .clicked()
+                        {
+                            *trigger_type = TriggerType::Random {
+                                min_interval_ms: 500,
+                                max_interval_ms: 2000,
+                                probability: 0.5,
+                            };
+                        }
+                        if ui
+                            .selectable_label(
+                                matches!(trigger_type, TriggerType::Fixed { .. }),
+                                "Fixed Timer",
+                            )
+                            .clicked()
+                        {
+                            *trigger_type = TriggerType::Fixed {
+                                interval_ms: 1000,
+                                offset_ms: 0,
+                            };
+                        }
+                    });
+            }
+            ModulePartType::Source(source_type) => {
+                ui.label("Source Type:");
+                let current = match source_type {
+                    SourceType::MediaFile { .. } => "Media File",
+                    SourceType::Shader { .. } => "Shader",
+                    SourceType::LiveInput { .. } => "Live Input",
+                };
+                egui::ComboBox::from_id_source("source_type")
+                    .selected_text(current)
+                    .show_ui(ui, |ui| {
+                        if ui
+                            .selectable_label(
+                                matches!(source_type, SourceType::MediaFile { .. }),
+                                "Media File",
+                            )
+                            .clicked()
+                        {
+                            *source_type = SourceType::MediaFile {
+                                path: String::new(),
+                            };
+                        }
+                        if ui
+                            .selectable_label(
+                                matches!(source_type, SourceType::Shader { .. }),
+                                "Shader",
+                            )
+                            .clicked()
+                        {
+                            *source_type = SourceType::Shader {
+                                name: "Default".to_string(),
+                                params: vec![],
+                            };
+                        }
+                        if ui
+                            .selectable_label(
+                                matches!(source_type, SourceType::LiveInput { .. }),
+                                "Live Input",
+                            )
+                            .clicked()
+                        {
+                            *source_type = SourceType::LiveInput { device_id: 0 };
+                        }
+                    });
+            }
+            ModulePartType::Mask(mask_type) => {
+                ui.label("Mask Type:");
+                let current = match mask_type {
+                    MaskType::File { .. } => "File",
+                    MaskType::Shape(_) => "Shape",
+                    MaskType::Gradient { .. } => "Gradient",
+                };
+                egui::ComboBox::from_id_source("mask_type")
+                    .selected_text(current)
+                    .show_ui(ui, |ui| {
+                        if ui
+                            .selectable_label(matches!(mask_type, MaskType::File { .. }), "File")
+                            .clicked()
+                        {
+                            *mask_type = MaskType::File {
+                                path: String::new(),
+                            };
+                        }
+                        if ui
+                            .selectable_label(matches!(mask_type, MaskType::Shape(_)), "Shape")
+                            .clicked()
+                        {
+                            *mask_type = MaskType::Shape(MaskShape::Rectangle);
+                        }
+                        if ui
+                            .selectable_label(
+                                matches!(mask_type, MaskType::Gradient { .. }),
+                                "Gradient",
+                            )
+                            .clicked()
+                        {
+                            *mask_type = MaskType::Gradient {
+                                angle: 0.0,
+                                softness: 0.5,
+                            };
+                        }
+                    });
+
+                // Shape sub-selector
+                if let MaskType::Shape(shape) = mask_type {
+                    ui.add_space(4.0);
+                    ui.label("Shape:");
+                    egui::ComboBox::from_id_source("shape_type")
+                        .selected_text(format!("{:?}", shape))
+                        .show_ui(ui, |ui| {
+                            if ui
+                                .selectable_label(matches!(shape, MaskShape::Circle), "Circle")
+                                .clicked()
+                            {
+                                *shape = MaskShape::Circle;
+                            }
+                            if ui
+                                .selectable_label(
+                                    matches!(shape, MaskShape::Rectangle),
+                                    "Rectangle",
+                                )
+                                .clicked()
+                            {
+                                *shape = MaskShape::Rectangle;
+                            }
+                            if ui
+                                .selectable_label(matches!(shape, MaskShape::Triangle), "Triangle")
+                                .clicked()
+                            {
+                                *shape = MaskShape::Triangle;
+                            }
+                            if ui
+                                .selectable_label(matches!(shape, MaskShape::Star), "Star")
+                                .clicked()
+                            {
+                                *shape = MaskShape::Star;
+                            }
+                            if ui
+                                .selectable_label(matches!(shape, MaskShape::Ellipse), "Ellipse")
+                                .clicked()
+                            {
+                                *shape = MaskShape::Ellipse;
+                            }
+                        });
+                }
+            }
+            ModulePartType::Modulizer(modulizer_type) => {
+                ui.label("Modulator Type:");
+                let current = match modulizer_type {
+                    ModulizerType::Effect(_) => "Effect",
+                    ModulizerType::BlendMode(_) => "Blend Mode",
+                    ModulizerType::AudioReactive { .. } => "Audio Reactive",
+                };
+                egui::ComboBox::from_id_source("modulator_type")
+                    .selected_text(current)
+                    .show_ui(ui, |ui| {
+                        if ui
+                            .selectable_label(
+                                matches!(modulizer_type, ModulizerType::Effect(_)),
+                                "Effect",
+                            )
+                            .clicked()
+                        {
+                            *modulizer_type = ModulizerType::Effect(EffectType::Blur);
+                        }
+                        if ui
+                            .selectable_label(
+                                matches!(modulizer_type, ModulizerType::BlendMode(_)),
+                                "Blend Mode",
+                            )
+                            .clicked()
+                        {
+                            *modulizer_type = ModulizerType::BlendMode(BlendModeType::Normal);
+                        }
+                    });
+
+                // Effect sub-selector
+                if let ModulizerType::Effect(effect) = modulizer_type {
+                    ui.add_space(4.0);
+                    ui.label("Effect:");
+                    egui::ComboBox::from_id_source("effect_type")
+                        .selected_text(effect.name())
+                        .show_ui(ui, |ui| {
+                            for e in EffectType::all() {
+                                if ui.selectable_label(*effect == *e, e.name()).clicked() {
+                                    *effect = *e;
+                                }
+                            }
+                        });
+                }
+
+                // Blend mode sub-selector
+                if let ModulizerType::BlendMode(blend) = modulizer_type {
+                    ui.add_space(4.0);
+                    ui.label("Blend Mode:");
+                    egui::ComboBox::from_id_source("blend_type")
+                        .selected_text(blend.name())
+                        .show_ui(ui, |ui| {
+                            for b in BlendModeType::all() {
+                                if ui.selectable_label(*blend == *b, b.name()).clicked() {
+                                    *blend = *b;
+                                }
+                            }
+                        });
+                }
+            }
+            ModulePartType::LayerAssignment(layer_type) => {
+                ui.label("Layer Type:");
+                let current = match layer_type {
+                    LayerAssignmentType::SingleLayer { .. } => "Single Layer",
+                    LayerAssignmentType::Group { .. } => "Group",
+                    LayerAssignmentType::AllLayers => "All Layers",
+                };
+                egui::ComboBox::from_id_source("layer_type")
+                    .selected_text(current)
+                    .show_ui(ui, |ui| {
+                        if ui
+                            .selectable_label(
+                                matches!(layer_type, LayerAssignmentType::SingleLayer { .. }),
+                                "Single Layer",
+                            )
+                            .clicked()
+                        {
+                            *layer_type = LayerAssignmentType::SingleLayer {
+                                id: 0,
+                                name: "Layer 1".to_string(),
+                            };
+                        }
+                        if ui
+                            .selectable_label(
+                                matches!(layer_type, LayerAssignmentType::Group { .. }),
+                                "Group",
+                            )
+                            .clicked()
+                        {
+                            *layer_type = LayerAssignmentType::Group {
+                                name: "Group 1".to_string(),
+                            };
+                        }
+                        if ui
+                            .selectable_label(
+                                matches!(layer_type, LayerAssignmentType::AllLayers),
+                                "All Layers",
+                            )
+                            .clicked()
+                        {
+                            *layer_type = LayerAssignmentType::AllLayers;
+                        }
+                    });
+            }
+            ModulePartType::Output(output_type) => {
+                ui.label("Output Type:");
+                let current = match output_type {
+                    OutputType::Projector { .. } => "Projector",
+                    OutputType::Preview { .. } => "Preview",
+                };
+                egui::ComboBox::from_id_source("output_type")
+                    .selected_text(current)
+                    .show_ui(ui, |ui| {
+                        if ui
+                            .selectable_label(
+                                matches!(output_type, OutputType::Projector { .. }),
+                                "Projector",
+                            )
+                            .clicked()
+                        {
+                            *output_type = OutputType::Projector {
+                                id: 0,
+                                name: "Projector 1".to_string(),
+                            };
+                        }
+                        if ui
+                            .selectable_label(
+                                matches!(output_type, OutputType::Preview { .. }),
+                                "Preview",
+                            )
+                            .clicked()
+                        {
+                            *output_type = OutputType::Preview { window_id: 0 };
+                        }
+                    });
+            }
+        }
+
+        ui.add_space(10.0);
+        ui.separator();
+        ui.label(format!(
+            "Position: ({:.0}, {:.0})",
+            part.position.0, part.position.1
+        ));
+        ui.label(format!("Inputs: {}", part.inputs.len()));
+        ui.label(format!("Outputs: {}", part.outputs.len()));
+    }
+
     fn draw_grid(&self, painter: &egui::Painter, rect: Rect) {
         let grid_size = 20.0 * self.zoom;
         let color = Color32::from_rgb(40, 40, 40);
@@ -1154,6 +1529,51 @@ impl ModuleCanvas {
             }
 
             x += node_width + h_spacing;
+        }
+    }
+
+    /// Find a free position for a new node, avoiding overlaps with existing nodes
+    fn find_free_position(
+        parts: &[mapmap_core::module::ModulePart],
+        preferred: (f32, f32),
+    ) -> (f32, f32) {
+        let node_width = 190.0;
+        let node_height = 130.0;
+        let grid_step = 30.0;
+
+        let mut pos = preferred;
+        let mut attempts = 0;
+
+        loop {
+            let new_rect =
+                Rect::from_min_size(Pos2::new(pos.0, pos.1), Vec2::new(node_width, node_height));
+
+            let has_collision = parts.iter().any(|part| {
+                let part_height = 80.0 + (part.inputs.len().max(part.outputs.len()) as f32) * 20.0;
+                let part_rect = Rect::from_min_size(
+                    Pos2::new(part.position.0, part.position.1),
+                    Vec2::new(node_width, part_height),
+                );
+                new_rect.intersects(part_rect)
+            });
+
+            if !has_collision {
+                return pos;
+            }
+
+            // Try different positions in a spiral pattern
+            attempts += 1;
+            if attempts > 100 {
+                // Give up after 100 attempts, just offset significantly
+                return (preferred.0, preferred.1 + (parts.len() as f32) * 150.0);
+            }
+
+            // Move down first, then right
+            pos.1 += grid_step;
+            if pos.1 > preferred.1 + 500.0 {
+                pos.1 = preferred.1;
+                pos.0 += node_width + 20.0;
+            }
         }
     }
 }
