@@ -1,5 +1,5 @@
 use crate::i18n::LocaleManager;
-use egui::{Color32, Pos2, Rect, Response, Sense, Stroke, Ui, Vec2};
+use egui::{Color32, Pos2, Rect, Sense, Stroke, Ui, Vec2};
 use mapmap_core::module::{MapFlowModule, ModuleManager, ModulePart, ModulePartId};
 
 #[allow(dead_code)]
@@ -160,13 +160,16 @@ impl ModuleCanvas {
         }
     }
 
-    fn render_canvas(&mut self, ui: &mut Ui, module: &mut MapFlowModule, locale: &LocaleManager) {
+    fn render_canvas(&mut self, ui: &mut Ui, module: &mut MapFlowModule, _locale: &LocaleManager) {
         let (response, painter) = ui.allocate_painter(ui.available_size(), Sense::click_and_drag());
+        let canvas_rect = response.rect;
 
-        // Handle canvas interactions (pan, zoom)
-        if response.dragged() {
+        // Handle canvas pan (only when not dragging a part)
+        if response.dragged() && self.dragging_part.is_none() {
             self.pan_offset += response.drag_delta();
         }
+
+        // Handle zoom
         if response.hovered() {
             let scroll = ui.input(|i| i.raw_scroll_delta.y);
             if scroll != 0.0 {
@@ -175,22 +178,81 @@ impl ModuleCanvas {
             }
         }
 
-        let to_screen = |pos: Pos2| -> Pos2 {
-            response.rect.min + (pos.to_vec2() + self.pan_offset) * self.zoom
+        let to_screen =
+            |pos: Pos2| -> Pos2 { canvas_rect.min + (pos.to_vec2() + self.pan_offset) * self.zoom };
+
+        let _from_screen = |screen_pos: Pos2| -> Pos2 {
+            let v = (screen_pos - canvas_rect.min) / self.zoom - self.pan_offset;
+            Pos2::new(v.x, v.y)
         };
 
         // Draw grid
-        self.draw_grid(&painter, response.rect);
+        self.draw_grid(&painter, canvas_rect);
 
-        // TODO: Draw connections
+        // Draw connections first (behind nodes)
+        self.draw_connections(&painter, module, &to_screen);
+
+        // Collect part info for dragging (need to avoid borrow issues)
+        let part_rects: Vec<_> = module
+            .parts
+            .iter()
+            .map(|part| {
+                let part_screen_pos = to_screen(Pos2::new(part.position.0, part.position.1));
+                let part_size = Vec2::new(
+                    180.0,
+                    80.0 + (part.inputs.len().max(part.outputs.len()) as f32) * 20.0,
+                );
+                (
+                    part.id,
+                    Rect::from_min_size(part_screen_pos, part_size * self.zoom),
+                )
+            })
+            .collect();
+
+        // Handle part dragging
+        for (part_id, rect) in &part_rects {
+            let part_response =
+                ui.interact(*rect, egui::Id::new(*part_id), Sense::click_and_drag());
+
+            if part_response.drag_started() {
+                self.dragging_part = Some((*part_id, Vec2::ZERO));
+            }
+
+            if part_response.dragged() {
+                if let Some((dragged_id, _)) = self.dragging_part {
+                    if dragged_id == *part_id {
+                        let delta = part_response.drag_delta() / self.zoom;
+                        if let Some(part) = module.parts.iter_mut().find(|p| p.id == *part_id) {
+                            part.position.0 += delta.x;
+                            part.position.1 += delta.y;
+                        }
+                    }
+                }
+            }
+
+            if part_response.drag_stopped() {
+                self.dragging_part = None;
+            }
+        }
 
         // Draw parts (nodes)
         for part in &module.parts {
             let part_screen_pos = to_screen(Pos2::new(part.position.0, part.position.1));
-            let part_size = Vec2::new(180.0, 120.0); // Fixed size for now
+            let part_height = 80.0 + (part.inputs.len().max(part.outputs.len()) as f32) * 20.0;
+            let part_size = Vec2::new(180.0, part_height);
             let part_screen_rect = Rect::from_min_size(part_screen_pos, part_size * self.zoom);
 
-            self.draw_part(ui, &painter, part, part_screen_rect, locale);
+            self.draw_part(&painter, part, part_screen_rect);
+        }
+
+        // Draw connection being created
+        if let Some((_from_part_id, _from_socket_idx, start_pos)) = self.creating_connection {
+            if let Some(pointer_pos) = ui.input(|i| i.pointer.hover_pos()) {
+                painter.line_segment(
+                    [start_pos, pointer_pos],
+                    Stroke::new(2.0, Color32::from_rgb(100, 200, 100)),
+                );
+            }
         }
     }
 
@@ -215,36 +277,191 @@ impl ModuleCanvas {
         }
     }
 
-    fn draw_part(
-        &self,
-        ui: &Ui,
-        painter: &egui::Painter,
-        part: &ModulePart,
-        rect: Rect,
-        _locale: &LocaleManager,
-    ) -> Response {
-        let response = ui.interact(rect, egui::Id::new(part.id), Sense::click_and_drag());
+    fn draw_connections<F>(&self, painter: &egui::Painter, module: &MapFlowModule, to_screen: &F)
+    where
+        F: Fn(Pos2) -> Pos2,
+    {
+        for conn in &module.connections {
+            // Find source and target parts
+            let from_part = module.parts.iter().find(|p| p.id == conn.from_part);
+            let to_part = module.parts.iter().find(|p| p.id == conn.to_part);
 
-        let bg_color = Color32::from_rgb(50, 50, 60);
-        painter.rect_filled(rect, 4.0, bg_color);
-        painter.rect_stroke(rect, 4.0, Stroke::new(2.0, Color32::from_rgb(80, 80, 80)));
+            if let (Some(from), Some(to)) = (from_part, to_part) {
+                // Calculate socket positions
+                let from_pos = to_screen(Pos2::new(from.position.0, from.position.1));
+                let to_pos = to_screen(Pos2::new(to.position.0, to.position.1));
+
+                let _from_height = 80.0 + (from.inputs.len().max(from.outputs.len()) as f32) * 20.0;
+                let socket_y_offset = 50.0 + conn.from_socket as f32 * 20.0;
+                let from_socket_pos = Pos2::new(
+                    from_pos.x + 180.0 * self.zoom, // Right side
+                    from_pos.y + socket_y_offset * self.zoom,
+                );
+
+                let to_socket_y_offset = 50.0 + conn.to_socket as f32 * 20.0;
+                let to_socket_pos = Pos2::new(
+                    to_pos.x, // Left side
+                    to_pos.y + to_socket_y_offset * self.zoom,
+                );
+
+                // Draw bezier curve
+                let control_offset = (to_socket_pos.x - from_socket_pos.x).abs() * 0.4;
+                let ctrl1 = Pos2::new(from_socket_pos.x + control_offset, from_socket_pos.y);
+                let ctrl2 = Pos2::new(to_socket_pos.x - control_offset, to_socket_pos.y);
+
+                // Draw as line segments (approximating bezier)
+                let steps = 20;
+                for i in 0..steps {
+                    let t1 = i as f32 / steps as f32;
+                    let t2 = (i + 1) as f32 / steps as f32;
+                    let p1 = Self::bezier_point(from_socket_pos, ctrl1, ctrl2, to_socket_pos, t1);
+                    let p2 = Self::bezier_point(from_socket_pos, ctrl1, ctrl2, to_socket_pos, t2);
+                    painter
+                        .line_segment([p1, p2], Stroke::new(2.0, Color32::from_rgb(100, 180, 255)));
+                }
+            }
+        }
+    }
+
+    fn bezier_point(p0: Pos2, p1: Pos2, p2: Pos2, p3: Pos2, t: f32) -> Pos2 {
+        let u = 1.0 - t;
+        let tt = t * t;
+        let uu = u * u;
+        let uuu = uu * u;
+        let ttt = tt * t;
+
+        Pos2::new(
+            uuu * p0.x + 3.0 * uu * t * p1.x + 3.0 * u * tt * p2.x + ttt * p3.x,
+            uuu * p0.y + 3.0 * uu * t * p1.y + 3.0 * u * tt * p2.y + ttt * p3.y,
+        )
+    }
+
+    fn draw_part(&self, painter: &egui::Painter, part: &ModulePart, rect: Rect) {
+        // Get part color and name based on type
+        let (bg_color, title_color, icon, name) = Self::get_part_style(&part.part_type);
+
+        // Draw background
+        painter.rect_filled(rect, 6.0 * self.zoom, bg_color);
+        painter.rect_stroke(
+            rect,
+            6.0 * self.zoom,
+            Stroke::new(2.0, Color32::from_rgb(80, 80, 90)),
+        );
 
         // Title bar
-        let title_rect = Rect::from_min_size(rect.min, Vec2::new(rect.width(), 24.0 * self.zoom));
-        painter.rect_filled(title_rect, 4.0, Color32::from_rgb(30, 30, 30));
+        let title_height = 28.0 * self.zoom;
+        let title_rect = Rect::from_min_size(rect.min, Vec2::new(rect.width(), title_height));
+        painter.rect_filled(
+            title_rect,
+            egui::Rounding {
+                nw: 6.0 * self.zoom,
+                ne: 6.0 * self.zoom,
+                sw: 0.0,
+                se: 0.0,
+            },
+            title_color,
+        );
 
-        // TODO: Get proper name for part type
-        let part_name = "Module Part";
+        // Title text with icon
+        let title_text = format!("{} {}", icon, name);
         painter.text(
             title_rect.center(),
             egui::Align2::CENTER_CENTER,
-            part_name,
-            egui::FontId::proportional(14.0 * self.zoom),
+            title_text,
+            egui::FontId::proportional(13.0 * self.zoom),
             Color32::WHITE,
         );
 
-        // TODO: Draw sockets
+        // Draw input sockets (left side)
+        let socket_start_y = rect.min.y + title_height + 10.0 * self.zoom;
+        for (i, socket) in part.inputs.iter().enumerate() {
+            let socket_y = socket_start_y + i as f32 * 22.0 * self.zoom;
+            let socket_pos = Pos2::new(rect.min.x, socket_y);
+            let socket_radius = 6.0 * self.zoom;
 
-        response
+            // Socket circle
+            let socket_color = Self::get_socket_color(&socket.socket_type);
+            painter.circle_filled(socket_pos, socket_radius, socket_color);
+            painter.circle_stroke(socket_pos, socket_radius, Stroke::new(1.5, Color32::WHITE));
+
+            // Socket label
+            painter.text(
+                Pos2::new(rect.min.x + 12.0 * self.zoom, socket_y),
+                egui::Align2::LEFT_CENTER,
+                &socket.name,
+                egui::FontId::proportional(10.0 * self.zoom),
+                Color32::from_gray(200),
+            );
+        }
+
+        // Draw output sockets (right side)
+        for (i, socket) in part.outputs.iter().enumerate() {
+            let socket_y = socket_start_y + i as f32 * 22.0 * self.zoom;
+            let socket_pos = Pos2::new(rect.max.x, socket_y);
+            let socket_radius = 6.0 * self.zoom;
+
+            // Socket circle
+            let socket_color = Self::get_socket_color(&socket.socket_type);
+            painter.circle_filled(socket_pos, socket_radius, socket_color);
+            painter.circle_stroke(socket_pos, socket_radius, Stroke::new(1.5, Color32::WHITE));
+
+            // Socket label
+            painter.text(
+                Pos2::new(rect.max.x - 12.0 * self.zoom, socket_y),
+                egui::Align2::RIGHT_CENTER,
+                &socket.name,
+                egui::FontId::proportional(10.0 * self.zoom),
+                Color32::from_gray(200),
+            );
+        }
+    }
+
+    fn get_part_style(
+        part_type: &mapmap_core::module::ModulePartType,
+    ) -> (Color32, Color32, &'static str, &'static str) {
+        use mapmap_core::module::ModulePartType;
+        match part_type {
+            ModulePartType::Trigger(_) => (
+                Color32::from_rgb(60, 50, 70),   // bg
+                Color32::from_rgb(130, 80, 180), // title
+                "⚡",
+                "Trigger",
+            ),
+            ModulePartType::Resource(_) => (
+                Color32::from_rgb(50, 60, 70),
+                Color32::from_rgb(80, 140, 180),
+                "🎬",
+                "Media",
+            ),
+            ModulePartType::Modulizer(_) => (
+                Color32::from_rgb(60, 60, 50),
+                Color32::from_rgb(180, 140, 60),
+                "〰️",
+                "Modulator",
+            ),
+            ModulePartType::LayerAssignment(_) => (
+                Color32::from_rgb(50, 70, 60),
+                Color32::from_rgb(80, 180, 120),
+                "📑",
+                "Layer",
+            ),
+            ModulePartType::Output(_) => (
+                Color32::from_rgb(70, 50, 50),
+                Color32::from_rgb(180, 80, 80),
+                "📺",
+                "Output",
+            ),
+        }
+    }
+
+    fn get_socket_color(socket_type: &mapmap_core::module::ModuleSocketType) -> Color32 {
+        use mapmap_core::module::ModuleSocketType;
+        match socket_type {
+            ModuleSocketType::Trigger => Color32::from_rgb(180, 100, 220),
+            ModuleSocketType::Media => Color32::from_rgb(100, 180, 220),
+            ModuleSocketType::Effect => Color32::from_rgb(220, 180, 100),
+            ModuleSocketType::Layer => Color32::from_rgb(100, 220, 140),
+            ModuleSocketType::Output => Color32::from_rgb(220, 100, 100),
+        }
     }
 }
