@@ -108,8 +108,18 @@ pub struct AudioAnalysis {
     /// Overall RMS volume (0.0-1.0)
     pub rms_volume: f32,
 
+    /// Left channel RMS volume (0.0-1.0)
+    pub left_rms: f32,
+    /// Right channel RMS volume (0.0-1.0)
+    pub right_rms: f32,
+
     /// Peak volume (0.0-1.0)
     pub peak_volume: f32,
+
+    /// Left channel Peak volume (0.0-1.0)
+    pub left_peak: f32,
+    /// Right channel Peak volume (0.0-1.0)
+    pub right_peak: f32,
 
     /// Beat detected (kick drum)
     pub beat_detected: bool,
@@ -134,7 +144,11 @@ impl Default for AudioAnalysis {
             fft_magnitudes: vec![0.0; 512],
             band_energies: [0.0; 7],
             rms_volume: 0.0,
+            left_rms: 0.0,
+            right_rms: 0.0,
             peak_volume: 0.0,
+            left_peak: 0.0,
+            right_peak: 0.0,
             beat_detected: false,
             beat_strength: 0.0,
             onset_detected: false,
@@ -215,16 +229,41 @@ impl AudioAnalyzer {
     }
 
     /// Process audio samples
-    pub fn process_samples(&mut self, samples: &[f32], timestamp: f64) -> AudioAnalysis {
+    ///
+    /// `samples`: Interleaved audio samples
+    /// `channels`: Number of channels (1=Mono, 2=Stereo, etc.)
+    /// `timestamp`: Current time
+    pub fn process_samples(
+        &mut self,
+        samples: &[f32],
+        channels: u16,
+        timestamp: f64,
+    ) -> AudioAnalysis {
         self.current_time = timestamp;
 
-        // Add samples to input buffer with gain and noise gate
-        for &sample in samples {
-            let mut processed = sample * self.config.gain;
-            if processed.abs() < self.config.noise_gate {
-                processed = 0.0;
+        // Separate channels and downmix to mono for FFT
+        let channels_usize = channels as usize;
+        if channels_usize > 0 {
+            let mut i = 0;
+            while i < samples.len() {
+                // Downmix for FFT buffer (average of all channels)
+                let mut mono_sample = 0.0;
+                for c in 0..channels_usize {
+                    if i + c < samples.len() {
+                        mono_sample += samples[i + c];
+                    }
+                }
+                mono_sample /= channels_usize as f32;
+
+                // Process with gain and gate
+                let mut processed = mono_sample * self.config.gain;
+                if processed.abs() < self.config.noise_gate {
+                    processed = 0.0;
+                }
+                self.input_buffer.push_back(processed);
+
+                i += channels_usize;
             }
-            self.input_buffer.push_back(processed);
         }
 
         // Check if we have enough samples for FFT
@@ -237,7 +276,7 @@ impl AudioAnalyzer {
         self.perform_fft();
 
         // Calculate analysis metrics
-        let analysis = self.calculate_analysis();
+        let analysis = self.calculate_analysis(samples, channels);
 
         // Send analysis to receiver channel
         let _ = self.analysis_sender.send(analysis.clone());
@@ -280,18 +319,70 @@ impl AudioAnalyzer {
     }
 
     /// Calculate audio analysis from FFT results
-    fn calculate_analysis(&mut self) -> AudioAnalysis {
+    fn calculate_analysis(&mut self, raw_samples: &[f32], channels: u16) -> AudioAnalysis {
         let _half_size = self.config.fft_size / 2;
 
-        // Calculate RMS volume
+        // Calculate RMS volume (Mono)
         let rms_volume = self.calculate_rms();
 
-        // Calculate peak volume
+        // Calculate peak volume (Mono)
         let peak_volume = self
             .magnitude_buffer
             .iter()
             .copied()
             .fold(0.0f32, |a, b| a.max(b));
+
+        // Calculate Stereo Metrics from the raw interleaved samples of this frame
+        let (left_rms, right_rms, left_peak, right_peak) = if channels == 2 {
+            let mut l_sum_sq = 0.0;
+            let mut r_sum_sq = 0.0;
+            let mut l_peak = 0.0f32;
+            let mut r_peak = 0.0f32;
+            let count = raw_samples.len() / 2;
+
+            for chunk in raw_samples.chunks_exact(2) {
+                let l = chunk[0].abs();
+                let r = chunk[1].abs();
+                l_sum_sq += l * l;
+                r_sum_sq += r * r;
+                l_peak = l_peak.max(l);
+                r_peak = r_peak.max(r);
+            }
+
+            let l_rms = if count > 0 {
+                (l_sum_sq / count as f32).sqrt()
+            } else {
+                0.0
+            };
+            let r_rms = if count > 0 {
+                (r_sum_sq / count as f32).sqrt()
+            } else {
+                0.0
+            };
+
+            (l_rms, r_rms, l_peak, r_peak)
+        } else {
+            // Fallback for Mono or other: duplicate mono values
+            // Ideally we should process raw samples for peak/rms properly here too,
+            // but reusing the FFT-based mono metrics is a decent approximation for visualization
+            // unless we want strict time-domain metering.
+            // For now, let's calculate simple RMS/Peak from raw samples to be responsive
+            let mut sum_sq = 0.0;
+            let mut peak = 0.0f32;
+            let count = raw_samples.len();
+            for &s in raw_samples {
+                let abs_s = s.abs();
+                sum_sq += abs_s * abs_s;
+                peak = peak.max(abs_s);
+            }
+            let rms = if count > 0 {
+                (sum_sq / count as f32).sqrt()
+            } else {
+                0.0
+            };
+
+            (rms, rms, peak, peak)
+        };
 
         // Calculate frequency band energies
         let band_energies = self.calculate_band_energies();
@@ -310,7 +401,11 @@ impl AudioAnalyzer {
             fft_magnitudes: self.magnitude_buffer.clone(),
             band_energies,
             rms_volume,
+            left_rms,
+            right_rms,
             peak_volume,
+            left_peak,
+            right_peak,
             beat_detected,
             beat_strength,
             onset_detected,
@@ -669,7 +764,7 @@ mod tests {
         }
 
         // Process the mock samples
-        let analysis = analyzer.process_samples(&samples, 0.0);
+        let analysis = analyzer.process_samples(&samples, 1, 0.0);
 
         // Verify we got valid analysis results
         assert!(!analysis.fft_magnitudes.is_empty());
@@ -697,11 +792,11 @@ mod tests {
 
         // Build up history first
         for _ in 0..5 {
-            analyzer.process_samples(&vec![0.0; 1024], 0.0);
+            analyzer.process_samples(&vec![0.0; 1024], 1, 0.0);
         }
 
         // Process kick drum
-        let analysis = analyzer.process_samples(&samples, 0.5);
+        let analysis = analyzer.process_samples(&samples, 1, 0.5);
 
         // Check that band energies are calculated
         assert_eq!(analysis.band_energies.len(), 7);

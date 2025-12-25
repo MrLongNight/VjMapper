@@ -319,30 +319,31 @@ pub fn show(ctx: &egui::Context, ui_state: &mut AppUI) -> Vec<UIAction> {
 
                     ui.separator();
 
-                    // === AUDIO LEVEL METER (variable width, dB scale) ===
-                    let audio_level = ui_state.current_audio_level;
-                    let db = if audio_level > 0.0001 {
-                        20.0 * audio_level.log10()
+                    // === AUDIO LEVEL METER (Stereo, Centered) ===
+                    // Calculate DB levels for Left/Right
+                    let db_l = if ui_state.current_audio_level_l > 0.0001 {
+                        20.0 * ui_state.current_audio_level_l.log10()
                     } else {
                         -60.0
                     };
 
-                    // Choose width based on style
-                    let meter_width = match ui_state.user_config.meter_style {
-                        crate::config::AudioMeterStyle::Retro => 160.0,
-                        crate::config::AudioMeterStyle::Digital => 180.0,
+                    let db_r = if ui_state.current_audio_level_r > 0.0001 {
+                        20.0 * ui_state.current_audio_level_r.log10()
+                    } else {
+                        -60.0
                     };
 
-                    // Allow slightly more height for Retro look if needed
-                    let meter_height = match ui_state.user_config.meter_style {
-                        crate::config::AudioMeterStyle::Retro => 40.0,
-                        crate::config::AudioMeterStyle::Digital => 24.0,
+                    // Dimensions
+                    let available_height = ui.available_height(); // Use full height
+                    let meter_width = match ui_state.user_config.meter_style {
+                        crate::config::AudioMeterStyle::Retro => 220.0, // Wider for dual meters
+                        crate::config::AudioMeterStyle::Digital => 360.0, // Wide digital bar
                     };
 
                     ui.label("🔊");
                     ui.add(
-                        AudioMeter::new(ui_state.user_config.meter_style, db)
-                            .desired_size(egui::vec2(meter_width, meter_height)),
+                        AudioMeter::new(ui_state.user_config.meter_style, db_l, db_r)
+                            .desired_size(egui::vec2(meter_width, available_height)),
                     );
 
                     // === SPACER - push performance to right ===

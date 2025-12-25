@@ -430,7 +430,10 @@ impl App {
                     let samples = backend.get_samples();
                     if !samples.is_empty() {
                         let timestamp = self.start_time.elapsed().as_secs_f64();
-                        let analysis = self.audio_analyzer.process_samples(&samples, timestamp);
+                        let channels = backend.channel_count();
+                        let analysis = self
+                            .audio_analyzer
+                            .process_samples(&samples, channels, timestamp);
                         // Log periodically (every ~5 seconds based on timestamp)
                         if (timestamp as i64) % 5 == 0 {
                             tracing::debug!(
@@ -794,6 +797,8 @@ impl App {
 
                     let audio_analysis = self.audio_analyzer.get_latest_analysis();
                     self.ui_state.current_audio_level = audio_analysis.rms_volume;
+                    self.ui_state.current_audio_level_l = audio_analysis.left_rms;
+                    self.ui_state.current_audio_level_r = audio_analysis.right_rms;
 
                     // === 1. TOP PANEL: Menu Bar + Toolbar ===
                     let menu_actions = menu_bar::show(ctx, &mut self.ui_state);

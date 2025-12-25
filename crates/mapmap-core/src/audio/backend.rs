@@ -24,6 +24,8 @@ pub trait AudioBackend {
     fn stop(&mut self);
     /// Get the latest audio samples
     fn get_samples(&mut self) -> Vec<f32>;
+    /// Get the number of channels
+    fn channel_count(&self) -> u16;
 }
 
 /// CPAL implementation of the audio backend
@@ -44,6 +46,7 @@ pub mod cpal_backend {
         command_sender: Sender<Command>,
         #[allow(dead_code)]
         stream: cpal::Stream,
+        channel_count: u16,
     }
 
     impl CpalBackend {
@@ -54,7 +57,7 @@ pub mod cpal_backend {
             let (command_tx, command_rx) = unbounded::<Command>();
 
             // Build stream directly in main thread (cpal::Stream is not Send)
-            let stream = Self::build_stream(device_name, sample_tx)?;
+            let (stream, channels) = Self::build_stream(device_name, sample_tx)?;
 
             // Spawn command processing thread
             std::thread::Builder::new()
@@ -69,6 +72,7 @@ pub mod cpal_backend {
                 sample_receiver: sample_rx,
                 command_sender: command_tx,
                 stream,
+                channel_count: channels,
             })
         }
 
@@ -76,7 +80,7 @@ pub mod cpal_backend {
         fn build_stream(
             device_name: Option<String>,
             sample_tx: Sender<Vec<f32>>,
-        ) -> Result<cpal::Stream, AudioError> {
+        ) -> Result<(cpal::Stream, u16), AudioError> {
             let host = cpal::default_host();
 
             // Get device
@@ -117,6 +121,7 @@ pub mod cpal_backend {
                 }
             };
 
+            let channels = config.channels();
             let err_fn = |err| eprintln!("Audio stream error: {}", err);
 
             // Build stream
@@ -177,7 +182,7 @@ pub mod cpal_backend {
                             e
                         )));
                     }
-                    Ok(stream)
+                    Ok((stream, channels))
                 }
                 Err(e) => Err(AudioError::StreamBuildError(e.to_string())),
             }
@@ -206,6 +211,10 @@ pub mod cpal_backend {
 
         fn get_samples(&mut self) -> Vec<f32> {
             self.sample_receiver.try_iter().flatten().collect()
+        }
+
+        fn channel_count(&self) -> u16 {
+            self.channel_count
         }
     }
 
@@ -260,6 +269,10 @@ pub mod mock_backend {
                 }
             }
             buffer
+        }
+
+        fn channel_count(&self) -> u16 {
+            1
         }
     }
 }

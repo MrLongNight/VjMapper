@@ -216,8 +216,12 @@ pub struct AppUI {
     pub show_module_canvas: bool,
     /// Left sidebar visibility (collapsible)
     pub show_left_sidebar: bool,
-    /// Current audio level (0.0-1.0) for toolbar display
+    /// Current audio level (0.0-1.0) for toolbar display (legacy mono fallback)
     pub current_audio_level: f32,
+    /// Left channel audio level (0.0-1.0)
+    pub current_audio_level_l: f32,
+    /// Right channel audio level (0.0-1.0)
+    pub current_audio_level_r: f32,
     /// Current FPS for toolbar display
     pub current_fps: f32,
     /// Current frame time in ms for toolbar display
@@ -295,6 +299,8 @@ impl Default for AppUI {
             show_module_canvas: false,
             show_left_sidebar: true, // Essential panel - collapsible
             current_audio_level: 0.0,
+            current_audio_level_l: 0.0,
+            current_audio_level_r: 0.0,
             current_fps: 60.0,
             current_frame_time_ms: 16.67,
             target_fps: 60.0,

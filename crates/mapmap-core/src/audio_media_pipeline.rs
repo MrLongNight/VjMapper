@@ -142,7 +142,7 @@ impl AudioMediaPipeline {
                             samples_clone.fetch_add(sample_count, Ordering::Relaxed);
 
                             let mut analyzer = analyzer_clone.write();
-                            analyzer.process_samples(&samples, timestamp);
+                            analyzer.process_samples(&samples, 1, timestamp);
                             frames_clone.fetch_add(1, Ordering::Relaxed);
 
                             timestamp += samples.len() as f64 * dt;
