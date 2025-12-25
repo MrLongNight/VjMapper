@@ -529,7 +529,35 @@ impl ModuleCanvas {
                                                         );
                                                     }
                                                     TriggerType::Midi { channel, note } => {
-                                                        ui.label("🎹 MIDI");
+                                                        ui.label("🎹 MIDI Trigger");
+                                                        
+                                                        // Available MIDI ports dropdown
+                                                        ui.horizontal(|ui| {
+                                                            ui.label("Device:");
+                                                            #[cfg(feature = "cpal")]
+                                                            {
+                                                                if let Ok(ports) = mapmap_control::midi::MidiInputHandler::list_ports() {
+                                                                    if ports.is_empty() {
+                                                                        ui.label("No MIDI devices");
+                                                                    } else {
+                                                                        egui::ComboBox::from_id_source("midi_device")
+                                                                            .selected_text(ports.first().cloned().unwrap_or_default())
+                                                                            .show_ui(ui, |ui| {
+                                                                                for port in &ports {
+                                                                                    ui.selectable_label(false, port);
+                                                                                }
+                                                                            });
+                                                                    }
+                                                                } else {
+                                                                    ui.label("MIDI unavailable");
+                                                                }
+                                                            }
+                                                            #[cfg(not(feature = "cpal"))]
+                                                            {
+                                                                ui.label("(MIDI disabled)");
+                                                            }
+                                                        });
+                                                        
                                                         ui.add(
                                                             egui::Slider::new(channel, 1..=16)
                                                                 .text("Channel"),
@@ -538,6 +566,11 @@ impl ModuleCanvas {
                                                             egui::Slider::new(note, 0..=127)
                                                                 .text("Note"),
                                                         );
+                                                        
+                                                        // MIDI Learn button
+                                                        if ui.button("🎯 MIDI Learn").clicked() {
+                                                            // TODO: Start MIDI learn mode
+                                                        }
                                                     }
                                                     TriggerType::Osc { address } => {
                                                         ui.label("📡 OSC");
