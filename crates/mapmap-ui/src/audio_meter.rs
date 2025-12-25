@@ -51,16 +51,8 @@ fn draw_retro_meter(ui: &mut egui::Ui, rect: Rect, db: f32) {
     let painter = ui.painter();
 
     // Background - Warm off-white
-    painter.rect_filled(
-        rect,
-        4.0,
-        Color32::from_rgb(235, 230, 220)
-    );
-    painter.rect_stroke(
-        rect,
-        4.0,
-        Stroke::new(1.0, Color32::from_rgb(50, 50, 50))
-    );
+    painter.rect_filled(rect, 4.0, Color32::from_rgb(235, 230, 220));
+    painter.rect_stroke(rect, 4.0, Stroke::new(1.0, Color32::from_rgb(50, 50, 50)));
 
     // Calculate geometry to fit within the box while maximizing arc radius
     // We place the pivot below the widget to create a flatter, wider arc (classic VU look)
@@ -88,16 +80,18 @@ fn draw_retro_meter(ui: &mut egui::Ui, rect: Rect, db: f32) {
     // Draw red zone background (0dB to +3dB)
     // Simplified as a thick arc or polygon since egui doesn't have native arc filling yet easily
     // We approximate with line segments
-    let red_zone_points: Vec<Pos2> = (0..=10).map(|i| {
-        let t = i as f32 / 10.0;
-        let angle = zero_angle + t * (end_angle - zero_angle);
-        angle_to_pos(angle, radius * 0.7)
-    }).collect();
+    let red_zone_points: Vec<Pos2> = (0..=10)
+        .map(|i| {
+            let t = i as f32 / 10.0;
+            let angle = zero_angle + t * (end_angle - zero_angle);
+            angle_to_pos(angle, radius * 0.7)
+        })
+        .collect();
 
     if red_zone_points.len() >= 2 {
         painter.add(egui::Shape::line(
             red_zone_points,
-            Stroke::new(6.0, Color32::from_rgba_premultiplied(255, 100, 100, 100))
+            Stroke::new(6.0, Color32::from_rgba_premultiplied(255, 100, 100, 100)),
         ));
     }
 
@@ -123,7 +117,7 @@ fn draw_retro_meter(ui: &mut egui::Ui, rect: Rect, db: f32) {
                 egui::Align2::CENTER_CENTER,
                 label,
                 egui::FontId::proportional(10.0),
-                Color32::BLACK
+                Color32::BLACK,
             );
         }
     }
@@ -163,7 +157,7 @@ fn draw_retro_meter(ui: &mut egui::Ui, rect: Rect, db: f32) {
 
     let needle_dir = Vec2::new(
         (needle_angle - 90.0).to_radians().cos(),
-        (needle_angle - 90.0).to_radians().sin()
+        (needle_angle - 90.0).to_radians().sin(),
     );
 
     // Find intersection with bottom edge y = rect.max.y
@@ -175,13 +169,13 @@ fn draw_retro_meter(ui: &mut egui::Ui, rect: Rect, db: f32) {
     // Draw Needle Shadow
     painter.line_segment(
         [start_pos + Vec2::new(2.0, 2.0), tip + Vec2::new(2.0, 2.0)],
-        Stroke::new(2.0, Color32::from_black_alpha(50))
+        Stroke::new(2.0, Color32::from_black_alpha(50)),
     );
 
     // Draw Needle
     painter.line_segment(
         [start_pos, tip],
-        Stroke::new(1.5, Color32::from_rgb(200, 20, 20))
+        Stroke::new(1.5, Color32::from_rgb(200, 20, 20)),
     );
 
     // Pivot cap (only if visible, which it isn't with this geometry, so we skip it)
@@ -190,7 +184,7 @@ fn draw_retro_meter(ui: &mut egui::Ui, rect: Rect, db: f32) {
     painter.rect_filled(
         Rect::from_min_size(rect.min, Vec2::new(rect.width(), rect.height() * 0.4)),
         4.0,
-        Color32::from_white_alpha(30)
+        Color32::from_white_alpha(30),
     );
 }
 
@@ -235,7 +229,7 @@ fn draw_digital_meter(ui: &mut egui::Ui, rect: Rect, db: f32) {
                 base_color.r() / 5,
                 base_color.g() / 5,
                 base_color.b() / 5,
-                255
+                255,
             )
         };
 
@@ -245,7 +239,7 @@ fn draw_digital_meter(ui: &mut egui::Ui, rect: Rect, db: f32) {
         painter.rect_filled(
             Rect::from_min_size(Pos2::new(x, y), Vec2::new(segment_width, segment_height)),
             1.0,
-            color
+            color,
         );
     }
 }

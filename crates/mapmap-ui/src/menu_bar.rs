@@ -342,7 +342,7 @@ pub fn show(ctx: &egui::Context, ui_state: &mut AppUI) -> Vec<UIAction> {
                     ui.label("🔊");
                     ui.add(
                         AudioMeter::new(ui_state.user_config.meter_style, db)
-                            .desired_size(egui::vec2(meter_width, meter_height))
+                            .desired_size(egui::vec2(meter_width, meter_height)),
                     );
 
                     // === SPACER - push performance to right ===
