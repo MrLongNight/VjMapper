@@ -325,10 +325,11 @@ pub fn show(ctx: &egui::Context, ui_state: &mut AppUI) -> Vec<UIAction> {
 
                     // === AUDIO LEVEL METER (variable width, dB scale) ===
                     let audio_level = ui_state.current_audio_level;
-                    let db = if audio_level > 0.0001 {
-                        20.0 * audio_level.log10()
+                    // Ensure explicit f32 types to avoid build errors
+                    let db: f32 = if audio_level > 0.0001 {
+                        20.0f32 * audio_level.log10()
                     } else {
-                        -60.0
+                        -60.0f32
                     };
 
                     // Choose width based on style
@@ -338,6 +339,7 @@ pub fn show(ctx: &egui::Context, ui_state: &mut AppUI) -> Vec<UIAction> {
                     };
 
                     // Use all available height in the toolbar row, but clamp to avoid infinite expansion
+                    // Min 40px, Max 120px
                     let meter_height = ui.available_height().clamp(40.0, 120.0);
 
                     // Reserve space for Right-side stats panel (approximate width)
@@ -352,11 +354,13 @@ pub fn show(ctx: &egui::Context, ui_state: &mut AppUI) -> Vec<UIAction> {
                     }
 
                     // Create the meter widget with explicit sizing logic
-                    let meter_size = egui::Vec2::new(meter_width as f32, meter_height as f32);
+                    let meter_size = egui::Vec2::new(meter_width, meter_height);
+
+                    // Note: Current backend is mono, so we duplicate signal for visual stereo
                     let mut meter = AudioMeter::new(
                         ui_state.user_config.meter_style,
-                        db,
-                        db
+                        db, // Left
+                        db  // Right
                     );
                     meter = meter.desired_size(meter_size);
 
