@@ -168,62 +168,27 @@ pub fn show(ctx: &egui::Context, ui_state: &mut AppUI) -> Vec<UIAction> {
 
                 // --- View Menu ---
                 ui.menu_button(ui_state.i18n.t("menu-view"), |ui| {
-                    ui.label(ui_state.i18n.t("view-egui-panels"));
-                    ui.checkbox(
-                        &mut ui_state.dashboard.visible,
-                        ui_state.i18n.t("panel-dashboard"),
-                    );
-                    ui.checkbox(
-                        &mut ui_state.effect_chain_panel.visible,
-                        ui_state.i18n.t("panel-effect-chain"),
-                    );
-                    ui.separator();
-                    ui.label(ui_state.i18n.t("view-legacy-panels"));
-                    ui.checkbox(
-                        &mut ui_state.show_osc_panel,
-                        ui_state.i18n.t("check-show-osc"),
-                    );
-                    ui.checkbox(
-                        &mut ui_state.show_controls,
-                        ui_state.i18n.t("check-show-controls"),
-                    );
-                    ui.checkbox(
-                        &mut ui_state.show_layers,
-                        ui_state.i18n.t("check-show-layers"),
-                    );
-                    ui.checkbox(
-                        &mut ui_state.paint_panel.visible,
-                        ui_state.i18n.t("check-show-paints"),
-                    );
-                    ui.checkbox(
-                        &mut ui_state.show_mappings,
-                        ui_state.i18n.t("check-show-mappings"),
-                    );
-                    ui.checkbox(
-                        &mut ui_state.show_transforms,
-                        ui_state.i18n.t("check-show-transforms"),
-                    );
-                    ui.checkbox(
-                        &mut ui_state.show_master_controls,
-                        ui_state.i18n.t("check-show-master"),
-                    );
-                    ui.checkbox(
-                        &mut ui_state.oscillator_panel.visible,
-                        ui_state.i18n.t("check-show-oscillator"),
-                    );
-                    ui.checkbox(
-                        &mut ui_state.show_cue_panel,
-                        ui_state.i18n.t("check-show-cues"),
-                    );
-                    ui.checkbox(
-                        &mut ui_state.show_stats,
-                        ui_state.i18n.t("check-show-stats"),
-                    );
+                    // Core Panels
                     ui.checkbox(&mut ui_state.show_timeline, "Timeline");
-                    ui.checkbox(&mut ui_state.show_shader_graph, "Shader Graph");
-                    ui.checkbox(&mut ui_state.show_toolbar, "Werkzeugleiste");
-                    ui.checkbox(&mut ui_state.icon_demo_panel.visible, "Icon Gallery");
+                    ui.checkbox(&mut ui_state.show_audio, "Audio");
+                    ui.checkbox(&mut ui_state.show_layers, "Layers");
+                    ui.checkbox(&mut ui_state.show_media_browser, "Media Browser");
+
                     ui.separator();
+
+                    // Advanced Panels
+                    ui.checkbox(&mut ui_state.show_shader_graph, "Shader Graph");
+                    ui.checkbox(&mut ui_state.effect_chain_panel.visible, "Effect Chain");
+                    ui.checkbox(&mut ui_state.show_outputs, "Outputs");
+
+                    ui.separator();
+
+                    // UI Options
+                    ui.checkbox(&mut ui_state.show_toolbar, "Toolbar");
+                    ui.checkbox(&mut ui_state.show_stats, "Performance");
+
+                    ui.separator();
+
                     if menu_item(
                         ui,
                         ui_state.i18n.t("btn-fullscreen"),

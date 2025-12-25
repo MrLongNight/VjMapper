@@ -292,7 +292,7 @@ impl AppUI {
         self.icon_demo_panel.visible = !self.icon_demo_panel.visible;
     }
 
-    /// Render unified left sidebar with Layers hierarchy and Properties
+    /// Render unified left sidebar with Dashboard, Layers, Properties, and Media
     pub fn render_left_sidebar(
         &mut self,
         ctx: &egui::Context,
@@ -300,17 +300,90 @@ impl AppUI {
     ) {
         egui::SidePanel::left("left_sidebar")
             .resizable(true)
-            .default_width(280.0)
-            .min_width(200.0)
-            .max_width(450.0)
+            .default_width(300.0)
+            .min_width(250.0)
+            .max_width(500.0)
             .show(ctx, |ui| {
-                // === SURFACES / LAYERS SECTION (Top) ===
+                // === DASHBOARD SECTION (Top - Transport Controls) ===
+                egui::CollapsingHeader::new("Dashboard")
+                    .default_open(true)
+                    .show(ui, |ui| {
+                        let icon_size = 20.0;
+                        let icon_manager = self.icon_manager.as_ref();
+
+                        // Playback controls
+                        ui.horizontal(|ui| {
+                            // Play button
+                            if let Some(mgr) = icon_manager {
+                                if let Some(img) =
+                                    mgr.image(crate::icons::AppIcon::ArrowRight, icon_size)
+                                {
+                                    if ui
+                                        .add(egui::ImageButton::new(img))
+                                        .on_hover_text(self.i18n.t("btn-play"))
+                                        .clicked()
+                                    {
+                                        self.actions.push(UIAction::Play);
+                                    }
+                                }
+                                if let Some(img) =
+                                    mgr.image(crate::icons::AppIcon::ButtonPause, icon_size)
+                                {
+                                    if ui
+                                        .add(egui::ImageButton::new(img))
+                                        .on_hover_text(self.i18n.t("btn-pause"))
+                                        .clicked()
+                                    {
+                                        self.actions.push(UIAction::Pause);
+                                    }
+                                }
+                                if let Some(img) =
+                                    mgr.image(crate::icons::AppIcon::ButtonStop, icon_size)
+                                {
+                                    if ui
+                                        .add(egui::ImageButton::new(img))
+                                        .on_hover_text(self.i18n.t("btn-stop"))
+                                        .clicked()
+                                    {
+                                        self.actions.push(UIAction::Stop);
+                                    }
+                                }
+                            } else {
+                                if ui.button("▶").clicked() {
+                                    self.actions.push(UIAction::Play);
+                                }
+                                if ui.button("⏸").clicked() {
+                                    self.actions.push(UIAction::Pause);
+                                }
+                                if ui.button("⏹").clicked() {
+                                    self.actions.push(UIAction::Stop);
+                                }
+                            }
+
+                            ui.separator();
+
+                            // Speed control
+                            ui.add(
+                                egui::Slider::new(&mut self.playback_speed, 0.1..=2.0)
+                                    .text("Speed")
+                                    .show_value(true),
+                            );
+                        });
+                    });
+
+                ui.separator();
+
+                // === LAYERS SECTION ===
                 egui::CollapsingHeader::new(self.i18n.t("panel-layers"))
                     .default_open(true)
                     .show(ui, |ui| {
                         // Toolbar
                         ui.horizontal(|ui| {
-                            if ui.button(self.i18n.t("btn-add-layer")).clicked() {
+                            if ui
+                                .button("+")
+                                .on_hover_text(self.i18n.t("btn-add-layer"))
+                                .clicked()
+                            {
                                 self.actions.push(UIAction::AddLayer);
                             }
                             if ui
@@ -328,11 +401,9 @@ impl AppUI {
                             }
                         });
 
-                        ui.separator();
-
                         // Layer list
                         egui::ScrollArea::vertical()
-                            .max_height(200.0)
+                            .max_height(150.0)
                             .show(ui, |ui| {
                                 let layer_ids: Vec<u64> =
                                     layer_manager.layers().iter().map(|l| l.id).collect();
@@ -340,7 +411,6 @@ impl AppUI {
                                 for layer_id in layer_ids {
                                     if let Some(layer) = layer_manager.get_layer_mut(layer_id) {
                                         let is_selected = self.selected_layer_id == Some(layer_id);
-
                                         let response =
                                             ui.selectable_label(is_selected, &layer.name);
                                         if response.clicked() {
@@ -353,13 +423,12 @@ impl AppUI {
 
                 ui.separator();
 
-                // === PROPERTIES SECTION (Bottom) ===
+                // === PROPERTIES SECTION ===
                 egui::CollapsingHeader::new("Properties")
                     .default_open(true)
                     .show(ui, |ui| {
                         if let Some(layer_id) = self.selected_layer_id {
                             if let Some(layer) = layer_manager.get_layer_mut(layer_id) {
-                                // Opacity slider
                                 ui.horizontal(|ui| {
                                     ui.label("Opacity:");
                                     ui.add(
@@ -367,8 +436,6 @@ impl AppUI {
                                             .show_value(true),
                                     );
                                 });
-
-                                // Blend mode
                                 ui.horizontal(|ui| {
                                     ui.label("Blend:");
                                     egui::ComboBox::from_id_source("blend_mode")
@@ -383,10 +450,6 @@ impl AppUI {
                                             }
                                         });
                                 });
-
-                                ui.separator();
-
-                                // Visibility toggles
                                 ui.horizontal(|ui| {
                                     ui.checkbox(&mut layer.visible, "Visible");
                                     ui.checkbox(&mut layer.solo, "Solo");
@@ -402,12 +465,24 @@ impl AppUI {
 
                 // === MEDIA SECTION ===
                 egui::CollapsingHeader::new(self.i18n.t("media-browser-title"))
-                    .default_open(true)
+                    .default_open(false)
                     .show(ui, |ui| {
                         let _ = self
                             .media_browser
                             .ui(ui, &self.i18n, self.icon_manager.as_ref());
                     });
+
+                ui.separator();
+
+                // === AUDIO SECTION ===
+                if self.show_audio {
+                    egui::CollapsingHeader::new("Audio")
+                        .default_open(true)
+                        .show(ui, |ui| {
+                            ui.label("Audio analysis will be displayed here");
+                            // TODO: Add audio controls inline
+                        });
+                }
             });
     }
 

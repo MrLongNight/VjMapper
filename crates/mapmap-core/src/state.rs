@@ -3,7 +3,8 @@
 //! This module defines the core state structures that are persisted to disk.
 
 use crate::{
-    AudioConfig, LayerManager, MappingManager, OscillatorConfig, OutputManager, PaintManager,
+    logging::LogConfig, AudioConfig, LayerManager, MappingManager, OscillatorConfig, OutputManager,
+    PaintManager,
 };
 use serde::{Deserialize, Serialize};
 
@@ -81,6 +82,9 @@ pub struct AppSettings {
     pub ui_scale: f32,
     /// UI Language code (en, de)
     pub language: String,
+    /// Logging configuration
+    #[serde(default)]
+    pub log_config: LogConfig,
 }
 
 impl Default for AppSettings {
@@ -90,6 +94,7 @@ impl Default for AppSettings {
             dark_mode: true,
             ui_scale: 1.0,
             language: "en".to_string(),
+            log_config: LogConfig::default(),
         }
     }
 }

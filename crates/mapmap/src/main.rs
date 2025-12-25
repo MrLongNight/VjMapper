@@ -747,7 +747,6 @@ impl App {
             // --------- ImGui removed (Phase 6 Complete) ----------
 
             // --------- egui: UI separat zeichnen ---------
-            let mut dashboard_action = None;
             let (tris, screen_descriptor) = {
                 let raw_input = self.egui_state.take_egui_input(&window_context.window);
                 let full_output = self.egui_context.run(raw_input, |ctx| {
@@ -757,155 +756,17 @@ impl App {
                     let menu_actions = menu_bar::show(ctx, &mut self.ui_state);
                     self.ui_state.actions.extend(menu_actions);
 
-                    // Render Dashboard
-                    dashboard_action = self.ui_state.dashboard.ui(
-                        ctx,
-                        &self.ui_state.i18n,
-                        self.ui_state.icon_manager.as_ref(),
-                    );
-
-                    // === UNIFIED LEFT SIDEBAR (Layers + Properties + Media) ===
-                    self.ui_state
-                        .render_left_sidebar(ctx, &mut self.state.layer_manager);
-
-                    // Performance overlay (top-right)
-                    self.ui_state
-                        .render_stats(ctx, self.current_fps, self.current_frame_time_ms);
-
-                    // Legacy panels (Controls, Master, Cue) - keep for compatibility
-                    self.ui_state.render_controls(ctx);
-                    self.ui_state
-                        .render_master_controls(ctx, &mut self.state.layer_manager);
-                    self.ui_state.cue_panel.show(
-                        ctx,
-                        &mut self.control_manager,
-                        &self.ui_state.i18n,
-                        &mut self.ui_state.actions,
-                    );
-
-                    // Render Audio Panel
-                    if self.ui_state.show_audio {
-                        let analysis = self.audio_analyzer.get_latest_analysis();
-                        egui::Window::new(self.ui_state.i18n.t("audio-panel-title")).show(
-                            ctx,
-                            |ui| {
-                                if let Some(action) = self.ui_state.audio_panel.ui(
-                                    ui,
-                                    &self.ui_state.i18n,
-                                    Some(&analysis),
-                                    &self.state.audio_config,
-                                    &self.audio_devices,
-                                    &mut self.ui_state.selected_audio_device,
-                                ) {
-                                    match action {
-                                        mapmap_ui::audio_panel::AudioPanelAction::DeviceChanged(
-                                            new_device,
-                                        ) => {
-                                            // Handle device change
-                                            if let Some(backend) = &mut self.audio_backend {
-                                                backend.stop();
-                                            }
-                                            self.audio_backend = None;
-
-                                            match CpalBackend::new(Some(new_device)) {
-                                                Ok(mut backend) => {
-                                                    if let Err(e) = backend.start() {
-                                                        error!(
-                                                            "Failed to start audio stream: {}",
-                                                            e
-                                                        );
-                                                    } else {
-                                                        self.audio_backend = Some(backend);
-                                                    }
-                                                }
-                                                Err(e) => {
-                                                    error!(
-                                                        "Failed to initialize audio backend: {}",
-                                                        e
-                                                    );
-                                                }
-                                            }
-                                        }
-                                        mapmap_ui::audio_panel::AudioPanelAction::ConfigChanged(
-                                            new_config,
-                                        ) => {
-                                            self.audio_analyzer.update_config(new_config.clone());
-                                            self.state.audio_config = new_config;
-                                            self.state.dirty = true;
-                                        }
-                                    }
-                                }
-                            },
-                        );
-                    }
-
-                    // Render Effect Chain Panel
-                    self.ui_state
-                        .effect_chain_panel
-                        .ui(ctx, &self.ui_state.i18n);
-
-                    // Layer Panel disabled - now integrated in left sidebar
-                    // self.ui_state.layer_panel.show(...);
-
-                    // Render Paint Panel
-                    self.ui_state.paint_panel.render(
-                        ctx,
-                        &self.ui_state.i18n,
-                        &mut self.state.paint_manager,
-                    );
-
-                    // Render Mapping Panel
-                    self.ui_state.mapping_panel.show(
-                        ctx,
-                        &mut self.state.mapping_manager,
-                        &mut self.ui_state.actions,
-                        &self.ui_state.i18n,
-                    );
-
-                    // Render Output Panel
-                    self.ui_state.output_panel.show(
-                        ctx,
-                        &mut self.state.output_manager,
-                        &mut self.ui_state.selected_output_id,
-                        &mut self.ui_state.actions,
-                        &self.ui_state.i18n,
-                    );
-
-                    // Render Icon Gallery
-                    self.ui_state.render_icon_demo(ctx);
-
-                    // Media Browser disabled - now integrated in left sidebar
-                    // self.ui_state.render_media_browser(ctx);
-
-                    // === BOTTOM PANEL (Timeline + Audio Waveform) ===
+                    // === BOTTOM PANEL (Timeline - Full Width) ===
+                    // Rendered FIRST so it spans the entire window width
                     if self.ui_state.show_timeline {
-                        let analysis = self.audio_analyzer.get_latest_analysis();
-
                         egui::TopBottomPanel::bottom("timeline_panel")
                             .resizable(true)
-                            .default_height(250.0)
-                            .min_height(120.0)
-                            .max_height(450.0)
+                            .default_height(200.0)
+                            .min_height(100.0)
+                            .max_height(400.0)
                             .show(ctx, |ui| {
-                                // Timeline Header with controls
                                 ui.horizontal(|ui| {
                                     ui.heading("Timeline");
-                                    ui.separator();
-                                    // Simple audio level indicator
-                                    let audio_level = analysis.rms_volume.min(1.0);
-                                    let level_color = if audio_level > 0.7 {
-                                        egui::Color32::from_rgb(255, 100, 100)
-                                    } else if audio_level > 0.3 {
-                                        egui::Color32::from_rgb(100, 255, 100)
-                                    } else {
-                                        egui::Color32::from_rgb(100, 100, 255)
-                                    };
-                                    ui.add(
-                                        egui::ProgressBar::new(audio_level)
-                                            .fill(level_color)
-                                            .desired_width(60.0),
-                                    );
-
                                     ui.with_layout(
                                         egui::Layout::right_to_left(egui::Align::Center),
                                         |ui| {
@@ -915,116 +776,32 @@ impl App {
                                         },
                                     );
                                 });
-
                                 ui.separator();
-
-                                // Main timeline content
                                 let _ = self.ui_state.timeline_panel.ui(ui);
-
-                                ui.separator();
-
-                                // Audio waveform section at bottom
-                                ui.horizontal(|ui| {
-                                    ui.label("Audio:");
-                                    // Show frequency bands as mini-visualizer
-                                    let band_width = 8.0;
-                                    let max_height = 30.0;
-                                    for (i, &band) in
-                                        analysis.band_energies.iter().take(8).enumerate()
-                                    {
-                                        let height = (band * max_height).min(max_height);
-                                        let hue = i as f32 / 8.0;
-                                        let color =
-                                            egui::ecolor::Hsva::new(hue * 0.3 + 0.5, 0.8, 0.9, 1.0);
-                                        let rect = ui.available_rect_before_wrap();
-                                        ui.allocate_space(egui::vec2(band_width, max_height));
-                                        ui.painter().rect_filled(
-                                            egui::Rect::from_min_size(
-                                                egui::pos2(
-                                                    rect.min.x + i as f32 * (band_width + 2.0),
-                                                    rect.min.y + max_height - height,
-                                                ),
-                                                egui::vec2(band_width, height),
-                                            ),
-                                            2.0,
-                                            color,
-                                        );
-                                    }
-                                });
                             });
                     }
 
-                    // Render Shader Graph
-                    egui::Window::new("Shader Graph")
-                        .open(&mut self.ui_state.show_shader_graph)
-                        .default_size([800.0, 600.0])
-                        .show(ctx, |ui| {
-                            let _ = self.ui_state.node_editor_panel.ui(ui, &self.ui_state.i18n);
-                        });
-
-                    // Render Inspector Panel (context-sensitive right sidebar)
-                    if self.ui_state.show_inspector {
-                        let inspector_context = if let Some(layer_id) =
-                            self.ui_state.selected_layer_id
-                        {
-                            if let Some(layer) = self.state.layer_manager.get_layer(layer_id) {
-                                mapmap_ui::InspectorContext::Layer {
-                                    layer,
-                                    transform: &layer.transform,
-                                }
-                            } else {
-                                mapmap_ui::InspectorContext::None
-                            }
-                        } else if let Some(output_id) = self.ui_state.selected_output_id {
-                            if let Some(output) = self.state.output_manager.get_output(output_id) {
-                                mapmap_ui::InspectorContext::Output(output)
-                            } else {
-                                mapmap_ui::InspectorContext::None
-                            }
-                        } else {
-                            mapmap_ui::InspectorContext::None
-                        };
-
-                        self.ui_state.inspector_panel.show(
-                            ctx,
-                            inspector_context,
-                            &self.ui_state.i18n,
-                            self.ui_state.icon_manager.as_ref(),
-                        );
-                    }
-
-                    // Update and render Transform Panel
-                    if let Some(selected_id) = self.ui_state.selected_layer_id {
-                        if let Some(layer) = self.state.layer_manager.get_layer(selected_id) {
-                            self.ui_state
-                                .transform_panel
-                                .set_transform(&layer.name, &layer.transform);
-                        }
-                    } else {
-                        self.ui_state.transform_panel.clear_selection();
-                    }
+                    // === LEFT SIDEBAR (Dashboard + Layers + Properties + Media) ===
                     self.ui_state
-                        .transform_panel
-                        .render(ctx, &self.ui_state.i18n);
+                        .render_left_sidebar(ctx, &mut self.state.layer_manager);
 
-                    // Update and show the edge blend panel
-                    if let Some(output_id) = self.ui_state.selected_output_id {
-                        if let Some(output) = self.state.output_manager.get_output(output_id) {
-                            self.ui_state.edge_blend_panel.set_selected_output(output);
-                        }
-                    } else {
-                        self.ui_state.edge_blend_panel.clear_selection();
-                    }
+                    // Performance overlay (top-right)
                     self.ui_state
-                        .edge_blend_panel
-                        .show(ctx, &self.ui_state.i18n);
+                        .render_stats(ctx, self.current_fps, self.current_frame_time_ms);
 
-                    // Render Oscillator Panel
-                    self.ui_state.oscillator_panel.render(
-                        ctx,
-                        &self.ui_state.i18n,
-                        &mut self.state.oscillator_config,
-                    );
+                    // All legacy/redundant panels disabled - clean central area
+
+                    // === ALL FLOATING PANELS DISABLED ===
+                    // Central area is now reserved for the Canvas/Module editor
+
+                    // Audio Panel disabled - will be in left sidebar
+                    // Effect Chain disabled - will be a canvas node
+                    // Output Panel disabled - will be in Project Settings
+                    // Shader Graph disabled - will be a canvas node
+                    // Inspector, Transform, Edge Blend, Oscillator - all disabled
+
+                    // Oscillator Panel disabled - will be re-enabled as modal or in Effects
+                    // self.ui_state.oscillator_panel.render(...);
 
                     // Render Settings Window
                     if self.ui_state.show_settings {
@@ -1110,22 +887,8 @@ impl App {
                 (tris, screen_descriptor)
             };
 
-            // Handle Dashboard actions
-            if let Some(action) = dashboard_action {
-                match action {
-                    mapmap_ui::DashboardAction::ToggleAudioPanel => {
-                        self.ui_state.show_audio = !self.ui_state.show_audio;
-                    }
-                    mapmap_ui::DashboardAction::AudioDeviceChanged(_device) => {}
-                    mapmap_ui::DashboardAction::SendCommand(_cmd) => {
-                        // TODO: Implement playback commands if not handled elsewhere
-                        // Currently PlaybackCommand handling seems missing in main.rs or handled via Mcp?
-                        // "McpAction::MediaPlay" has TODO.
-                        // This suggests buttons in Dashboard might do nothing currently!
-                        // But fixing playback is not my task.
-                    }
-                }
-            }
+            // Dashboard actions now handled directly in left sidebar
+            // (Playback controls trigger UIActions)
 
             // Handle TransformPanel actions
             if let Some(action) = self.ui_state.transform_panel.take_action() {
@@ -1344,8 +1107,8 @@ impl App {
 
 /// The main entry point for the application.
 fn main() -> Result<()> {
-    // Initialize logging
-    tracing_subscriber::fmt::init();
+    // Initialize logging with file output
+    initialize_logging();
     info!("Starting MapFlow...");
 
     // Create the event loop
@@ -1358,4 +1121,100 @@ fn main() -> Result<()> {
     app.run(event_loop);
 
     Ok(())
+}
+
+/// Initialize logging with both console and file output.
+/// Creates timestamped log files and cleans up old ones.
+fn initialize_logging() {
+    use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt, EnvFilter};
+
+    // Ensure logs directory exists
+    let log_dir = PathBuf::from("logs");
+    if let Err(e) = std::fs::create_dir_all(&log_dir) {
+        eprintln!("Warning: Could not create logs directory: {}", e);
+    }
+
+    // Create timestamped log file
+    let timestamp = chrono::Local::now().format("%Y-%m-%d_%H-%M-%S");
+    let log_filename = format!("mapflow_{}.log", timestamp);
+    let log_path = log_dir.join(&log_filename);
+
+    // Try to create file appender
+    let file_appender = match std::fs::File::create(&log_path) {
+        Ok(file) => Some(file),
+        Err(e) => {
+            eprintln!("Warning: Could not create log file: {}", e);
+            None
+        }
+    };
+
+    // Setup environment filter (default to info, can be overridden with RUST_LOG)
+    let env_filter = EnvFilter::try_from_default_env()
+        .unwrap_or_else(|_| EnvFilter::new("info,wgpu=warn,naga=warn"));
+
+    if let Some(file) = file_appender {
+        // Setup subscriber with both console and file output
+        let file_layer = tracing_subscriber::fmt::layer()
+            .with_writer(std::sync::Mutex::new(file))
+            .with_ansi(false)
+            .with_target(true)
+            .with_level(true);
+
+        let console_layer = tracing_subscriber::fmt::layer()
+            .with_target(true)
+            .with_level(true);
+
+        tracing_subscriber::registry()
+            .with(env_filter)
+            .with(console_layer)
+            .with(file_layer)
+            .init();
+
+        // Cleanup old log files (keep max 10)
+        cleanup_old_logs(&log_dir, 10);
+
+        // Log the log file path
+        tracing::info!("Log file: {:?}", log_path);
+    } else {
+        // Fallback to console-only logging
+        tracing_subscriber::registry()
+            .with(env_filter)
+            .with(tracing_subscriber::fmt::layer())
+            .init();
+    }
+}
+
+/// Remove old log files, keeping only the most recent ones.
+fn cleanup_old_logs(log_dir: &PathBuf, max_files: usize) {
+    if let Ok(entries) = std::fs::read_dir(log_dir) {
+        let mut files: Vec<_> = entries
+            .filter_map(|e| e.ok())
+            .filter(|e| e.path().extension().map_or(false, |ext| ext == "log"))
+            .filter(|e| {
+                e.path()
+                    .file_name()
+                    .and_then(|n| n.to_str())
+                    .map_or(false, |n| n.starts_with("mapflow_"))
+            })
+            .collect();
+
+        // Sort by modification time (oldest first)
+        files.sort_by(|a, b| {
+            let time_a = a.metadata().and_then(|m| m.modified()).ok();
+            let time_b = b.metadata().and_then(|m| m.modified()).ok();
+            time_a.cmp(&time_b)
+        });
+
+        // Remove oldest files if we exceed max
+        while files.len() > max_files {
+            if let Some(oldest) = files.first() {
+                if let Err(e) = std::fs::remove_file(oldest.path()) {
+                    tracing::warn!("Could not remove old log file {:?}: {}", oldest.path(), e);
+                } else {
+                    tracing::debug!("Removed old log file: {:?}", oldest.path());
+                }
+            }
+            files.remove(0);
+        }
+    }
 }
