@@ -286,6 +286,8 @@ impl App {
             fps_samples: Vec::with_capacity(60),
             current_fps: 60.0,
             current_frame_time_ms: 16.6,
+            sys_info: sysinfo::System::new_all(),
+            last_sysinfo_refresh: std::time::Instant::now(),
         };
 
         // Create initial dummy texture
@@ -1378,9 +1380,6 @@ fn cleanup_old_logs(log_dir: &PathBuf, max_files: usize) {
                 }
             }
             files.remove(0);
-        }
-    }
-}
         }
     }
 }
