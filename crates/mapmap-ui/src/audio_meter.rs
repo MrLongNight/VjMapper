@@ -19,8 +19,8 @@ impl AudioMeter {
     /// Create a new stereo audio meter
     pub fn new(style: AudioMeterStyle, left_db: f32, right_db: f32) -> Self {
         let default_size = match style {
-            AudioMeterStyle::Retro => Vec2::new(300.0, 80.0),    // Wider for side-by-side
-            AudioMeterStyle::Digital => Vec2::new(360.0, 60.0),  // Wide horizontal, slightly taller
+            AudioMeterStyle::Retro => Vec2::new(300.0, 80.0), // Wider for side-by-side
+            AudioMeterStyle::Digital => Vec2::new(360.0, 60.0), // Wide horizontal, slightly taller
         };
         Self {
             style,
@@ -43,9 +43,7 @@ impl Widget for AudioMeter {
 
         if ui.is_rect_visible(rect) {
             match self.style {
-                AudioMeterStyle::Retro => {
-                    draw_retro_stereo(ui, rect, self.left_db, self.right_db)
-                }
+                AudioMeterStyle::Retro => draw_retro_stereo(ui, rect, self.left_db, self.right_db),
                 AudioMeterStyle::Digital => {
                     draw_digital_stereo(ui, rect, self.left_db, self.right_db)
                 }
@@ -60,11 +58,7 @@ impl Widget for AudioMeter {
 fn draw_screw(painter: &egui::Painter, center: Pos2, radius: f32) {
     // Screw head (silver/grey gradient simulated with solid circles)
     painter.circle_filled(center, radius, Color32::from_gray(180));
-    painter.circle_stroke(
-        center,
-        radius,
-        Stroke::new(1.0, Color32::from_gray(100)),
-    );
+    painter.circle_stroke(center, radius, Stroke::new(1.0, Color32::from_gray(100)));
 
     // Cross slot
     let slot_len = radius * 0.6;
@@ -125,7 +119,10 @@ fn draw_retro_stereo(ui: &mut egui::Ui, rect: Rect, left_db: f32, right_db: f32)
 
     // Split for Left/Right
     let split_width = inner_rect.width() / 2.0;
-    let left_rect = Rect::from_min_size(inner_rect.min, Vec2::new(split_width - 4.0, inner_rect.height()));
+    let left_rect = Rect::from_min_size(
+        inner_rect.min,
+        Vec2::new(split_width - 4.0, inner_rect.height()),
+    );
     let right_rect = Rect::from_min_size(
         inner_rect.min + Vec2::new(split_width + 4.0, 0.0),
         Vec2::new(split_width - 4.0, inner_rect.height()),
@@ -174,19 +171,23 @@ fn draw_single_retro_meter(ui: &mut egui::Ui, rect: Rect, db: f32) {
     // Main Arc Line
     // We approximate arc with segments
     let segments = 30;
-    let points: Vec<Pos2> = (0..=segments).map(|i| {
-        let t = i as f32 / segments as f32;
-        let deg = angle_min + t * (angle_max - angle_min);
-        to_pos(deg, radius_outer * 0.85) // Scale line radius
-    }).collect();
+    let points: Vec<Pos2> = (0..=segments)
+        .map(|i| {
+            let t = i as f32 / segments as f32;
+            let deg = angle_min + t * (angle_max - angle_min);
+            to_pos(deg, radius_outer * 0.85) // Scale line radius
+        })
+        .collect();
     painter.add(egui::Shape::line(points, Stroke::new(1.5, Color32::BLACK)));
 
     // Red Zone (0 to +3)
-    let red_pts: Vec<Pos2> = (0..=10).map(|i| {
-        let t = i as f32 / 10.0;
-        let deg = angle_zero + t * (angle_max - angle_zero);
-        to_pos(deg, radius_outer * 0.85)
-    }).collect();
+    let red_pts: Vec<Pos2> = (0..=10)
+        .map(|i| {
+            let t = i as f32 / 10.0;
+            let deg = angle_zero + t * (angle_max - angle_zero);
+            to_pos(deg, radius_outer * 0.85)
+        })
+        .collect();
     if red_pts.len() >= 2 {
         painter.add(egui::Shape::line(
             red_pts,
@@ -234,7 +235,10 @@ fn draw_single_retro_meter(ui: &mut egui::Ui, rect: Rect, db: f32) {
 
     // Needle Shadow (offset)
     painter.line_segment(
-        [needle_start + Vec2::new(2.0, 2.0), needle_tip + Vec2::new(2.0, 2.0)],
+        [
+            needle_start + Vec2::new(2.0, 2.0),
+            needle_tip + Vec2::new(2.0, 2.0),
+        ],
         Stroke::new(2.0, Color32::from_black_alpha(40)),
     );
 
@@ -251,7 +255,7 @@ fn draw_single_retro_meter(ui: &mut egui::Ui, rect: Rect, db: f32) {
     let mut mesh = egui::Mesh::default();
     mesh.add_colored_rect(
         glass_rect,
-        Color32::from_white_alpha(30) // Subtle shine
+        Color32::from_white_alpha(30), // Subtle shine
     );
     painter.add(mesh);
 
@@ -279,14 +283,15 @@ fn draw_digital_stereo(ui: &mut egui::Ui, rect: Rect, left_db: f32, right_db: f3
     // We'll put Left on top, Right on bottom, scale in the middle
     let bar_height = (inner_rect.height() - 15.0) / 2.0;
 
-    let left_bar_rect = Rect::from_min_size(inner_rect.min, Vec2::new(inner_rect.width(), bar_height));
+    let left_bar_rect =
+        Rect::from_min_size(inner_rect.min, Vec2::new(inner_rect.width(), bar_height));
     let scale_rect = Rect::from_min_size(
         inner_rect.min + Vec2::new(0.0, bar_height),
-        Vec2::new(inner_rect.width(), 15.0)
+        Vec2::new(inner_rect.width(), 15.0),
     );
     let right_bar_rect = Rect::from_min_size(
         inner_rect.min + Vec2::new(0.0, bar_height + 15.0),
-        Vec2::new(inner_rect.width(), bar_height)
+        Vec2::new(inner_rect.width(), bar_height),
     );
 
     draw_led_bar(ui, left_bar_rect, left_db);
@@ -336,14 +341,14 @@ fn draw_led_bar(ui: &mut egui::Ui, rect: Rect, db: f32) {
                 base_color.r() / 8,
                 base_color.g() / 8,
                 base_color.b() / 8,
-                255
+                255,
             )
         };
 
         let x = rect.min.x + (i as f32 * (segment_width + padding));
         let seg_rect = Rect::from_min_size(
             Pos2::new(x, rect.min.y + 2.0),
-            Vec2::new(segment_width, rect.height() - 4.0)
+            Vec2::new(segment_width, rect.height() - 4.0),
         );
 
         painter.rect_filled(seg_rect, 0.0, color);
@@ -362,7 +367,7 @@ fn draw_db_scale(ui: &mut egui::Ui, rect: Rect) {
         (-10.0, "-10"),
         (-5.0, "-5"),
         (0.0, "0"),
-        (3.0, "+3")
+        (3.0, "+3"),
     ];
 
     let min_db = -60.0;
@@ -376,7 +381,7 @@ fn draw_db_scale(ui: &mut egui::Ui, rect: Rect) {
         // Draw tick
         painter.line_segment(
             [Pos2::new(x, rect.min.y), Pos2::new(x, rect.min.y + 3.0)],
-            Stroke::new(1.0, color)
+            Stroke::new(1.0, color),
         );
 
         // Draw text centered on tick
@@ -385,7 +390,7 @@ fn draw_db_scale(ui: &mut egui::Ui, rect: Rect) {
             egui::Align2::CENTER_CENTER,
             text,
             font_id.clone(),
-            color
+            color,
         );
     }
 }

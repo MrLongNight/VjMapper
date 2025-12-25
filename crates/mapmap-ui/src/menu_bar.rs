@@ -334,7 +334,7 @@ pub fn show(ctx: &egui::Context, ui_state: &mut AppUI) -> Vec<UIAction> {
 
                     // Choose width based on style
                     let meter_width: f32 = match ui_state.user_config.meter_style {
-                        crate::config::AudioMeterStyle::Retro => 260.0,   // Wide Retro Stereo
+                        crate::config::AudioMeterStyle::Retro => 260.0, // Wide Retro Stereo
                         crate::config::AudioMeterStyle::Digital => 360.0, // Wide Digital Stereo
                     };
 
@@ -360,7 +360,7 @@ pub fn show(ctx: &egui::Context, ui_state: &mut AppUI) -> Vec<UIAction> {
                     let mut meter = AudioMeter::new(
                         ui_state.user_config.meter_style,
                         db, // Left
-                        db  // Right
+                        db, // Right
                     );
                     meter = meter.desired_size(meter_size);
 
