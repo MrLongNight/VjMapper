@@ -28,6 +28,10 @@ pub struct ModuleCanvas {
     creating_connection: Option<(ModulePartId, usize, bool, ModuleSocketType, Pos2)>,
     /// Part ID pending deletion (set when X button clicked)
     pending_delete: Option<ModulePartId>,
+    /// Selected parts for multi-select and copy/paste
+    selected_parts: Vec<ModulePartId>,
+    /// Clipboard for copy/paste (stores part types and relative positions)
+    clipboard: Vec<(mapmap_core::module::ModulePartType, (f32, f32))>,
 }
 
 impl Default for ModuleCanvas {
@@ -39,6 +43,8 @@ impl Default for ModuleCanvas {
             dragging_part: None,
             creating_connection: None,
             pending_delete: None,
+            selected_parts: Vec::new(),
+            clipboard: Vec::new(),
         }
     }
 }
@@ -302,6 +308,78 @@ impl ModuleCanvas {
             self.pan_offset += response.drag_delta();
         }
 
+        // Handle keyboard shortcuts
+        let ctrl_held = ui.input(|i| i.modifiers.ctrl);
+        let shift_held = ui.input(|i| i.modifiers.shift);
+
+        // Ctrl+C: Copy selected parts
+        if ctrl_held && ui.input(|i| i.key_pressed(egui::Key::C)) && !self.selected_parts.is_empty()
+        {
+            self.clipboard.clear();
+            // Find center of selection for relative positioning
+            let center = if !self.selected_parts.is_empty() {
+                let sum: (f32, f32) = module
+                    .parts
+                    .iter()
+                    .filter(|p| self.selected_parts.contains(&p.id))
+                    .map(|p| p.position)
+                    .fold((0.0, 0.0), |acc, pos| (acc.0 + pos.0, acc.1 + pos.1));
+                let count = self.selected_parts.len() as f32;
+                (sum.0 / count, sum.1 / count)
+            } else {
+                (0.0, 0.0)
+            };
+
+            for part in module
+                .parts
+                .iter()
+                .filter(|p| self.selected_parts.contains(&p.id))
+            {
+                let relative_pos = (part.position.0 - center.0, part.position.1 - center.1);
+                self.clipboard.push((part.part_type.clone(), relative_pos));
+            }
+        }
+
+        // Ctrl+V: Paste from clipboard
+        if ctrl_held && ui.input(|i| i.key_pressed(egui::Key::V)) && !self.clipboard.is_empty() {
+            let paste_offset = (50.0, 50.0); // Offset from original position
+            self.selected_parts.clear();
+
+            for (part_type, rel_pos) in self.clipboard.clone() {
+                let new_pos = (
+                    rel_pos.0 + paste_offset.0 + 100.0,
+                    rel_pos.1 + paste_offset.1 + 100.0,
+                );
+                let part_type_variant = Self::part_type_from_module_part_type(&part_type);
+                let new_id = module.add_part(part_type_variant, new_pos);
+                self.selected_parts.push(new_id);
+            }
+        }
+
+        // Ctrl+A: Select all
+        if ctrl_held && ui.input(|i| i.key_pressed(egui::Key::A)) {
+            self.selected_parts = module.parts.iter().map(|p| p.id).collect();
+        }
+
+        // Delete: Delete selected parts
+        if ui.input(|i| i.key_pressed(egui::Key::Delete)) && !self.selected_parts.is_empty() {
+            for part_id in self.selected_parts.clone() {
+                module
+                    .connections
+                    .retain(|c| c.from_part != part_id && c.to_part != part_id);
+                module.parts.retain(|p| p.id != part_id);
+            }
+            self.selected_parts.clear();
+        }
+
+        // Escape: Deselect all
+        if ui.input(|i| i.key_pressed(egui::Key::Escape)) {
+            self.selected_parts.clear();
+        }
+
+        // For shift_held - used in click handling below
+        let _ = shift_held;
+
         // Handle zoom
         if response.hovered() {
             let scroll = ui.input(|i| i.raw_scroll_delta.y);
@@ -451,9 +529,41 @@ impl ModuleCanvas {
                 if let Some((dragged_id, _)) = self.dragging_part {
                     if dragged_id == *part_id {
                         let delta = part_response.drag_delta() / self.zoom;
-                        if let Some(part) = module.parts.iter_mut().find(|p| p.id == *part_id) {
-                            part.position.0 += delta.x;
-                            part.position.1 += delta.y;
+
+                        // Calculate new position
+                        if let Some(part) = module.parts.iter().find(|p| p.id == *part_id) {
+                            let new_x = part.position.0 + delta.x;
+                            let new_y = part.position.1 + delta.y;
+                            let part_height =
+                                80.0 + (part.inputs.len().max(part.outputs.len()) as f32) * 20.0;
+                            let new_rect = Rect::from_min_size(
+                                Pos2::new(new_x, new_y),
+                                Vec2::new(180.0, part_height),
+                            );
+
+                            // Check collision with other parts
+                            let has_collision = module.parts.iter().any(|other| {
+                                if other.id == *part_id {
+                                    return false;
+                                }
+                                let other_height = 80.0
+                                    + (other.inputs.len().max(other.outputs.len()) as f32) * 20.0;
+                                let other_rect = Rect::from_min_size(
+                                    Pos2::new(other.position.0, other.position.1),
+                                    Vec2::new(180.0, other_height),
+                                );
+                                new_rect.intersects(other_rect)
+                            });
+
+                            // Only move if no collision
+                            if !has_collision {
+                                if let Some(part_mut) =
+                                    module.parts.iter_mut().find(|p| p.id == *part_id)
+                                {
+                                    part_mut.position.0 = new_x;
+                                    part_mut.position.1 = new_y;
+                                }
+                            }
                         }
                     }
                 }
@@ -498,13 +608,46 @@ impl ModuleCanvas {
             self.draw_part_with_delete(&painter, part, part_screen_rect);
         }
 
-        // Draw connection being created
-        if let Some((_from_part_id, _from_socket_idx, _is_output, ref socket_type, start_pos)) =
-            self.creating_connection
+        // Draw connection being created with visual feedback
+        if let Some((from_part_id, _from_socket_idx, from_is_output, ref from_type, start_pos)) =
+            self.creating_connection.clone()
         {
             if let Some(pointer_pos) = ui.input(|i| i.pointer.hover_pos()) {
-                let color = Self::get_socket_color(&socket_type);
+                // Check if hovering over a compatible socket
+                let socket_radius = 8.0 * self.zoom;
+                let mut is_valid_target = false;
+                let mut near_socket = false;
+
+                for socket in &all_sockets {
+                    if socket.position.distance(pointer_pos) < socket_radius * 2.0 {
+                        near_socket = true;
+                        // Valid if: different part, opposite direction, same type
+                        if socket.part_id != from_part_id
+                            && socket.is_output != from_is_output
+                            && socket.socket_type == *from_type
+                        {
+                            is_valid_target = true;
+                        }
+                        break;
+                    }
+                }
+
+                // Color based on validity
+                let color = if near_socket {
+                    if is_valid_target {
+                        Color32::from_rgb(50, 255, 100) // Green = valid
+                    } else {
+                        Color32::from_rgb(255, 80, 80) // Red = invalid
+                    }
+                } else {
+                    Self::get_socket_color(from_type) // Default socket color
+                };
+
+                // Draw the connection line
                 painter.line_segment([start_pos, pointer_pos], Stroke::new(3.0, color));
+
+                // Draw a circle at the end point
+                painter.circle_filled(pointer_pos, 5.0, color);
             }
         }
     }
@@ -806,6 +949,21 @@ impl ModuleCanvas {
                 OutputType::Projector { name, .. } => format!("📺 {}", name),
                 OutputType::Preview { window_id } => format!("👁 Preview {}", window_id),
             },
+        }
+    }
+
+    /// Convert ModulePartType back to PartType for add_part
+    fn part_type_from_module_part_type(
+        mpt: &mapmap_core::module::ModulePartType,
+    ) -> mapmap_core::module::PartType {
+        use mapmap_core::module::{ModulePartType, PartType};
+        match mpt {
+            ModulePartType::Trigger(_) => PartType::Trigger,
+            ModulePartType::Source(_) => PartType::Source,
+            ModulePartType::Mask(_) => PartType::Mask,
+            ModulePartType::Modulizer(_) => PartType::Modulator,
+            ModulePartType::LayerAssignment(_) => PartType::Layer,
+            ModulePartType::Output(_) => PartType::Output,
         }
     }
 }
