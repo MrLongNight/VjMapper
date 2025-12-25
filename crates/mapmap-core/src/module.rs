@@ -95,15 +95,23 @@ pub struct ModuleConnection {
     pub to_socket: usize,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ModuleManager {
     modules: HashMap<ModuleId, MapFlowModule>,
     next_module_id: ModuleId,
     next_part_id: ModulePartId,
     #[serde(skip)]
     color_palette: Vec<[f32; 4]>,
-    #[serde(skip)]
     next_color_index: usize,
+}
+
+impl PartialEq for ModuleManager {
+    fn eq(&self, other: &Self) -> bool {
+        self.modules == other.modules
+            && self.next_module_id == other.next_module_id
+            && self.next_part_id == other.next_part_id
+            && self.next_color_index == other.next_color_index
+    }
 }
 
 impl ModuleManager {
