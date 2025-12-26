@@ -77,10 +77,7 @@ impl MapFlowModule {
                 }],
             ),
             PartType::Layer => (
-                ModulePartType::LayerAssignment(LayerAssignmentType::AllLayers {
-                    opacity: 1.0,
-                    blend_mode: None,
-                }),
+                ModulePartType::LayerAssignment(LayerAssignmentType::AllLayers),
                 vec![ModuleSocket {
                     name: "Media In".to_string(),
                     socket_type: ModuleSocketType::Media,
@@ -426,21 +423,9 @@ impl BlendModeType {
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
 pub enum LayerAssignmentType {
-    SingleLayer {
-        id: u64,
-        name: String,
-        opacity: f32,
-        blend_mode: Option<BlendModeType>,
-    },
-    Group {
-        name: String,
-        opacity: f32,
-        blend_mode: Option<BlendModeType>,
-    },
-    AllLayers {
-        opacity: f32,
-        blend_mode: Option<BlendModeType>,
-    },
+    SingleLayer { id: u64, name: String },
+    Group { name: String },
+    AllLayers,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
