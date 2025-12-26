@@ -909,6 +909,7 @@ impl ModuleCanvas {
                              });
                      }
                 }
+            }
         } else {
             // Show a message if no module is selected
             ui.centered_and_justified(|ui| {
