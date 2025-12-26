@@ -11,6 +11,7 @@
 
 // Phase 6: Advanced Authoring UI (egui-based)
 pub mod asset_manager;
+pub mod assignment_panel;
 pub mod audio_meter;
 pub mod audio_panel;
 pub mod config;
@@ -46,6 +47,7 @@ pub use i18n::LocaleManager;
 
 // Phase 6 exports
 pub use asset_manager::{AssetManager, AssetManagerAction, EffectPreset, TransformPreset};
+pub use assignment_panel::AssignmentPanel;
 pub use audio_panel::AudioPanel;
 pub use config::UserConfig;
 pub use cue_panel::CuePanel;
@@ -148,6 +150,9 @@ pub enum UIAction {
     UpdateAudioConfig(mapmap_core::audio::AudioConfig),
     ToggleAudioPanel,
 
+    // Control actions
+    ToggleAssignmentPanel,
+
     // Settings
     SetLanguage(String),
 
@@ -186,6 +191,8 @@ pub struct AppUI {
     pub oscillator_panel: OscillatorPanel,
     pub show_audio: bool,
     pub audio_panel: AudioPanel,
+    pub assignment_panel: AssignmentPanel,
+    pub show_assignment_panel: bool,
     pub show_cue_panel: bool,
     pub playback_speed: f32,
     pub loop_mode: mapmap_media::LoopMode,
@@ -263,6 +270,8 @@ impl Default for AppUI {
             oscillator_panel: OscillatorPanel { visible: false }, // Hide by default
             show_audio: false, // Hide by default - use Dashboard toggle
             audio_panel: AudioPanel::default(),
+            assignment_panel: AssignmentPanel::default(),
+            show_assignment_panel: false,
             show_cue_panel: false, // Hide by default
             playback_speed: 1.0,
             loop_mode: mapmap_media::LoopMode::Loop,
