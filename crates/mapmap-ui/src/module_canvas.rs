@@ -848,7 +848,67 @@ impl ModuleCanvas {
                 });
             } else {
                 self.render_canvas(ui, module, locale);
-            }
+
+                // Context Menu Logic
+                if let Some(menu_pos) = self.context_menu_pos {
+                     ui.output_mut(|o| o.cursor_icon = egui::CursorIcon::Default);
+                     let menu_rect = Rect::from_min_size(menu_pos, Vec2::new(140.0, 100.0));
+                     
+                     // Check for click outside to close
+                     if ui.input(|i| i.pointer.any_pressed()) {
+                         let pointer = ui.input(|i| i.pointer.hover_pos());
+                         if let Some(pos) = pointer {
+                             if !menu_rect.contains(pos) {
+                                 self.context_menu_pos = None;
+                                 self.context_menu_connection = None;
+                                 self.context_menu_part = None;
+                             }
+                         }
+                     }
+        
+                     if self.context_menu_pos.is_some() {
+                         egui::Window::new("Context Menu")
+                             .fixed_pos(menu_pos)
+                             .collapsible(false)
+                             .resizable(false)
+                             .title_bar(false)
+                             .frame(egui::Frame::popup(ui.style()))
+                             .show(ui.ctx(), |ui| {
+                                if let Some(conn_idx) = self.context_menu_connection {
+                                    if ui.button("🗑 Delete Connection").clicked() {
+                                        if conn_idx < module.connections.len() {
+                                            module.connections.remove(conn_idx);
+                                        }
+                                        self.context_menu_pos = None;
+                                        self.context_menu_connection = None;
+                                    }
+                                }
+                                if let Some(part_id) = self.context_menu_part {
+                                    if ui.button("🗑 Delete Node").clicked() {
+                                         // Remove connections
+                                        module.connections.retain(|c| c.from_part != part_id && c.to_part != part_id);
+                                        // Remove part
+                                        module.parts.retain(|p| p.id != part_id);
+                                        self.context_menu_pos = None;
+                                        self.context_menu_part = None;
+                                    }
+                                    if ui.button("📄 Duplicate Node").clicked() {
+                                        // Find part to duplicate
+                                        if let Some(part) = module.parts.iter().find(|p| p.id == part_id).cloned() {
+                                             let new_id = manager.next_part_id();
+                                             let mut new_part = part.clone();
+                                             new_part.id = new_id;
+                                             new_part.position.0 += 20.0;
+                                             new_part.position.1 += 20.0;
+                                             module.parts.push(new_part);
+                                        }
+                                        self.context_menu_pos = None;
+                                        self.context_menu_part = None;
+                                    }
+                                }
+                             });
+                     }
+                }
         } else {
             // Show a message if no module is selected
             ui.centered_and_justified(|ui| {
@@ -1500,66 +1560,7 @@ impl ModuleCanvas {
             self.draw_presets_popup(ui, canvas_rect, module);
         }
 
-        // Draw context menu
-        if let Some(menu_pos) = self.context_menu_pos {
-             ui.output_mut(|o| o.cursor_icon = egui::CursorIcon::Default);
-             let menu_rect = Rect::from_min_size(menu_pos, Vec2::new(140.0, 100.0));
-             
-             // Check for click outside to close
-             if ui.input(|i| i.pointer.any_pressed()) {
-                 let pointer = ui.input(|i| i.pointer.hover_pos());
-                 if let Some(pos) = pointer {
-                     if !menu_rect.contains(pos) {
-                         self.context_menu_pos = None;
-                         self.context_menu_connection = None;
-                         self.context_menu_part = None;
-                     }
-                 }
-             }
 
-             if self.context_menu_pos.is_some() {
-                 egui::Window::new("Context Menu")
-                     .fixed_pos(menu_pos)
-                     .collapsible(false)
-                     .resizable(false)
-                     .title_bar(false)
-                     .frame(egui::Frame::popup(ui.style()))
-                     .show(ui.ctx(), |ui| {
-                        if let Some(conn_idx) = self.context_menu_connection {
-                            if ui.button("🗑 Delete Connection").clicked() {
-                                if conn_idx < module.connections.len() {
-                                    module.connections.remove(conn_idx);
-                                }
-                                self.context_menu_pos = None;
-                                self.context_menu_connection = None;
-                            }
-                        }
-                        if let Some(part_id) = self.context_menu_part {
-                            if ui.button("🗑 Delete Node").clicked() {
-                                 // Remove connections
-                                module.connections.retain(|c| c.from_part != part_id && c.to_part != part_id);
-                                // Remove part
-                                module.parts.retain(|p| p.id != part_id);
-                                self.context_menu_pos = None;
-                                self.context_menu_part = None;
-                            }
-                            if ui.button("📄 Duplicate Node").clicked() {
-                                // Find part to duplicate
-                                if let Some(part) = module.parts.iter().find(|p| p.id == part_id).cloned() {
-                                     let new_id = module.next_part_id();
-                                     let mut new_part = part.clone();
-                                     new_part.id = new_id;
-                                     new_part.position.0 += 20.0;
-                                     new_part.position.1 += 20.0;
-                                     module.parts.push(new_part);
-                                }
-                                self.context_menu_pos = None;
-                                self.context_menu_part = None;
-                            }
-                        }
-                     });
-             }
-        }
 
     }
 
