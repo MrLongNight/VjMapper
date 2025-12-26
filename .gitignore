@@ -41,8 +41,6 @@
 # Allow assets icons
 !assets/icons/*.svg
 
-*.json
-
 # Rust
 /target/
 **/*.rs.bk
