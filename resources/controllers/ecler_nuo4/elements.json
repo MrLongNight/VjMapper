@@ -1,0 +1,547 @@
+{
+    "controller": "Ecler NUO 4",
+    "elements": [
+        {
+            "id": "ch2_gain",
+            "element_type": "knob",
+            "section": "channel_2",
+            "label": "CH2 GAIN",
+            "position": {
+                "x": 0.14,
+                "y": 0.08,
+                "width": 0.04,
+                "height": 0.04
+            },
+            "midi": {
+                "type": "cc",
+                "channel": 0,
+                "controller": 16
+            },
+            "asset": "nuo4_eq_knob.png"
+        },
+        {
+            "id": "ch2_treble",
+            "element_type": "knob",
+            "section": "channel_2",
+            "label": "CH2 TREBLE",
+            "position": {
+                "x": 0.14,
+                "y": 0.18,
+                "width": 0.05,
+                "height": 0.05
+            },
+            "midi": {
+                "type": "cc",
+                "channel": 0,
+                "controller": 17
+            },
+            "asset": "nuo4_eq_knob.png"
+        },
+        {
+            "id": "ch2_mid",
+            "element_type": "knob",
+            "section": "channel_2",
+            "label": "CH2 MID",
+            "position": {
+                "x": 0.14,
+                "y": 0.28,
+                "width": 0.05,
+                "height": 0.05
+            },
+            "midi": {
+                "type": "cc",
+                "channel": 0,
+                "controller": 18
+            },
+            "asset": "nuo4_eq_knob.png"
+        },
+        {
+            "id": "ch2_bass",
+            "element_type": "knob",
+            "section": "channel_2",
+            "label": "CH2 BASS",
+            "position": {
+                "x": 0.14,
+                "y": 0.38,
+                "width": 0.05,
+                "height": 0.05
+            },
+            "midi": {
+                "type": "cc",
+                "channel": 0,
+                "controller": 19
+            },
+            "asset": "nuo4_eq_knob.png"
+        },
+        {
+            "id": "ch2_fx_send",
+            "element_type": "knob",
+            "section": "channel_2",
+            "label": "CH2 FX SEND",
+            "position": {
+                "x": 0.14,
+                "y": 0.52,
+                "width": 0.04,
+                "height": 0.04
+            },
+            "midi": {
+                "type": "cc",
+                "channel": 0,
+                "controller": 12
+            },
+            "asset": "nuo4_eq_knob.png"
+        },
+        {
+            "id": "ch2_fader",
+            "element_type": "fader",
+            "section": "channel_2",
+            "label": "CH2 FADER",
+            "position": {
+                "x": 0.12,
+                "y": 0.62,
+                "width": 0.04,
+                "height": 0.25
+            },
+            "midi": {
+                "type": "cc",
+                "channel": 0,
+                "controller": 7
+            },
+            "asset": "nuo4_fader_cap.png"
+        },
+        {
+            "id": "ch2_bass_off",
+            "element_type": "toggle",
+            "section": "channel_2",
+            "label": "CH2 BASS OFF",
+            "position": {
+                "x": 0.10,
+                "y": 0.40,
+                "width": 0.02,
+                "height": 0.02
+            },
+            "midi": {
+                "type": "note",
+                "channel": 0,
+                "note": 50
+            },
+            "asset": "nuo4_button.png"
+        },
+        {
+            "id": "ch2_pfl",
+            "element_type": "button",
+            "section": "channel_2",
+            "label": "CH2 PFL",
+            "position": {
+                "x": 0.14,
+                "y": 0.46,
+                "width": 0.03,
+                "height": 0.02
+            },
+            "midi": {
+                "type": "note",
+                "channel": 0,
+                "note": 51
+            },
+            "asset": "nuo4_button.png"
+        },
+        {
+            "id": "ch3_gain",
+            "element_type": "knob",
+            "section": "channel_3",
+            "label": "CH3 GAIN",
+            "position": {
+                "x": 0.62,
+                "y": 0.08,
+                "width": 0.04,
+                "height": 0.04
+            },
+            "midi": {
+                "type": "cc",
+                "channel": 1,
+                "controller": 16
+            },
+            "asset": "nuo4_eq_knob.png"
+        },
+        {
+            "id": "ch3_treble",
+            "element_type": "knob",
+            "section": "channel_3",
+            "label": "CH3 TREBLE",
+            "position": {
+                "x": 0.62,
+                "y": 0.18,
+                "width": 0.05,
+                "height": 0.05
+            },
+            "midi": {
+                "type": "cc",
+                "channel": 1,
+                "controller": 17
+            },
+            "asset": "nuo4_eq_knob.png"
+        },
+        {
+            "id": "ch3_mid",
+            "element_type": "knob",
+            "section": "channel_3",
+            "label": "CH3 MID",
+            "position": {
+                "x": 0.62,
+                "y": 0.28,
+                "width": 0.05,
+                "height": 0.05
+            },
+            "midi": {
+                "type": "cc",
+                "channel": 1,
+                "controller": 18
+            },
+            "asset": "nuo4_eq_knob.png"
+        },
+        {
+            "id": "ch3_bass",
+            "element_type": "knob",
+            "section": "channel_3",
+            "label": "CH3 BASS",
+            "position": {
+                "x": 0.62,
+                "y": 0.38,
+                "width": 0.05,
+                "height": 0.05
+            },
+            "midi": {
+                "type": "cc",
+                "channel": 1,
+                "controller": 19
+            },
+            "asset": "nuo4_eq_knob.png"
+        },
+        {
+            "id": "ch3_fx_send",
+            "element_type": "knob",
+            "section": "channel_3",
+            "label": "CH3 FX SEND",
+            "position": {
+                "x": 0.62,
+                "y": 0.52,
+                "width": 0.04,
+                "height": 0.04
+            },
+            "midi": {
+                "type": "cc",
+                "channel": 1,
+                "controller": 12
+            },
+            "asset": "nuo4_eq_knob.png"
+        },
+        {
+            "id": "ch3_fader",
+            "element_type": "fader",
+            "section": "channel_3",
+            "label": "CH3 FADER",
+            "position": {
+                "x": 0.60,
+                "y": 0.62,
+                "width": 0.04,
+                "height": 0.25
+            },
+            "midi": {
+                "type": "cc",
+                "channel": 1,
+                "controller": 7
+            },
+            "asset": "nuo4_fader_cap.png"
+        },
+        {
+            "id": "ch3_bass_off",
+            "element_type": "toggle",
+            "section": "channel_3",
+            "label": "CH3 BASS OFF",
+            "position": {
+                "x": 0.58,
+                "y": 0.40,
+                "width": 0.02,
+                "height": 0.02
+            },
+            "midi": {
+                "type": "note",
+                "channel": 1,
+                "note": 50
+            },
+            "asset": "nuo4_button.png"
+        },
+        {
+            "id": "ch3_pfl",
+            "element_type": "button",
+            "section": "channel_3",
+            "label": "CH3 PFL",
+            "position": {
+                "x": 0.62,
+                "y": 0.46,
+                "width": 0.03,
+                "height": 0.02
+            },
+            "midi": {
+                "type": "note",
+                "channel": 1,
+                "note": 51
+            },
+            "asset": "nuo4_button.png"
+        },
+        {
+            "id": "crossfader",
+            "element_type": "crossfader",
+            "section": "master",
+            "label": "CROSSFADER",
+            "position": {
+                "x": 0.30,
+                "y": 0.92,
+                "width": 0.40,
+                "height": 0.04
+            },
+            "midi": {
+                "type": "cc",
+                "channel": 0,
+                "controller": 3
+            },
+            "asset": "nuo4_fader_cap.png"
+        },
+        {
+            "id": "encoder_1",
+            "element_type": "encoder",
+            "section": "midi_control",
+            "label": "ENCODER 1",
+            "position": {
+                "x": 0.35,
+                "y": 0.12,
+                "width": 0.06,
+                "height": 0.06
+            },
+            "midi": {
+                "type": "cc_relative",
+                "channel": 15,
+                "controller": 20
+            },
+            "layout_aware": true,
+            "ab_aware": true,
+            "asset": "nuo4_knob_large.png"
+        },
+        {
+            "id": "encoder_2",
+            "element_type": "encoder",
+            "section": "midi_control",
+            "label": "ENCODER 2",
+            "position": {
+                "x": 0.43,
+                "y": 0.12,
+                "width": 0.06,
+                "height": 0.06
+            },
+            "midi": {
+                "type": "cc_relative",
+                "channel": 15,
+                "controller": 21
+            },
+            "layout_aware": true,
+            "ab_aware": true,
+            "asset": "nuo4_knob_large.png"
+        },
+        {
+            "id": "encoder_3",
+            "element_type": "encoder",
+            "section": "midi_control",
+            "label": "ENCODER 3",
+            "position": {
+                "x": 0.51,
+                "y": 0.12,
+                "width": 0.06,
+                "height": 0.06
+            },
+            "midi": {
+                "type": "cc_relative",
+                "channel": 15,
+                "controller": 22
+            },
+            "layout_aware": true,
+            "ab_aware": true,
+            "asset": "nuo4_knob_large.png"
+        },
+        {
+            "id": "encoder_4",
+            "element_type": "encoder",
+            "section": "midi_control",
+            "label": "ENCODER 4",
+            "position": {
+                "x": 0.59,
+                "y": 0.12,
+                "width": 0.06,
+                "height": 0.06
+            },
+            "midi": {
+                "type": "cc_relative",
+                "channel": 15,
+                "controller": 23
+            },
+            "layout_aware": true,
+            "ab_aware": true,
+            "asset": "nuo4_knob_large.png"
+        },
+        {
+            "id": "push_enc_1",
+            "element_type": "button",
+            "section": "midi_control",
+            "label": "PUSH 1",
+            "position": {
+                "x": 0.35,
+                "y": 0.12,
+                "width": 0.03,
+                "height": 0.03
+            },
+            "midi": {
+                "type": "note",
+                "channel": 15,
+                "note": 0
+            },
+            "layout_aware": true,
+            "ab_aware": true
+        },
+        {
+            "id": "push_enc_2",
+            "element_type": "button",
+            "section": "midi_control",
+            "label": "PUSH 2",
+            "position": {
+                "x": 0.43,
+                "y": 0.12,
+                "width": 0.03,
+                "height": 0.03
+            },
+            "midi": {
+                "type": "note",
+                "channel": 15,
+                "note": 1
+            },
+            "layout_aware": true,
+            "ab_aware": true
+        },
+        {
+            "id": "push_enc_3",
+            "element_type": "button",
+            "section": "midi_control",
+            "label": "PUSH 3",
+            "position": {
+                "x": 0.51,
+                "y": 0.12,
+                "width": 0.03,
+                "height": 0.03
+            },
+            "midi": {
+                "type": "note",
+                "channel": 15,
+                "note": 2
+            },
+            "layout_aware": true,
+            "ab_aware": true
+        },
+        {
+            "id": "push_enc_4",
+            "element_type": "button",
+            "section": "midi_control",
+            "label": "PUSH 4",
+            "position": {
+                "x": 0.59,
+                "y": 0.12,
+                "width": 0.03,
+                "height": 0.03
+            },
+            "midi": {
+                "type": "note",
+                "channel": 15,
+                "note": 3
+            },
+            "layout_aware": true,
+            "ab_aware": true
+        },
+        {
+            "id": "switch_1",
+            "element_type": "button",
+            "section": "midi_control",
+            "label": "SWITCH 1",
+            "position": {
+                "x": 0.35,
+                "y": 0.35,
+                "width": 0.04,
+                "height": 0.03
+            },
+            "midi": {
+                "type": "note",
+                "channel": 15,
+                "note": 4
+            },
+            "layout_aware": true,
+            "ab_aware": true,
+            "asset": "nuo4_button.png"
+        },
+        {
+            "id": "switch_2",
+            "element_type": "button",
+            "section": "midi_control",
+            "label": "SWITCH 2",
+            "position": {
+                "x": 0.43,
+                "y": 0.35,
+                "width": 0.04,
+                "height": 0.03
+            },
+            "midi": {
+                "type": "note",
+                "channel": 15,
+                "note": 5
+            },
+            "layout_aware": true,
+            "ab_aware": true,
+            "asset": "nuo4_button.png"
+        },
+        {
+            "id": "switch_3",
+            "element_type": "button",
+            "section": "midi_control",
+            "label": "SWITCH 3",
+            "position": {
+                "x": 0.51,
+                "y": 0.35,
+                "width": 0.04,
+                "height": 0.03
+            },
+            "midi": {
+                "type": "note",
+                "channel": 15,
+                "note": 6
+            },
+            "layout_aware": true,
+            "ab_aware": true,
+            "asset": "nuo4_button.png"
+        },
+        {
+            "id": "switch_4",
+            "element_type": "button",
+            "section": "midi_control",
+            "label": "SWITCH 4",
+            "position": {
+                "x": 0.59,
+                "y": 0.35,
+                "width": 0.04,
+                "height": 0.03
+            },
+            "midi": {
+                "type": "note",
+                "channel": 15,
+                "note": 7
+            },
+            "layout_aware": true,
+            "ab_aware": true,
+            "asset": "nuo4_button.png"
+        }
+    ]
+}
