@@ -3,7 +3,6 @@
 //! Visual representation of the Ecler NUO 4 (or other MIDI controllers)
 //! with live state visualization and MIDI Learn functionality.
 
-use egui::Ui;
 #[cfg(feature = "midi")]
 use egui::{Color32, Pos2, Rect, Response, Sense, Stroke, Vec2};
 
