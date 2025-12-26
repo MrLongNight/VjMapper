@@ -539,7 +539,7 @@ impl ModuleCanvas {
                                                     }
                                                     TriggerType::Midi { channel, note } => {
                                                         ui.label("🎹 MIDI Trigger");
-                                                        
+
                                                         // Available MIDI ports dropdown
                                                         ui.horizontal(|ui| {
                                                             ui.label("Device:");
@@ -566,7 +566,7 @@ impl ModuleCanvas {
                                                                 ui.label("(MIDI disabled)");
                                                             }
                                                         });
-                                                        
+
                                                         ui.add(
                                                             egui::Slider::new(channel, 1..=16)
                                                                 .text("Channel"),
@@ -575,7 +575,7 @@ impl ModuleCanvas {
                                                             egui::Slider::new(note, 0..=127)
                                                                 .text("Note"),
                                                         );
-                                                        
+
                                                         // MIDI Learn button
                                                         let is_learning = self.midi_learn_part_id == Some(part_id);
                                                         let learn_text = if is_learning {
@@ -853,7 +853,7 @@ impl ModuleCanvas {
                 if let Some(menu_pos) = self.context_menu_pos {
                      ui.output_mut(|o| o.cursor_icon = egui::CursorIcon::Default);
                      let menu_rect = Rect::from_min_size(menu_pos, Vec2::new(140.0, 100.0));
-                     
+
                      // Check for click outside to close
                      if ui.input(|i| i.pointer.any_pressed()) {
                          let pointer = ui.input(|i| i.pointer.hover_pos());
@@ -865,7 +865,7 @@ impl ModuleCanvas {
                              }
                          }
                      }
-        
+
                      if self.context_menu_pos.is_some() {
                          egui::Window::new("Context Menu")
                              .fixed_pos(menu_pos)
@@ -1472,7 +1472,7 @@ impl ModuleCanvas {
                 if resize_response.drag_started() {
                     self.resizing_part = Some((part.id, (part_width, part_height)));
                 }
-                
+
                 if resize_response.dragged() {
                      if let Some((id, _original_size)) = self.resizing_part {
                          if id == part.id {
@@ -1481,7 +1481,7 @@ impl ModuleCanvas {
                          }
                      }
                 }
-                
+
                 if resize_response.drag_stopped() {
                     self.resizing_part = None;
                 }
@@ -2071,7 +2071,7 @@ impl ModuleCanvas {
                             };
                         }
                     });
-            
+
                 // Properties for MaskType
                 if let MaskType::File { path } = mask_type {
                     ui.add_space(4.0);
