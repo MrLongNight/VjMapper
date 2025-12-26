@@ -327,6 +327,75 @@
   - ⬜ R32Float Validation Error in OscillatorRenderer
   - ⬜ Pipeline Sampler Error (NonFiltering)
 
+### 🟡 Bekannte Probleme (Gemeldet 2025-12-26)
+
+- ✅ **Node-Verbindungen im Module Canvas** (FIXED 2025-12-26)
+  - ✅ Wire-Drag erstellt keine tatsächlichen Connections → button_down statt clicked
+  - ✅ Socket-Typen matchen nicht korrekt → Type-Check relaxiert
+  - ⬜ AudioAnalysis-Daten zu Node-Outputs verknüpfen (Runtime-Verdrahtung)
+
+- ✅ **Audio Trigger Node - Outputs** (ERWEITERT 2025-12-26)
+  - ✅ 11 Outputs: SubBass, Bass, LowMid, Mid, HighMid, Presence, Brilliance, RMS, Peak, Beat, BPM
+
+- 🟡 **Panel-Redundanz**
+  - ⬜ Node Inspector UND Properties Panel konsolidieren → NUR EIN Panel
+
+- ✅ **MIDI-System Fehler** (FIXED 2025-12-26)
+  - ✅ Feature-Flag von `cpal` auf `midi` korrigiert
+  - ⬜ MIDI-Ports korrekt auflisten (testen)
+  - ⬜ MIDI Learn Funktion testen
+
+- 🟡 **Level Meter Redesign**
+  - ✅ STEREO für beide Varianten → StereoAudioMeter Widget
+  - ✅ Einbaurahmen mit 4 Phillips-Schrauben
+  - ✅ Beschriftete dB-Skala
+  - ⬜ In UI integrieren (mittig, volle Höhe)
+
+### 🟢 MODULE-CANVAS PANELS (Implementiert 2025-12-26)
+
+Die folgenden Node-Typen haben vollständige UI-Panels:
+
+#### Part-Typen (6 Hauptkategorien)
+- ✅ **Trigger** - Schaltet andere Nodes
+  - ✅ AudioFFT Panel (Band-Auswahl, Threshold-Slider, 11 Outputs)
+  - ✅ Random Panel (Min/Max Interval, Probability)
+  - ✅ Fixed Panel (Interval, Offset)
+  - ✅ MIDI Panel (Channel, Note, Device-Auswahl, MIDI Learn)
+  - ✅ OSC Panel (Address, Port)
+  - ✅ Shortcut Panel (Tastenkombination)
+  - ✅ Beat Panel (Legacy)
+
+- ✅ **Source** - Medienquellen
+  - ✅ MediaFile Panel (File Picker, Preview)
+  - ✅ Shader Panel (Shader-Auswahl, Parameter-Editor)
+  - ✅ LiveInput Panel (Device-Dropdown)
+
+- ✅ **Mask** - Masken für Compositing
+  - ✅ File Mask Panel (File Picker)
+  - ✅ Shape Mask Panel (Circle, Rectangle, Triangle, Star, Ellipse)
+  - ✅ Gradient Mask Panel (Angle, Softness)
+
+- ✅ **Modulator** - Effekte und Modifier
+  - ✅ Effect Panel (24 Effekt-Typen: Blur, Sharpen, Invert, Threshold, Brightness, Contrast, Saturation, HueShift, Colorize, Wave, Spiral, Pinch, Mirror, Kaleidoscope, Pixelate, Halftone, EdgeDetect, Posterize, Glitch, RgbSplit, ChromaticAberration, VHS, FilmGrain)
+  - ✅ BlendMode Panel (Normal, Add, Multiply, Screen, Overlay, Difference, Exclusion)
+  - ✅ AudioReactive Panel (FFT-Band Selector, Sensitivity, Smoothing)
+
+- ✅ **Layer Assignment** - Zuweist Medien zu Layers
+  - ✅ SingleLayer Panel (ID, Name, Opacity, Blend Mode)
+  - ✅ Group Panel (Name, Opacity, Blend Mode)
+  - ✅ AllLayers Panel (Master-Opacity, Master-Blend)
+
+- ✅ **Output** - Ausgabeziele
+  - ✅ Projector Panel (ID, Name)
+  - ✅ Preview Panel (Window-ID)
+
+#### Socket-Typen (für Wire-Kompatibilität)
+- ✅ Trigger (Signal-Flow)
+- ✅ Media (Bild/Video-Daten)
+- ✅ Effect (Effekt-Kette)
+- ✅ Layer (Layer-Referenz)
+- ✅ Output (Ausgabe-Referenz)
+
 ### Phase 7: Advanced Show Control (Module-Based Timeline) – PLANNED
 
 - ⬜ **Architecture Refactor (Timeline V3)**

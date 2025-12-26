@@ -232,9 +232,7 @@ impl ControllerOverlayPanel {
                     self.learn_manager.update();
 
                     // Draw controller overlay
-                    if self.elements.is_some() {
-                        // We need to clone elements to avoid borrow checker issues with self.draw_controller
-                        let elements = self.elements.clone().unwrap();
+                    if let Some(elements) = self.elements.clone() {
                         self.draw_controller(ui, &elements);
                     } else {
                         ui.label("Kein Controller geladen");

@@ -22,12 +22,60 @@ impl MapFlowModule {
 
         let (module_part_type, inputs, outputs) = match part_type {
             PartType::Trigger => (
-                ModulePartType::Trigger(TriggerType::Beat),
+                ModulePartType::Trigger(TriggerType::AudioFFT {
+                    band: AudioBand::Bass,
+                    threshold: 0.5,
+                }),
                 vec![], // No inputs - triggers are sources
-                vec![ModuleSocket {
-                    name: "Trigger Out".to_string(),
-                    socket_type: ModuleSocketType::Trigger,
-                }],
+                vec![
+                    // FFT Band Outputs
+                    ModuleSocket {
+                        name: "SubBass Out".to_string(),
+                        socket_type: ModuleSocketType::Trigger,
+                    },
+                    ModuleSocket {
+                        name: "Bass Out".to_string(),
+                        socket_type: ModuleSocketType::Trigger,
+                    },
+                    ModuleSocket {
+                        name: "LowMid Out".to_string(),
+                        socket_type: ModuleSocketType::Trigger,
+                    },
+                    ModuleSocket {
+                        name: "Mid Out".to_string(),
+                        socket_type: ModuleSocketType::Trigger,
+                    },
+                    ModuleSocket {
+                        name: "HighMid Out".to_string(),
+                        socket_type: ModuleSocketType::Trigger,
+                    },
+                    ModuleSocket {
+                        name: "Presence Out".to_string(),
+                        socket_type: ModuleSocketType::Trigger,
+                    },
+                    ModuleSocket {
+                        name: "Brilliance Out".to_string(),
+                        socket_type: ModuleSocketType::Trigger,
+                    },
+                    // Volume Outputs
+                    ModuleSocket {
+                        name: "RMS Volume".to_string(),
+                        socket_type: ModuleSocketType::Trigger,
+                    },
+                    ModuleSocket {
+                        name: "Peak Volume".to_string(),
+                        socket_type: ModuleSocketType::Trigger,
+                    },
+                    // Beat Detection
+                    ModuleSocket {
+                        name: "Beat Out".to_string(),
+                        socket_type: ModuleSocketType::Trigger,
+                    },
+                    ModuleSocket {
+                        name: "BPM Out".to_string(),
+                        socket_type: ModuleSocketType::Trigger,
+                    },
+                ],
             ),
             PartType::Source => (
                 ModulePartType::Source(SourceType::MediaFile {
@@ -76,6 +124,22 @@ impl MapFlowModule {
                     socket_type: ModuleSocketType::Media,
                 }],
             ),
+            PartType::Mesh => (
+                ModulePartType::Mesh(MeshType::Quad {
+                    tl: (0.0, 0.0),
+                    tr: (1.0, 0.0),
+                    br: (1.0, 1.0),
+                    bl: (0.0, 1.0),
+                }),
+                vec![ModuleSocket {
+                    name: "Media In".to_string(),
+                    socket_type: ModuleSocketType::Media,
+                }],
+                vec![ModuleSocket {
+                    name: "Mesh Out".to_string(),
+                    socket_type: ModuleSocketType::Layer,
+                }],
+            ),
             PartType::Layer => (
                 ModulePartType::LayerAssignment(LayerAssignmentType::AllLayers {
                     opacity: 1.0,
@@ -106,6 +170,108 @@ impl MapFlowModule {
         let part = ModulePart {
             id,
             part_type: module_part_type,
+            position,
+            size: None,
+            inputs,
+            outputs,
+        };
+
+        self.parts.push(part);
+        id
+    }
+
+    /// Add a part with a specific ModulePartType (for dropdown menus)
+    pub fn add_part_with_type(
+        &mut self,
+        part_type: ModulePartType,
+        position: (f32, f32),
+    ) -> ModulePartId {
+        static NEXT_PART_ID: std::sync::atomic::AtomicU64 =
+            std::sync::atomic::AtomicU64::new(10000);
+        let id = NEXT_PART_ID.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+
+        let (inputs, outputs) = match &part_type {
+            ModulePartType::Trigger(_) => (
+                vec![], // No inputs - triggers are sources
+                vec![ModuleSocket {
+                    name: "Trigger Out".to_string(),
+                    socket_type: ModuleSocketType::Trigger,
+                }],
+            ),
+            ModulePartType::Source(_) => (
+                vec![ModuleSocket {
+                    name: "Trigger In".to_string(),
+                    socket_type: ModuleSocketType::Trigger,
+                }],
+                vec![ModuleSocket {
+                    name: "Media Out".to_string(),
+                    socket_type: ModuleSocketType::Media,
+                }],
+            ),
+            ModulePartType::Mask(_) => (
+                vec![
+                    ModuleSocket {
+                        name: "Media In".to_string(),
+                        socket_type: ModuleSocketType::Media,
+                    },
+                    ModuleSocket {
+                        name: "Mask In".to_string(),
+                        socket_type: ModuleSocketType::Media,
+                    },
+                ],
+                vec![ModuleSocket {
+                    name: "Media Out".to_string(),
+                    socket_type: ModuleSocketType::Media,
+                }],
+            ),
+            ModulePartType::Modulizer(_) => (
+                vec![
+                    ModuleSocket {
+                        name: "Media In".to_string(),
+                        socket_type: ModuleSocketType::Media,
+                    },
+                    ModuleSocket {
+                        name: "Trigger In".to_string(),
+                        socket_type: ModuleSocketType::Trigger,
+                    },
+                ],
+                vec![ModuleSocket {
+                    name: "Media Out".to_string(),
+                    socket_type: ModuleSocketType::Media,
+                }],
+            ),
+            ModulePartType::Mesh(_) => (
+                vec![ModuleSocket {
+                    name: "Media In".to_string(),
+                    socket_type: ModuleSocketType::Media,
+                }],
+                vec![ModuleSocket {
+                    name: "Mesh Out".to_string(),
+                    socket_type: ModuleSocketType::Layer,
+                }],
+            ),
+            ModulePartType::LayerAssignment(_) => (
+                vec![ModuleSocket {
+                    name: "Media In".to_string(),
+                    socket_type: ModuleSocketType::Media,
+                }],
+                vec![ModuleSocket {
+                    name: "Layer Out".to_string(),
+                    socket_type: ModuleSocketType::Layer,
+                }],
+            ),
+            ModulePartType::Output(_) => (
+                vec![ModuleSocket {
+                    name: "Layer In".to_string(),
+                    socket_type: ModuleSocketType::Layer,
+                }],
+                vec![], // No outputs - outputs are sinks
+            ),
+        };
+
+        let part = ModulePart {
+            id,
+            part_type,
             position,
             size: None,
             inputs,
@@ -195,6 +361,7 @@ pub enum ModulePartType {
     Source(SourceType),
     Mask(MaskType),
     Modulizer(ModulizerType),
+    Mesh(MeshType),
     LayerAssignment(LayerAssignmentType),
     Output(OutputType),
 }
@@ -206,6 +373,7 @@ pub enum PartType {
     Source,
     Mask,
     Modulator,
+    Mesh,
     Layer,
     Output,
 }
@@ -277,6 +445,37 @@ pub enum MaskShape {
     Triangle,
     Star,
     Ellipse,
+}
+
+/// Mesh types for projection mapping
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+pub enum MeshType {
+    /// Simple quad mesh (4 corner points)
+    Quad {
+        tl: (f32, f32),
+        tr: (f32, f32),
+        br: (f32, f32),
+        bl: (f32, f32),
+    },
+    /// Grid mesh with configurable subdivision
+    Grid { rows: u32, cols: u32 },
+    /// Bezier surface with control points
+    BezierSurface { control_points: Vec<(f32, f32)> },
+    /// Freeform polygon mesh
+    Polygon { vertices: Vec<(f32, f32)> },
+    /// Triangle mesh
+    TriMesh,
+    /// Circle/Arc for curved surfaces
+    Circle { segments: u32, arc_angle: f32 },
+    /// Cylinder projection (for 3D surfaces)
+    Cylinder { segments: u32, height: f32 },
+    /// Sphere segment (for dome projections)
+    Sphere {
+        lat_segments: u32,
+        lon_segments: u32,
+    },
+    /// Custom mesh from file
+    Custom { path: String },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
