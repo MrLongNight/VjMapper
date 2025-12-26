@@ -3,8 +3,8 @@
 //! This module defines the core state structures that are persisted to disk.
 
 use crate::{
-    module::ModuleManager, AudioConfig, LayerManager, MappingManager, OscillatorConfig,
-    OutputManager, PaintManager,
+    assignment::AssignmentManager, module::ModuleManager, AudioConfig, LayerManager,
+    MappingManager, OscillatorConfig, OutputManager, PaintManager,
 };
 use serde::{Deserialize, Serialize};
 
@@ -38,6 +38,10 @@ pub struct AppState {
     /// Oscillator configuration
     pub oscillator_config: OscillatorConfig,
 
+    /// Assignment manager
+    #[serde(default)]
+    pub assignment_manager: AssignmentManager,
+
     /// Application settings
     #[serde(default)]
     pub settings: AppSettings,
@@ -59,6 +63,7 @@ impl Default for AppState {
             module_manager: ModuleManager::default(),
             audio_config: AudioConfig::default(),
             oscillator_config: OscillatorConfig::default(),
+            assignment_manager: AssignmentManager::default(),
             settings: AppSettings::default(),
             dirty: false,
         }

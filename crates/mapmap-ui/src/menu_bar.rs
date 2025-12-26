@@ -189,6 +189,10 @@ pub fn show(ctx: &egui::Context, ui_state: &mut AppUI) -> Vec<UIAction> {
                         &mut ui_state.show_controller_overlay,
                         "MIDI Controller Overlay",
                     );
+                    ui.checkbox(
+                        &mut ui_state.assignment_panel.visible,
+                        "Assignment Panel", // TODO: i18n
+                    );
                     ui.separator();
                     ui.label(ui_state.i18n.t("view-legacy-panels"));
                     ui.checkbox(

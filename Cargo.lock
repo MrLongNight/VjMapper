@@ -2735,6 +2735,7 @@ dependencies = [
  "axum",
  "futures",
  "http",
+ "mapmap-core",
  "midir",
  "rosc",
  "serde",

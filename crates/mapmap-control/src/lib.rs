@@ -38,6 +38,7 @@
 // Core modules
 pub mod error;
 pub mod manager;
+pub mod source;
 pub mod target;
 
 // Control system modules
@@ -58,6 +59,7 @@ pub mod shortcuts;
 // Re-exports
 pub use error::{ControlError, Result};
 pub use manager::ControlManager;
+pub use source::{ControlSource, MidiSource, OscSource};
 pub use target::{ControlTarget, ControlValue, EdgeSide};
 
 #[cfg(feature = "midi")]

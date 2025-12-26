@@ -11,6 +11,7 @@
 
 // Phase 6: Advanced Authoring UI (egui-based)
 pub mod asset_manager;
+pub mod assignment_panel;
 pub mod audio_meter;
 pub mod audio_panel;
 pub mod config;
@@ -45,6 +46,7 @@ pub use controller_overlay_panel::ControllerOverlayPanel;
 pub use i18n::LocaleManager;
 
 // Phase 6 exports
+use crate::assignment_panel::AssignmentPanel;
 pub use asset_manager::{AssetManager, AssetManagerAction, EffectPreset, TransformPreset};
 pub use audio_panel::AudioPanel;
 pub use config::UserConfig;
@@ -237,6 +239,8 @@ pub struct AppUI {
     /// Controller Overlay Panel (MIDI visualization)
     pub controller_overlay: ControllerOverlayPanel,
     pub show_controller_overlay: bool,
+    /// Assignment Panel
+    pub assignment_panel: AssignmentPanel,
 }
 
 impl Default for AppUI {
@@ -310,6 +314,7 @@ impl Default for AppUI {
             ram_usage_mb: 0.0,
             controller_overlay: ControllerOverlayPanel::new(),
             show_controller_overlay: false,
+            assignment_panel: AssignmentPanel::default(),
         }
     }
 }

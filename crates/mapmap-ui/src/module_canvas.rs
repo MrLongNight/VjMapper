@@ -160,15 +160,11 @@ impl ModuleCanvas {
             ui.add_enabled_ui(has_module, |ui| {
                 // === SIGNAL FLOW ORDER: Trigger → Source → Mask → Modulator → Layer → Output ===
 
-                // Helper for styled node buttons
-                let add_node_btn = |ui: &mut Ui, text: &str, tooltip: &str| -> bool {
-                    ui.add(egui::Button::new(egui::RichText::new(text).size(14.0))
-                        .min_size(Vec2::new(80.0, 24.0)))
-                        .on_hover_text(tooltip)
-                        .clicked()
-                };
-
-                if add_node_btn(ui, "⚡ Trigger", "Add a Trigger node (Audio/MIDI/OSC/Keyboard)") {
+                if ui
+                    .button("⚡ Trigger")
+                    .on_hover_text("Add a Trigger node (Audio/MIDI/OSC/Keyboard)")
+                    .clicked()
+                {
                     if let Some(id) = self.active_module_id {
                         if let Some(module) = manager.get_module_mut(id) {
                             let pos = Self::find_free_position(&module.parts, (100.0, 100.0));
@@ -177,16 +173,28 @@ impl ModuleCanvas {
                     }
                 }
 
-                if add_node_btn(ui, "🎬 Source", "Add a Source node (Media/Shader/Live Input)") {
+                if ui
+                    .button("🎬 Source")
+                    .on_hover_text("Add a Source node (Media/Shader/Live Input)")
+                    .clicked()
+                {
                     if let Some(id) = self.active_module_id {
                         if let Some(module) = manager.get_module_mut(id) {
                             let pos = Self::find_free_position(&module.parts, (200.0, 100.0));
                             module.add_part(mapmap_core::module::PartType::Source, pos);
+                        } else {
+                            eprintln!("Modul mit ID {id:?} nicht gefunden!");
                         }
+                    } else {
+                        eprintln!("Kein aktives Modul vorhanden!");
                     }
                 }
 
-                if add_node_btn(ui, "🎭 Mask", "Add a Mask node (File/Shape/Gradient)") {
+                if ui
+                    .button("🎭 Mask")
+                    .on_hover_text("Add a Mask node (File/Shape/Gradient)")
+                    .clicked()
+                {
                     if let Some(id) = self.active_module_id {
                         if let Some(module) = manager.get_module_mut(id) {
                             let pos = Self::find_free_position(&module.parts, (300.0, 100.0));
@@ -195,7 +203,11 @@ impl ModuleCanvas {
                     }
                 }
 
-                if add_node_btn(ui, "〰️ Modulator", "Add a Modulator/Effect node") {
+                if ui
+                    .button("〰️ Modulator")
+                    .on_hover_text("Add a Modulator/Effect node")
+                    .clicked()
+                {
                     if let Some(id) = self.active_module_id {
                         if let Some(module) = manager.get_module_mut(id) {
                             let pos = Self::find_free_position(&module.parts, (400.0, 100.0));
@@ -204,7 +216,11 @@ impl ModuleCanvas {
                     }
                 }
 
-                if add_node_btn(ui, "📑 Layer", "Add a Layer node (Mapping/Mesh)") {
+                if ui
+                    .button("📑 Layer")
+                    .on_hover_text("Add a Layer node (Mapping/Mesh)")
+                    .clicked()
+                {
                     if let Some(id) = self.active_module_id {
                         if let Some(module) = manager.get_module_mut(id) {
                             let pos = Self::find_free_position(&module.parts, (500.0, 100.0));
@@ -213,7 +229,11 @@ impl ModuleCanvas {
                     }
                 }
 
-                if add_node_btn(ui, "📺 Output", "Add an Output node (Projector/Preview)") {
+                if ui
+                    .button("📺 Output")
+                    .on_hover_text("Add an Output node (Projector/Preview)")
+                    .clicked()
+                {
                     if let Some(id) = self.active_module_id {
                         if let Some(module) = manager.get_module_mut(id) {
                             let pos = Self::find_free_position(&module.parts, (600.0, 100.0));
@@ -523,7 +543,7 @@ impl ModuleCanvas {
                                                     }
                                                     TriggerType::Midi { channel, note } => {
                                                         ui.label("🎹 MIDI Trigger");
-                                                        
+
                                                         // Available MIDI ports dropdown
                                                         ui.horizontal(|ui| {
                                                             ui.label("Device:");
@@ -550,7 +570,7 @@ impl ModuleCanvas {
                                                                 ui.label("(MIDI disabled)");
                                                             }
                                                         });
-                                                        
+
                                                         ui.add(
                                                             egui::Slider::new(channel, 1..=16)
                                                                 .text("Channel"),
@@ -559,7 +579,7 @@ impl ModuleCanvas {
                                                             egui::Slider::new(note, 0..=127)
                                                                 .text("Note"),
                                                         );
-                                                        
+
                                                         // MIDI Learn button
                                                         let is_learning = self.midi_learn_part_id == Some(part_id);
                                                         let learn_text = if is_learning {
@@ -835,29 +855,29 @@ impl ModuleCanvas {
 
                 // Context Menu Logic
                 if let Some(menu_pos) = self.context_menu_pos {
-                     ui.output_mut(|o| o.cursor_icon = egui::CursorIcon::Default);
-                     let menu_rect = Rect::from_min_size(menu_pos, Vec2::new(140.0, 100.0));
-                     
-                     // Check for click outside to close
-                     if ui.input(|i| i.pointer.any_pressed()) {
-                         let pointer = ui.input(|i| i.pointer.hover_pos());
-                         if let Some(pos) = pointer {
-                             if !menu_rect.contains(pos) {
-                                 self.context_menu_pos = None;
-                                 self.context_menu_connection = None;
-                                 self.context_menu_part = None;
-                             }
-                         }
-                     }
-        
-                     if self.context_menu_pos.is_some() {
-                         egui::Window::new("Context Menu")
-                             .fixed_pos(menu_pos)
-                             .collapsible(false)
-                             .resizable(false)
-                             .title_bar(false)
-                             .frame(egui::Frame::popup(ui.style()))
-                             .show(ui.ctx(), |ui| {
+                    ui.output_mut(|o| o.cursor_icon = egui::CursorIcon::Default);
+                    let menu_rect = Rect::from_min_size(menu_pos, Vec2::new(140.0, 100.0));
+
+                    // Check for click outside to close
+                    if ui.input(|i| i.pointer.any_pressed()) {
+                        let pointer = ui.input(|i| i.pointer.hover_pos());
+                        if let Some(pos) = pointer {
+                            if !menu_rect.contains(pos) {
+                                self.context_menu_pos = None;
+                                self.context_menu_connection = None;
+                                self.context_menu_part = None;
+                            }
+                        }
+                    }
+
+                    if self.context_menu_pos.is_some() {
+                        egui::Window::new("Context Menu")
+                            .fixed_pos(menu_pos)
+                            .collapsible(false)
+                            .resizable(false)
+                            .title_bar(false)
+                            .frame(egui::Frame::popup(ui.style()))
+                            .show(ui.ctx(), |ui| {
                                 if let Some(conn_idx) = self.context_menu_connection {
                                     if ui.button("🗑 Delete Connection").clicked() {
                                         if conn_idx < module.connections.len() {
@@ -869,8 +889,10 @@ impl ModuleCanvas {
                                 }
                                 if let Some(part_id) = self.context_menu_part {
                                     if ui.button("🗑 Delete Node").clicked() {
-                                         // Remove connections
-                                        module.connections.retain(|c| c.from_part != part_id && c.to_part != part_id);
+                                        // Remove connections
+                                        module.connections.retain(|c| {
+                                            c.from_part != part_id && c.to_part != part_id
+                                        });
                                         // Remove part
                                         module.parts.retain(|p| p.id != part_id);
                                         self.context_menu_pos = None;
@@ -878,21 +900,29 @@ impl ModuleCanvas {
                                     }
                                     if ui.button("📄 Duplicate Node").clicked() {
                                         // Find part to duplicate
-                                        if let Some(part) = module.parts.iter().find(|p| p.id == part_id).cloned() {
-                                             // Generate new ID locally to avoid borrowing manager/module conflict
-                                             let new_id = module.parts.iter().map(|p| p.id).max().unwrap_or(0) + 1;
-                                             let mut new_part = part.clone();
-                                             new_part.id = new_id;
-                                             new_part.position.0 += 20.0;
-                                             new_part.position.1 += 20.0;
-                                             module.parts.push(new_part);
+                                        if let Some(part) =
+                                            module.parts.iter().find(|p| p.id == part_id).cloned()
+                                        {
+                                            // Generate new ID locally to avoid borrowing manager/module conflict
+                                            let new_id = module
+                                                .parts
+                                                .iter()
+                                                .map(|p| p.id)
+                                                .max()
+                                                .unwrap_or(0)
+                                                + 1;
+                                            let mut new_part = part.clone();
+                                            new_part.id = new_id;
+                                            new_part.position.0 += 20.0;
+                                            new_part.position.1 += 20.0;
+                                            module.parts.push(new_part);
                                         }
                                         self.context_menu_pos = None;
                                         self.context_menu_part = None;
                                     }
                                 }
-                             });
-                     }
+                            });
+                    }
                 }
             }
         } else {
@@ -1111,7 +1141,7 @@ impl ModuleCanvas {
             .map(|part| {
                 let part_screen_pos = to_screen(Pos2::new(part.position.0, part.position.1));
                 let part_height = 80.0 + (part.inputs.len().max(part.outputs.len()) as f32) * 20.0;
-                let part_size = Vec2::new(200.0, part_height);
+                let part_size = Vec2::new(180.0, part_height);
                 let rect = Rect::from_min_size(part_screen_pos, part_size * self.zoom);
 
                 // Calculate socket positions
@@ -1260,17 +1290,18 @@ impl ModuleCanvas {
                         module.parts.iter().find(|p| p.id == conn.from_part),
                         module.parts.iter().find(|p| p.id == conn.to_part),
                     ) {
-
-                         // Adjust for socket offset (approximation)
-                         let from_socket_y = 50.0 + conn.from_socket as f32 * 20.0;
-                         let from_screen_socket = to_screen(Pos2::new(
-                                from_part.position.0 + 180.0,
-                                from_part.position.1 + from_socket_y,
-                         ));
+                        // Adjust for socket offset (approximation)
+                        let from_socket_y = 50.0 + conn.from_socket as f32 * 20.0;
+                        let from_screen_socket = to_screen(Pos2::new(
+                            from_part.position.0 + 180.0,
+                            from_part.position.1 + from_socket_y,
+                        ));
 
                         let to_socket_y = 50.0 + conn.to_socket as f32 * 20.0;
-                        let to_screen_socket =
-                            to_screen(Pos2::new(to_part.position.0, to_part.position.1 + to_socket_y));
+                        let to_screen_socket = to_screen(Pos2::new(
+                            to_part.position.0,
+                            to_part.position.1 + to_socket_y,
+                        ));
 
                         // Simple distance check to bezier curve (approximate with line)
                         let mid = Pos2::new(
@@ -1379,7 +1410,7 @@ impl ModuleCanvas {
                                 80.0 + (part.inputs.len().max(part.outputs.len()) as f32) * 20.0;
                             let new_rect = Rect::from_min_size(
                                 Pos2::new(new_x, new_y),
-                                Vec2::new(200.0, part_height),
+                                Vec2::new(180.0, part_height),
                             );
 
                             // Check collision with other parts
@@ -1391,7 +1422,7 @@ impl ModuleCanvas {
                                     + (other.inputs.len().max(other.outputs.len()) as f32) * 20.0;
                                 let other_rect = Rect::from_min_size(
                                     Pos2::new(other.position.0, other.position.1),
-                                    Vec2::new(200.0, other_height),
+                                    Vec2::new(180.0, other_height),
                                 );
                                 new_rect.intersects(other_rect)
                             });
@@ -1450,7 +1481,7 @@ impl ModuleCanvas {
             let (part_width, part_height) = part.size.unwrap_or_else(|| {
                 let default_height =
                     80.0 + (part.inputs.len().max(part.outputs.len()) as f32) * 20.0;
-                (200.0, default_height)
+                (180.0, default_height)
             });
             let part_size = Vec2::new(part_width, part_height);
             let part_screen_rect = Rect::from_min_size(part_screen_pos, part_size * self.zoom);
@@ -1493,16 +1524,16 @@ impl ModuleCanvas {
                 if resize_response.drag_started() {
                     self.resizing_part = Some((part.id, (part_width, part_height)));
                 }
-                
+
                 if resize_response.dragged() {
-                     if let Some((id, _original_size)) = self.resizing_part {
-                         if id == part.id {
-                             let delta = resize_response.drag_delta() / self.zoom;
-                             resize_ops.push((part.id, delta));
-                         }
-                     }
+                    if let Some((id, _original_size)) = self.resizing_part {
+                        if id == part.id {
+                            let delta = resize_response.drag_delta() / self.zoom;
+                            resize_ops.push((part.id, delta));
+                        }
+                    }
                 }
-                
+
                 if resize_response.drag_stopped() {
                     self.resizing_part = None;
                 }
@@ -1513,19 +1544,17 @@ impl ModuleCanvas {
 
         // Apply resize operations
         for (part_id, delta) in resize_ops {
-             if let Some(part) = module.parts.iter_mut().find(|p| p.id == part_id) {
-                 // Initialize size if None
-                 let current_size = part.size.unwrap_or_else(|| {
-                     let h = 80.0 + (part.inputs.len().max(part.outputs.len()) as f32) * 20.0;
-                     (200.0, h)
-                 });
-                 let new_w = (current_size.0 + delta.x).max(100.0);
-                 let new_h = (current_size.1 + delta.y).max(50.0);
-                 part.size = Some((new_w, new_h));
-             }
+            if let Some(part) = module.parts.iter_mut().find(|p| p.id == part_id) {
+                // Initialize size if None
+                let current_size = part.size.unwrap_or_else(|| {
+                    let h = 80.0 + (part.inputs.len().max(part.outputs.len()) as f32) * 20.0;
+                    (180.0, h)
+                });
+                let new_w = (current_size.0 + delta.x).max(100.0);
+                let new_h = (current_size.1 + delta.y).max(50.0);
+                part.size = Some((new_w, new_h));
+            }
         }
-
-
 
         // Draw connection being created with visual feedback
         if let Some((from_part_id, _from_socket_idx, from_is_output, ref from_type, start_pos)) =
@@ -1575,19 +1604,22 @@ impl ModuleCanvas {
 
         // Draw search popup if visible
         if self.show_search {
-            self.draw_search_popup(ui, canvas_rect, module);
+            self.draw_search_popup(ui, canvas_rect, module, _locale);
         }
 
         // Draw presets popup if visible
         if self.show_presets {
             self.draw_presets_popup(ui, canvas_rect, module);
         }
-
-
-
     }
 
-    fn draw_search_popup(&mut self, ui: &mut Ui, canvas_rect: Rect, module: &mut MapFlowModule) {
+    fn draw_search_popup(
+        &mut self,
+        ui: &mut Ui,
+        canvas_rect: Rect,
+        module: &mut MapFlowModule,
+        _locale: &LocaleManager,
+    ) {
         // Search popup in top-center
         let popup_width = 300.0;
         let popup_height = 200.0;
@@ -1876,7 +1908,7 @@ impl ModuleCanvas {
             let height = 80.0 + (part.inputs.len().max(part.outputs.len()) as f32) * 20.0;
             min_x = min_x.min(part.position.0);
             min_y = min_y.min(part.position.1);
-            max_x = max_x.max(part.position.0 + 200.0);
+            max_x = max_x.max(part.position.0 + 180.0);
             max_y = max_y.max(part.position.1 + height);
         }
 
@@ -1906,7 +1938,7 @@ impl ModuleCanvas {
         for part in &module.parts {
             let height = 80.0 + (part.inputs.len().max(part.outputs.len()) as f32) * 20.0;
             let part_min = to_map(Pos2::new(part.position.0, part.position.1));
-            let part_max = to_map(Pos2::new(part.position.0 + 200.0, part.position.1 + height));
+            let part_max = to_map(Pos2::new(part.position.0 + 180.0, part.position.1 + height));
             let part_rect = Rect::from_min_max(part_min, part_max);
 
             let (_, title_color, _, _) = Self::get_part_style(&part.part_type);
@@ -2092,7 +2124,7 @@ impl ModuleCanvas {
                             };
                         }
                     });
-            
+
                 // Properties for MaskType
                 if let MaskType::File { path } = mask_type {
                     ui.add_space(4.0);
@@ -2212,15 +2244,13 @@ impl ModuleCanvas {
             }
             ModulePartType::LayerAssignment(layer_type) => {
                 ui.label("Layer Type:");
-                let current_type_name = match layer_type {
+                let current = match layer_type {
                     LayerAssignmentType::SingleLayer { .. } => "Single Layer",
                     LayerAssignmentType::Group { .. } => "Group",
-                    LayerAssignmentType::AllLayers { .. } => "All Layers",
+                    LayerAssignmentType::AllLayers => "All Layers",
                 };
-
-                // Type Selector
                 egui::ComboBox::from_id_source("layer_type")
-                    .selected_text(current_type_name)
+                    .selected_text(current)
                     .show_ui(ui, |ui| {
                         if ui
                             .selectable_label(
@@ -2232,8 +2262,6 @@ impl ModuleCanvas {
                             *layer_type = LayerAssignmentType::SingleLayer {
                                 id: 0,
                                 name: "Layer 1".to_string(),
-                                opacity: 1.0,
-                                blend_mode: None,
                             };
                         }
                         if ui
@@ -2245,71 +2273,16 @@ impl ModuleCanvas {
                         {
                             *layer_type = LayerAssignmentType::Group {
                                 name: "Group 1".to_string(),
-                                opacity: 1.0,
-                                blend_mode: None,
                             };
                         }
                         if ui
                             .selectable_label(
-                                matches!(layer_type, LayerAssignmentType::AllLayers { .. }),
+                                matches!(layer_type, LayerAssignmentType::AllLayers),
                                 "All Layers",
                             )
                             .clicked()
                         {
-                            *layer_type = LayerAssignmentType::AllLayers {
-                                opacity: 1.0,
-                                blend_mode: None,
-                            };
-                        }
-                    });
-
-                ui.separator();
-
-                // Common Properties access
-                let (opacity, blend_mode) = match layer_type {
-                    LayerAssignmentType::SingleLayer {
-                        opacity,
-                        blend_mode,
-                        ..
-                    } => (opacity, blend_mode),
-                    LayerAssignmentType::Group {
-                        opacity,
-                        blend_mode,
-                        ..
-                    } => (opacity, blend_mode),
-                    LayerAssignmentType::AllLayers {
-                        opacity,
-                        blend_mode,
-                    } => (opacity, blend_mode),
-                };
-
-                // Opacity Slider
-                ui.label("Opacity:");
-                ui.add(egui::Slider::new(opacity, 0.0..=1.0).text("Value"));
-
-                // Blend Mode Selector
-                ui.label("Blend Mode:");
-                let current_blend = blend_mode.map(|b| b.name()).unwrap_or("Keep Original");
-                egui::ComboBox::from_id_source("layer_blend")
-                    .selected_text(current_blend)
-                    .show_ui(ui, |ui| {
-                        if ui
-                            .selectable_label(blend_mode.is_none(), "Keep Original")
-                            .clicked()
-                        {
-                            *blend_mode = None;
-                        }
-                        ui.separator();
-                        for b in BlendModeType::all() {
-                            if ui
-                                .selectable_label(
-                                    blend_mode.as_ref().map_or(false, |current| *current == *b),
-                                    b.name(),
-                                )
-                                .clicked()
-                            {
-                                *blend_mode = Some(*b);
-                            }
+                            *layer_type = LayerAssignmentType::AllLayers;
                         }
                     });
             }
@@ -2646,8 +2619,8 @@ impl ModuleCanvas {
                 use mapmap_core::module::LayerAssignmentType;
                 match layer_type {
                     LayerAssignmentType::SingleLayer { name, .. } => format!("📑 {}", name),
-                    LayerAssignmentType::Group { name, .. } => format!("📁 {}", name),
-                    LayerAssignmentType::AllLayers { .. } => "📑 All Layers".to_string(),
+                    LayerAssignmentType::Group { name } => format!("📁 {}", name),
+                    LayerAssignmentType::AllLayers => "📑 All Layers".to_string(),
                 }
             }
             ModulePartType::Output(output_type) => match output_type {
@@ -2725,7 +2698,7 @@ impl ModuleCanvas {
         parts: &[mapmap_core::module::ModulePart],
         preferred: (f32, f32),
     ) -> (f32, f32) {
-        let node_width = 200.0;
+        let node_width = 190.0;
         let node_height = 130.0;
         let grid_step = 30.0;
 
@@ -2856,10 +2829,7 @@ impl ModuleCanvas {
                         None,
                     ),
                     (
-                        ModulePartType::LayerAssignment(LayerAssignmentType::AllLayers {
-                            opacity: 1.0,
-                            blend_mode: None,
-                        }),
+                        ModulePartType::LayerAssignment(LayerAssignmentType::AllLayers),
                         (650.0, 100.0),
                         None,
                     ),
