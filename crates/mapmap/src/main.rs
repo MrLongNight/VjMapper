@@ -475,6 +475,9 @@ impl App {
                     }
                 }
 
+                // Update Control System
+                self.control_manager.update(&self.state.assignment_manager);
+
                 // Redraw all windows
                 for output_id in self
                     .window_manager
@@ -573,6 +576,9 @@ impl App {
                 }
                 mapmap_ui::UIAction::ToggleControllerOverlay => {
                     self.ui_state.show_controller_overlay = !self.ui_state.show_controller_overlay;
+                }
+                mapmap_ui::UIAction::ToggleAssignmentPanel => {
+                    self.ui_state.assignment_panel.visible = !self.ui_state.assignment_panel.visible;
                 }
                 // TODO: Handle other actions (AddLayer, etc.) here or delegating to state
                 _ => {}
@@ -834,6 +840,11 @@ impl App {
                     // MIDI Controller Overlay
                     if self.ui_state.show_controller_overlay {
                         self.ui_state.controller_overlay.show(ctx);
+                    }
+
+                    // Assignment Panel
+                    if self.ui_state.show_assignment_panel {
+                        self.ui_state.assignment_panel.show(ctx, &mut self.state);
                     }
 
                     // === 1. TOP PANEL: Menu Bar + Toolbar ===

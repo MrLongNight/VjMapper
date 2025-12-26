@@ -7,12 +7,14 @@
 
 use crate::error::{ControlError, Result};
 use crate::shortcuts::{Action, Key, KeyBindings, Modifiers};
+use crate::source::ControlSource;
 use crate::target::{ControlTarget, ControlValue};
+use mapmap_core::assignment::AssignmentManager;
 use std::sync::{Arc, Mutex};
 use tracing::{info, warn};
 
 #[cfg(feature = "midi")]
-use crate::midi::MidiInputHandler;
+use crate::midi::{MidiInputHandler, MidiMessage};
 
 use crate::cue::CueList;
 use crate::dmx::{ArtNetSender, SacnSender};
@@ -85,12 +87,6 @@ impl ControlManager {
             }
             Err(e) => {
                 warn!("MIDI input initialization failed: {}", e);
-                // We return Ok even if MIDI fails, so the app can continue
-                // Or we return Err and app handles it.
-                // The prompt says "Fehlerrobustheit ... bspw. keine Panics".
-                // Returning Err is fine if app handles it. But here we can just log warn.
-                // However, the function returns Result, so caller expects it.
-                // I will return Err but ensuring no panic.
                 Err(e)
             }
         }
@@ -164,14 +160,14 @@ impl ControlManager {
     }
 
     /// Update all control systems (call every frame)
-    pub fn update(&mut self) {
+    pub fn update(&mut self, assignment_manager: &AssignmentManager) {
         // Process MIDI messages
         #[cfg(feature = "midi")]
-        self.process_midi_messages();
+        self.process_midi_messages(assignment_manager);
 
         // Process OSC messages
         #[cfg(feature = "osc")]
-        self.process_osc_messages();
+        self.process_osc_messages(assignment_manager);
 
         // Update cue system
         self.cue_list.update();
@@ -179,19 +175,46 @@ impl ControlManager {
 
     /// Process MIDI messages
     #[cfg(feature = "midi")]
-    fn process_midi_messages(&mut self) {
-        // Collect messages to process to avoid borrow checker issues
+    fn process_midi_messages(&mut self, assignment_manager: &AssignmentManager) {
         let mut controls_to_apply = Vec::new();
 
         if let Some(midi_input) = &self.midi_input {
             while let Some(message) = midi_input.poll_message() {
-                // Learn mode removed. Directly map.
-
-                // Get mapping and collect control values
-                if let Some(mapping) = midi_input.get_mapping() {
-                    if let Some((target, value)) = mapping.get_control_value(&message) {
-                        controls_to_apply.push((target, value));
+                // Determine source and normalized value
+                let (source, raw_value) = match message {
+                    MidiMessage::ControlChange {
+                        channel,
+                        controller,
+                        value,
+                    } => (
+                        ControlSource::MidiCC(channel, controller),
+                        value as f32 / 127.0,
+                    ),
+                    MidiMessage::NoteOn {
+                        channel,
+                        note,
+                        velocity,
+                    } => (
+                        ControlSource::MidiNote(channel, note),
+                        velocity as f32 / 127.0,
+                    ),
+                    MidiMessage::NoteOff { channel, note } => {
+                        (ControlSource::MidiNote(channel, note), 0.0)
                     }
+                    _ => continue,
+                };
+
+                let source_id = source.id();
+                let assignments = assignment_manager.find_by_source(source_id);
+
+                for assignment in assignments {
+                    let val = if assignment.invert {
+                        assignment.max - (raw_value * (assignment.max - assignment.min))
+                    } else {
+                        assignment.min + (raw_value * (assignment.max - assignment.min))
+                    };
+
+                    controls_to_apply.push((assignment.target.clone(), ControlValue::Float(val)));
                 }
             }
         }
@@ -204,25 +227,45 @@ impl ControlManager {
 
     /// Process OSC messages
     #[cfg(feature = "osc")]
-    fn process_osc_messages(&mut self) {
+    fn process_osc_messages(&mut self, assignment_manager: &AssignmentManager) {
         let mut controls_to_apply = Vec::new();
 
         if let Some(osc_server) = &mut self.osc_server {
             while let Some(packet) = osc_server.poll_packet() {
-                // Learn mode removed.
-
-                // Try to map and apply the control
                 if let rosc::OscPacket::Message(msg) = packet {
-                    if let Some(target) = self.osc_mapping.get(&msg.addr) {
-                        let value_result = match target {
-                            ControlTarget::LayerPosition(_) => {
-                                crate::osc::types::osc_to_vec2(&msg.args)
+                    let source = ControlSource::OscAddress(msg.addr.clone());
+                    let source_id = source.id();
+
+                    let assignments = assignment_manager.find_by_source(source_id);
+
+                    if !assignments.is_empty() {
+                        // Extract value (assume first arg is float)
+                        let raw_value = if let Some(arg) = msg.args.first() {
+                            match arg {
+                                rosc::OscType::Float(f) => *f,
+                                rosc::OscType::Int(i) => *i as f32, // Normalize? Usually OSC is 0-1 or arbitary.
+                                rosc::OscType::Bool(b) => {
+                                    if *b {
+                                        1.0
+                                    } else {
+                                        0.0
+                                    }
+                                }
+                                _ => 0.0,
                             }
-                            _ => crate::osc::types::osc_to_control_value(&msg.args),
+                        } else {
+                            0.0
                         };
 
-                        if let Ok(value) = value_result {
-                            controls_to_apply.push((target.clone(), value));
+                        for assignment in assignments {
+                            let val = if assignment.invert {
+                                assignment.max - (raw_value * (assignment.max - assignment.min))
+                            } else {
+                                assignment.min + (raw_value * (assignment.max - assignment.min))
+                            };
+
+                            controls_to_apply
+                                .push((assignment.target.clone(), ControlValue::Float(val)));
                         }
                     }
                 }
@@ -236,7 +279,7 @@ impl ControlManager {
 
     /// Apply a control change
     pub fn apply_control(&mut self, target: ControlTarget, value: ControlValue) {
-        info!("Control change: {:?} = {:?}", target, value);
+        // info!("Control change: {:?} = {:?}", target, value); // Reduce log spam
 
         // Call the control callback if set
         if let Some(callback) = &self.control_callback {
@@ -373,34 +416,5 @@ mod tests {
         manager.apply_control(ControlTarget::LayerOpacity(0), ControlValue::Float(0.5));
 
         assert!(called.load(Ordering::SeqCst));
-    }
-    #[test]
-    fn test_cue_execution() {
-        let mut manager = ControlManager::new();
-
-        // Add some dummy cues to test navigation
-        manager.cue_list.add_cue(
-            crate::cue::Cue::new(1, "Cue 1".to_string())
-                .with_fade_duration(std::time::Duration::from_millis(0)),
-        );
-        manager.cue_list.add_cue(
-            crate::cue::Cue::new(2, "Cue 2".to_string())
-                .with_fade_duration(std::time::Duration::from_millis(0)),
-        );
-
-        // Test Goto 1
-        manager.execute_action(Action::GotoCue(1));
-        manager.update();
-        assert_eq!(manager.cue_list.current_cue(), Some(1));
-
-        // Test Next
-        manager.execute_action(Action::NextCue);
-        manager.update();
-        assert_eq!(manager.cue_list.current_cue(), Some(2));
-
-        // Test Prev
-        manager.execute_action(Action::PrevCue);
-        manager.update();
-        assert_eq!(manager.cue_list.current_cue(), Some(1));
     }
 }

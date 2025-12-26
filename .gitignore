@@ -41,7 +41,7 @@
 # Allow assets icons
 !assets/icons/*.svg
 
-*.json
+# *.json  <-- Removed to allow JSON files in resources
 
 # Rust
 /target/

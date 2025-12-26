@@ -1228,7 +1228,7 @@ impl ModuleCanvas {
                 // Draw bezier curve from start to mouse
                 let wire_color = Self::get_socket_color(&socket_type);
                 let control_offset = 50.0 * self.zoom;
-                
+
                 // Calculate control points for smooth curve
                 let (ctrl1, ctrl2) = if is_output {
                     // Dragging from output (right side) - curve goes right then to mouse
