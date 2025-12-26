@@ -168,10 +168,13 @@ impl ControllerOverlayPanel {
     }
 
     /// Show the panel UI
-    /// Show the panel UI
-    pub fn show(&mut self, ctx: &egui::Context) {
+    pub fn show(&mut self, ctx: &egui::Context, is_open: &mut bool) {
+        if !*is_open {
+            return;
+        }
+
         egui::Window::new("Controller Overlay")
-            .open(&mut true) // Controlled by parent boolean usually, but we can just show it if called
+            .open(is_open)
             .resizable(true)
             .show(ctx, |ui| {
                 ui.horizontal(|ui| {
@@ -257,7 +260,7 @@ impl ControllerOverlayPanel {
 
     /// Draw the controller visualization
     #[cfg(feature = "midi")]
-    fn draw_controller(&mut self, ui: &mut Ui, elements: &ControllerElements) {
+    fn draw_controller(&mut self, ui: &mut egui::Ui, elements: &ControllerElements) {
         let available_size = ui.available_size();
         let panel_size = Vec2::new(available_size.x.min(600.0), available_size.y.min(400.0));
 
