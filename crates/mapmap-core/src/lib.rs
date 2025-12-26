@@ -27,6 +27,7 @@ pub mod animation;
 pub mod audio;
 pub mod audio_media_pipeline;
 pub mod audio_reactive;
+pub mod assignment;
 pub mod codegen;
 pub mod effects;
 pub mod logging;
@@ -49,6 +50,7 @@ pub use audio_reactive::{
     AudioAnimationBlendMode, AudioReactiveAnimationSystem, AudioReactiveController,
     AudioReactivePreset,
 };
+pub use assignment::{Assignment, AssignmentManager};
 pub use codegen::{CodegenError, WGSLCodegen};
 pub use effects::{Effect, EffectChain, EffectType};
 pub use logging::LogConfig;

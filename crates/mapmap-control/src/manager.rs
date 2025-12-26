@@ -7,7 +7,9 @@
 
 use crate::error::{ControlError, Result};
 use crate::shortcuts::{Action, Key, KeyBindings, Modifiers};
+use crate::source::{ControlSource, MidiMessageType, MidiSource, OscSource};
 use crate::target::{ControlTarget, ControlValue};
+use mapmap_core::AssignmentManager;
 use std::sync::{Arc, Mutex};
 use tracing::{info, warn};
 
@@ -164,14 +166,14 @@ impl ControlManager {
     }
 
     /// Update all control systems (call every frame)
-    pub fn update(&mut self) {
+    pub fn update(&mut self, assignment_manager: &AssignmentManager) {
         // Process MIDI messages
         #[cfg(feature = "midi")]
-        self.process_midi_messages();
+        self.process_midi_messages(assignment_manager);
 
         // Process OSC messages
         #[cfg(feature = "osc")]
-        self.process_osc_messages();
+        self.process_osc_messages(assignment_manager);
 
         // Update cue system
         self.cue_list.update();
@@ -179,18 +181,59 @@ impl ControlManager {
 
     /// Process MIDI messages
     #[cfg(feature = "midi")]
-    fn process_midi_messages(&mut self) {
+    fn process_midi_messages(&mut self, assignment_manager: &AssignmentManager) {
         // Collect messages to process to avoid borrow checker issues
         let mut controls_to_apply = Vec::new();
 
         if let Some(midi_input) = &self.midi_input {
             while let Some(message) = midi_input.poll_message() {
-                // Learn mode removed. Directly map.
+                let (source, value) = match message {
+                    crate::midi::MidiMessage::ControlChange {
+                        channel,
+                        controller,
+                        value,
+                    } => (
+                        MidiSource {
+                            device_id: "Default MIDI Device".to_string(),
+                            channel,
+                            message_type: MidiMessageType::ControlChange {
+                                control: controller,
+                            },
+                        },
+                        value as f32 / 127.0,
+                    ),
+                    crate::midi::MidiMessage::NoteOn {
+                        channel,
+                        note,
+                        velocity,
+                    } => (
+                        MidiSource {
+                            device_id: "Default MIDI Device".to_string(),
+                            channel,
+                            message_type: MidiMessageType::NoteOn { note },
+                        },
+                        velocity as f32 / 127.0,
+                    ),
+                    _ => continue,
+                };
 
-                // Get mapping and collect control values
-                if let Some(mapping) = midi_input.get_mapping() {
-                    if let Some((target, value)) = mapping.get_control_value(&message) {
-                        controls_to_apply.push((target, value));
+                let source_id = ControlSource::Midi(source).to_id();
+
+                for assignment in assignment_manager.assignments() {
+                    if assignment.enabled && assignment.source_id == source_id {
+                        let target = match assignment.target_param_name.as_str() {
+                            "opacity" => {
+                                Some(ControlTarget::LayerOpacity(assignment.target_module_id as u32))
+                            }
+                            "visibility" => Some(ControlTarget::LayerVisibility(
+                                assignment.target_module_id as u32,
+                            )),
+                            _ => None,
+                        };
+
+                        if let Some(target) = target {
+                            controls_to_apply.push((target, ControlValue::Float(value)));
+                        }
                     }
                 }
             }
@@ -204,25 +247,38 @@ impl ControlManager {
 
     /// Process OSC messages
     #[cfg(feature = "osc")]
-    fn process_osc_messages(&mut self) {
+    fn process_osc_messages(&mut self, assignment_manager: &AssignmentManager) {
         let mut controls_to_apply = Vec::new();
 
         if let Some(osc_server) = &mut self.osc_server {
             while let Some(packet) = osc_server.poll_packet() {
-                // Learn mode removed.
-
-                // Try to map and apply the control
                 if let rosc::OscPacket::Message(msg) = packet {
-                    if let Some(target) = self.osc_mapping.get(&msg.addr) {
-                        let value_result = match target {
-                            ControlTarget::LayerPosition(_) => {
-                                crate::osc::types::osc_to_vec2(&msg.args)
-                            }
-                            _ => crate::osc::types::osc_to_control_value(&msg.args),
-                        };
+                    let source = OscSource {
+                        address: msg.addr.clone(),
+                    };
+                    let source_id = ControlSource::Osc(source).to_id();
 
-                        if let Ok(value) = value_result {
-                            controls_to_apply.push((target.clone(), value));
+                    for assignment in assignment_manager.assignments() {
+                        if assignment.enabled && assignment.source_id == source_id {
+                            let target = match assignment.target_param_name.as_str() {
+                                "opacity" => Some(ControlTarget::LayerOpacity(
+                                    assignment.target_module_id as u32,
+                                )),
+                                "visibility" => Some(ControlTarget::LayerVisibility(
+                                    assignment.target_module_id as u32,
+                                )),
+                                _ => None,
+                            };
+
+                            if let Some(target) = target {
+                                // TODO: More robust OSC arg to ControlValue conversion
+                                let value = if let Some(rosc::OscType::Float(v)) = msg.args.get(0) {
+                                    ControlValue::Float(*v)
+                                } else {
+                                    ControlValue::Float(0.0)
+                                };
+                                controls_to_apply.push((target, value));
+                            }
                         }
                     }
                 }
@@ -390,17 +446,17 @@ mod tests {
 
         // Test Goto 1
         manager.execute_action(Action::GotoCue(1));
-        manager.update();
+        manager.update(&AssignmentManager::default());
         assert_eq!(manager.cue_list.current_cue(), Some(1));
 
         // Test Next
         manager.execute_action(Action::NextCue);
-        manager.update();
+        manager.update(&AssignmentManager::default());
         assert_eq!(manager.cue_list.current_cue(), Some(2));
 
         // Test Prev
         manager.execute_action(Action::PrevCue);
-        manager.update();
+        manager.update(&AssignmentManager::default());
         assert_eq!(manager.cue_list.current_cue(), Some(1));
     }
 }

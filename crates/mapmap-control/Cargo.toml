@@ -9,6 +9,7 @@ repository.workspace = true
 
 [dependencies]
 # Core dependencies
+mapmap-core = { path = "../mapmap-core" }
 serde = { workspace = true }
 serde_json = { workspace = true }
 thiserror = { workspace = true }

@@ -433,6 +433,7 @@ impl App {
                 }
             }
             Event::AboutToWait => {
+                self.control_manager.update(&self.state.assignment_manager);
                 // Poll MIDI
                 #[cfg(feature = "midi")]
                 if let Some(handler) = &mut self.midi_handler {
@@ -1051,6 +1052,11 @@ impl App {
                             });
                         }
                     });
+
+                    // === Assignment Panel ===
+                    self.ui_state
+                        .assignment_panel
+                        .show(ctx, &mut self.state.assignment_manager);
 
                     // === Settings Window (only modal allowed) ===
                     if self.ui_state.show_settings {
