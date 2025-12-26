@@ -54,6 +54,8 @@ pub struct ModuleCanvas {
     context_menu_pos: Option<Pos2>,
     /// Context menu target (connection index or None)
     context_menu_connection: Option<usize>,
+    /// Context menu target (part ID or None)
+    context_menu_part: Option<ModulePartId>,
     /// MIDI Learn mode - which part is waiting for MIDI input
     midi_learn_part_id: Option<ModulePartId>,
 }
@@ -118,6 +120,7 @@ impl Default for ModuleCanvas {
             new_preset_name: String::new(),
             context_menu_pos: None,
             context_menu_connection: None,
+            context_menu_part: None,
             midi_learn_part_id: None,
         }
     }
@@ -1174,17 +1177,22 @@ impl ModuleCanvas {
                         module.parts.iter().find(|p| p.id == conn.from_part),
                         module.parts.iter().find(|p| p.id == conn.to_part),
                     ) {
-                        let from_screen = to_screen(Pos2::new(
-                            from_part.position.0 + 180.0,
-                            from_part.position.1 + 50.0,
-                        ));
-                        let to_screen_pos =
-                            to_screen(Pos2::new(to_part.position.0, to_part.position.1 + 50.0));
+
+                         // Adjust for socket offset (approximation)
+                         let from_socket_y = 50.0 + conn.from_socket as f32 * 20.0;
+                         let from_screen_socket = to_screen(Pos2::new(
+                                from_part.position.0 + 180.0,
+                                from_part.position.1 + from_socket_y,
+                         ));
+
+                        let to_socket_y = 50.0 + conn.to_socket as f32 * 20.0;
+                        let to_screen_socket =
+                            to_screen(Pos2::new(to_part.position.0, to_part.position.1 + to_socket_y));
 
                         // Simple distance check to bezier curve (approximate with line)
                         let mid = Pos2::new(
-                            (from_screen.x + to_screen_pos.x) / 2.0,
-                            (from_screen.y + to_screen_pos.y) / 2.0,
+                            (from_screen_socket.x + to_screen_socket.x) / 2.0,
+                            (from_screen_socket.y + to_screen_socket.y) / 2.0,
                         );
                         if pos.distance(mid) < 20.0 * self.zoom {
                             self.context_menu_pos = Some(pos);
@@ -1348,6 +1356,9 @@ impl ModuleCanvas {
             module.parts.retain(|p| p.id != part_id);
         }
 
+        // Resize operations to apply after the loop
+        let mut resize_ops = Vec::new();
+
         // Draw parts (nodes) with delete buttons and selection highlight
         for part in &module.parts {
             let part_screen_pos = to_screen(Pos2::new(part.position.0, part.position.1));
@@ -1399,33 +1410,39 @@ impl ModuleCanvas {
                 if resize_response.drag_started() {
                     self.resizing_part = Some((part.id, (part_width, part_height)));
                 }
+                
+                if resize_response.dragged() {
+                     if let Some((id, _original_size)) = self.resizing_part {
+                         if id == part.id {
+                             let delta = resize_response.drag_delta() / self.zoom;
+                             resize_ops.push((part.id, delta));
+                         }
+                     }
+                }
+                
+                if resize_response.drag_stopped() {
+                    self.resizing_part = None;
+                }
             }
 
             self.draw_part_with_delete(&painter, part, part_screen_rect);
         }
 
-        // Handle resize dragging
-        if let Some((resize_id, (orig_w, orig_h))) = self.resizing_part {
-            if ui.input(|i| i.pointer.any_released()) {
-                self.resizing_part = None;
-            } else if let Some(delta) = ui.input(|i| {
-                if i.pointer.any_down() {
-                    Some(i.pointer.delta())
-                } else {
-                    None
-                }
-            }) {
-                // Calculate new size
-                let new_w = (orig_w + delta.x / self.zoom).max(120.0).min(400.0);
-                let new_h = (orig_h + delta.y / self.zoom).max(60.0).min(300.0);
-
-                if let Some(part) = module.parts.iter_mut().find(|p| p.id == resize_id) {
-                    part.size = Some((new_w, new_h));
-                }
-
-                self.resizing_part = Some((resize_id, (new_w, new_h)));
-            }
+        // Apply resize operations
+        for (part_id, delta) in resize_ops {
+             if let Some(part) = module.parts.iter_mut().find(|p| p.id == part_id) {
+                 // Initialize size if None
+                 let current_size = part.size.unwrap_or_else(|| {
+                     let h = 80.0 + (part.inputs.len().max(part.outputs.len()) as f32) * 20.0;
+                     (180.0, h)
+                 });
+                 let new_w = (current_size.0 + delta.x).max(100.0);
+                 let new_h = (current_size.1 + delta.y).max(50.0);
+                 part.size = Some((new_w, new_h));
+             }
         }
+
+
 
         // Draw connection being created with visual feedback
         if let Some((from_part_id, _from_socket_idx, from_is_output, ref from_type, start_pos)) =
@@ -1483,37 +1500,67 @@ impl ModuleCanvas {
             self.draw_presets_popup(ui, canvas_rect, module);
         }
 
-        // Draw context menu for connections
+        // Draw context menu
         if let Some(menu_pos) = self.context_menu_pos {
-            let menu_rect = Rect::from_min_size(menu_pos, Vec2::new(120.0, 30.0));
-            let painter = ui.painter();
-            painter.rect_filled(menu_rect, 4.0, Color32::from_rgb(50, 50, 60));
-            painter.rect_stroke(
-                menu_rect,
-                4.0,
-                Stroke::new(1.0, Color32::from_rgb(100, 100, 120)),
-            );
+             ui.output_mut(|o| o.cursor_icon = egui::CursorIcon::Default);
+             let menu_rect = Rect::from_min_size(menu_pos, Vec2::new(140.0, 100.0));
+             
+             // Check for click outside to close
+             if ui.input(|i| i.pointer.any_pressed()) {
+                 let pointer = ui.input(|i| i.pointer.hover_pos());
+                 if let Some(pos) = pointer {
+                     if !menu_rect.contains(pos) {
+                         self.context_menu_pos = None;
+                         self.context_menu_connection = None;
+                         self.context_menu_part = None;
+                     }
+                 }
+             }
 
-            ui.allocate_ui_at_rect(menu_rect.shrink(4.0), |ui| {
-                if ui.button("🗑 Delete Connection").clicked() {
-                    if let Some(conn_idx) = self.context_menu_connection {
-                        if conn_idx < module.connections.len() {
-                            module.connections.remove(conn_idx);
+             if self.context_menu_pos.is_some() {
+                 egui::Window::new("Context Menu")
+                     .fixed_pos(menu_pos)
+                     .collapsible(false)
+                     .resizable(false)
+                     .title_bar(false)
+                     .frame(egui::Frame::popup(ui.style()))
+                     .show(ui.ctx(), |ui| {
+                        if let Some(conn_idx) = self.context_menu_connection {
+                            if ui.button("🗑 Delete Connection").clicked() {
+                                if conn_idx < module.connections.len() {
+                                    module.connections.remove(conn_idx);
+                                }
+                                self.context_menu_pos = None;
+                                self.context_menu_connection = None;
+                            }
                         }
-                    }
-                    self.context_menu_pos = None;
-                    self.context_menu_connection = None;
-                }
-            });
-
-            // Close menu on click elsewhere
-            if ui.input(|i| i.pointer.any_click())
-                && !menu_rect.contains(ui.input(|i| i.pointer.hover_pos()).unwrap_or(Pos2::ZERO))
-            {
-                self.context_menu_pos = None;
-                self.context_menu_connection = None;
-            }
+                        if let Some(part_id) = self.context_menu_part {
+                            if ui.button("🗑 Delete Node").clicked() {
+                                 // Remove connections
+                                module.connections.retain(|c| c.from_part != part_id && c.to_part != part_id);
+                                // Remove part
+                                module.parts.retain(|p| p.id != part_id);
+                                self.context_menu_pos = None;
+                                self.context_menu_part = None;
+                            }
+                            if ui.button("📄 Duplicate Node").clicked() {
+                                // Find part to duplicate
+                                if let Some(part) = module.parts.iter().find(|p| p.id == part_id).cloned() {
+                                     let new_id = module.next_part_id();
+                                     let mut new_part = part.clone();
+                                     new_part.id = new_id;
+                                     new_part.position.0 += 20.0;
+                                     new_part.position.1 += 20.0;
+                                     module.parts.push(new_part);
+                                }
+                                self.context_menu_pos = None;
+                                self.context_menu_part = None;
+                            }
+                        }
+                     });
+             }
         }
+
     }
 
     fn draw_search_popup(&mut self, ui: &mut Ui, canvas_rect: Rect, module: &mut MapFlowModule) {
@@ -1969,6 +2016,20 @@ impl ModuleCanvas {
                             *source_type = SourceType::LiveInput { device_id: 0 };
                         }
                     });
+
+                // Properties for SourceType
+                if let SourceType::MediaFile { path } = source_type {
+                    ui.add_space(4.0);
+                    ui.label("Media Path:");
+                    ui.horizontal(|ui| {
+                        ui.text_edit_singleline(path);
+                        if ui.button("📂").on_hover_text("Select File").clicked() {
+                            if let Some(file_path) = rfd::FileDialog::new().pick_file() {
+                                *path = file_path.to_string_lossy().to_string();
+                            }
+                        }
+                    });
+                }
             }
             ModulePartType::Mask(mask_type) => {
                 ui.label("Mask Type:");
@@ -2007,6 +2068,20 @@ impl ModuleCanvas {
                             };
                         }
                     });
+            
+                // Properties for MaskType
+                if let MaskType::File { path } = mask_type {
+                    ui.add_space(4.0);
+                    ui.label("Mask Image Path:");
+                    ui.horizontal(|ui| {
+                        ui.text_edit_singleline(path);
+                        if ui.button("📂").on_hover_text("Select File").clicked() {
+                            if let Some(file_path) = rfd::FileDialog::new().pick_file() {
+                                *path = file_path.to_string_lossy().to_string();
+                            }
+                        }
+                    });
+                }
 
                 // Shape sub-selector
                 if let MaskType::Shape(shape) = mask_type {

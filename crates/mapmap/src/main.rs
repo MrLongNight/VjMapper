@@ -9,6 +9,8 @@ mod window_manager;
 use anyhow::Result;
 use egui_wgpu::Renderer;
 use egui_winit::State;
+#[cfg(feature = "midi")]
+use mapmap_control::midi::{MidiInputHandler, MidiMessage};
 use mapmap_control::{shortcuts::Action, ControlManager};
 use mapmap_core::{
     audio::{backend::cpal_backend::CpalBackend, backend::AudioBackend, AudioAnalyzer},
@@ -101,6 +103,9 @@ struct App {
     sys_info: sysinfo::System,
     /// Last system refresh time
     last_sysinfo_refresh: std::time::Instant,
+    /// MIDI Input Handler
+    #[cfg(feature = "midi")]
+    midi_handler: Option<MidiInputHandler>,
 }
 
 impl App {
@@ -287,6 +292,24 @@ impl App {
             current_frame_time_ms: 16.6,
             sys_info: sysinfo::System::new_all(),
             last_sysinfo_refresh: std::time::Instant::now(),
+            #[cfg(feature = "midi")]
+            midi_handler: {
+                match MidiInputHandler::new() {
+                    Ok(mut handler) => {
+                        info!("MIDI initialized");
+                        if let Ok(ports) = MidiInputHandler::list_ports() {
+                            info!("Available MIDI ports: {:?}", ports);
+                            // Auto-connect/Reconnect logic could go here
+                            // For now just log them
+                        }
+                        Some(handler)
+                    }
+                    Err(e) => {
+                        error!("Failed to init MIDI: {}", e);
+                        None
+                    }
+                }
+            },
         };
 
         // Create initial dummy texture
@@ -410,6 +433,15 @@ impl App {
                 }
             }
             Event::AboutToWait => {
+                // Poll MIDI
+                #[cfg(feature = "midi")]
+                if let Some(handler) = &mut self.midi_handler {
+                    while let Some(msg) = handler.poll_message() {
+                        // Pass to UI Overlay
+                        self.ui_state.controller_overlay.process_midi(msg);
+                    }
+                }
+
                 // Autosave check (every 5 minutes)
                 if self.state.dirty
                     && self.last_autosave.elapsed() >= std::time::Duration::from_secs(300)
@@ -539,6 +571,9 @@ impl App {
                 mapmap_ui::UIAction::OpenSettings => {
                     info!("Settings requested");
                     self.ui_state.show_settings = true;
+                }
+                mapmap_ui::UIAction::ToggleControllerOverlay => {
+                    self.ui_state.show_controller_overlay = !self.ui_state.show_controller_overlay;
                 }
                 // TODO: Handle other actions (AddLayer, etc.) here or delegating to state
                 _ => {}
@@ -794,6 +829,13 @@ impl App {
 
                     let audio_analysis = self.audio_analyzer.get_latest_analysis();
                     self.ui_state.current_audio_level = audio_analysis.rms_volume;
+
+                    self.ui_state.current_audio_level = audio_analysis.rms_volume;
+
+                    // MIDI Controller Overlay
+                    if self.ui_state.show_controller_overlay {
+                        self.ui_state.controller_overlay.show(ctx);
+                    }
 
                     // === 1. TOP PANEL: Menu Bar + Toolbar ===
                     let menu_actions = menu_bar::show(ctx, &mut self.ui_state);

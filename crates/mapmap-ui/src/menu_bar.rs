@@ -185,6 +185,10 @@ pub fn show(ctx: &egui::Context, ui_state: &mut AppUI) -> Vec<UIAction> {
                         &mut ui_state.show_module_canvas,
                         ui_state.i18n.t("panel-module-canvas"),
                     );
+                    ui.checkbox(
+                        &mut ui_state.show_controller_overlay,
+                        "MIDI Controller Overlay",
+                    );
                     ui.separator();
                     ui.label(ui_state.i18n.t("view-legacy-panels"));
                     ui.checkbox(

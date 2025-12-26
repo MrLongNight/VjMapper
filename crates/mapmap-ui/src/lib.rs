@@ -141,6 +141,7 @@ pub enum UIAction {
     ToggleFullscreen,
     ResetLayout,
     ToggleModuleCanvas,
+    ToggleControllerOverlay,
 
     // Audio actions
     SelectAudioDevice(String),
@@ -233,6 +234,9 @@ pub struct AppUI {
     pub gpu_usage: f32,
     /// RAM usage in MB
     pub ram_usage_mb: f32,
+    /// Controller Overlay Panel (MIDI visualization)
+    pub controller_overlay: ControllerOverlayPanel,
+    pub show_controller_overlay: bool,
 }
 
 impl Default for AppUI {
@@ -304,6 +308,8 @@ impl Default for AppUI {
             cpu_usage: 0.0,
             gpu_usage: 0.0,
             ram_usage_mb: 0.0,
+            controller_overlay: ControllerOverlayPanel::new(),
+            show_controller_overlay: false,
         }
     }
 }
