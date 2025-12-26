@@ -169,84 +169,91 @@ impl ControllerOverlayPanel {
     }
 
     /// Show the panel UI
-    pub fn show(&mut self, ui: &mut Ui) {
-        ui.horizontal(|ui| {
-            ui.heading("🎛️ Controller Overlay");
-
-            if ui
-                .button(if self.is_expanded { "⏷" } else { "⏵" })
-                .clicked()
-            {
-                self.is_expanded = !self.is_expanded;
-            }
-
-            ui.separator();
-
-            ui.checkbox(&mut self.show_labels, "Labels");
-            ui.checkbox(&mut self.show_values, "Values");
-        });
-
-        if !self.is_expanded {
-            return;
-        }
-
-        ui.separator();
-
-        #[cfg(feature = "midi")]
-        {
-            // Show learn mode status
-            if self.learn_manager.is_learning() {
+    /// Show the panel UI
+    pub fn show(&mut self, ctx: &egui::Context) {
+        egui::Window::new("Controller Overlay")
+            .open(&mut true) // Controlled by parent boolean usually, but we can just show it if called
+            .resizable(true)
+            .show(ctx, |ui| {
                 ui.horizontal(|ui| {
-                    ui.colored_label(Color32::YELLOW, "⏳ MIDI Learn aktiv");
-                    if let Some(remaining) = self.learn_manager.state().remaining_time() {
-                        ui.label(format!("({:.0}s)", remaining.as_secs_f32()));
+                    ui.heading("🎛️ Controller Overlay");
+
+                    if ui
+                        .button(if self.is_expanded { "⏷" } else { "⏵" })
+                        .clicked()
+                    {
+                        self.is_expanded = !self.is_expanded;
                     }
-                    if ui.button("Abbrechen").clicked() {
-                        self.learn_manager.cancel();
-                    }
+
+                    ui.separator();
+
+                    ui.checkbox(&mut self.show_labels, "Labels");
+                    ui.checkbox(&mut self.show_values, "Values");
                 });
-                ui.separator();
-            }
 
-            // Check for detected mapping
-            if self.learn_manager.has_detection() {
-                ui.horizontal(|ui| {
-                    ui.colored_label(Color32::GREEN, "✓ MIDI erkannt!");
-                    if let Some(key) = self.learn_manager.state().get_detected_key() {
-                        ui.label(format!("{:?}", key));
+                if !self.is_expanded {
+                    return;
+                }
+
+                ui.separator();
+
+                #[cfg(feature = "midi")]
+                {
+                    // Show learn mode status
+                    if self.learn_manager.is_learning() {
+                        ui.horizontal(|ui| {
+                            ui.colored_label(Color32::YELLOW, "⏳ MIDI Learn aktiv");
+                            if let Some(remaining) = self.learn_manager.state().remaining_time() {
+                                ui.label(format!("({:.0}s)", remaining.as_secs_f32()));
+                            }
+                            if ui.button("Abbrechen").clicked() {
+                                self.learn_manager.cancel();
+                            }
+                        });
+                        ui.separator();
                     }
-                    if ui.button("Übernehmen").clicked() {
-                        if let Some((_element_id, _key)) = self.learn_manager.accept() {
-                            // TODO: Store the mapping
+
+                    // Check for detected mapping
+                    if self.learn_manager.has_detection() {
+                        ui.horizontal(|ui| {
+                            ui.colored_label(Color32::GREEN, "✓ MIDI erkannt!");
+                            if let Some(key) = self.learn_manager.state().get_detected_key() {
+                                ui.label(format!("{:?}", key));
+                            }
+                            if ui.button("Übernehmen").clicked() {
+                                if let Some((_element_id, _key)) = self.learn_manager.accept() {
+                                    // TODO: Store the mapping
+                                }
+                            }
+                        });
+                        ui.separator();
+                    }
+
+                    // Update learn manager
+                    self.learn_manager.update();
+
+                    // Draw controller overlay
+                    if let Some(elements) = &self.elements {
+                        self.draw_controller(ui, elements);
+                    } else {
+                        ui.label("Kein Controller geladen");
+                        if ui.button("Ecler NUO 4 laden").clicked() {
+                            // Load default Ecler NUO 4 elements
+                            let json = include_str!(
+                                "../../../resources/controllers/ecler_nuo4/elements.json"
+                            );
+                            if let Err(e) = self.load_elements(json) {
+                                tracing::error!("Failed to load elements: {}", e);
+                            }
                         }
                     }
-                });
-                ui.separator();
-            }
-
-            // Update learn manager
-            self.learn_manager.update();
-
-            // Draw controller overlay
-            if let Some(elements) = &self.elements {
-                self.draw_controller(ui, elements);
-            } else {
-                ui.label("Kein Controller geladen");
-                if ui.button("Ecler NUO 4 laden").clicked() {
-                    // Load default Ecler NUO 4 elements
-                    let json =
-                        include_str!("../../../resources/controllers/ecler_nuo4/elements.json");
-                    if let Err(e) = self.load_elements(json) {
-                        tracing::error!("Failed to load elements: {}", e);
-                    }
                 }
-            }
-        }
 
-        #[cfg(not(feature = "midi"))]
-        {
-            ui.label("MIDI-Feature ist nicht aktiviert");
-        }
+                #[cfg(not(feature = "midi"))]
+                {
+                    ui.label("MIDI-Feature ist nicht aktiviert");
+                }
+            });
     }
 
     /// Draw the controller visualization

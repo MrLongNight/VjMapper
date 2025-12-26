@@ -895,7 +895,8 @@ impl ModuleCanvas {
                                     if ui.button("📄 Duplicate Node").clicked() {
                                         // Find part to duplicate
                                         if let Some(part) = module.parts.iter().find(|p| p.id == part_id).cloned() {
-                                             let new_id = manager.next_part_id();
+                                             // Generate new ID locally to avoid borrowing manager/module conflict
+                                             let new_id = module.parts.iter().map(|p| p.id).max().unwrap_or(0) + 1;
                                              let mut new_part = part.clone();
                                              new_part.id = new_id;
                                              new_part.position.0 += 20.0;
