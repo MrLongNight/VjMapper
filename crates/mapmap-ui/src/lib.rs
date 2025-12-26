@@ -12,6 +12,7 @@
 
 // Phase 6: Advanced Authoring UI (egui-based)
 pub mod asset_manager;
+pub mod assignment_table_panel;
 pub mod audio_meter;
 pub mod audio_panel;
 pub mod config;
