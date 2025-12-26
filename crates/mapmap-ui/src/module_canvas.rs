@@ -255,6 +255,27 @@ impl ModuleCanvas {
 
             ui.add_enabled_ui(has_module, |ui| {
                 // === SIGNAL FLOW ORDER: Trigger → Source → Mask → Modulator → Layer → Output ===
+
+                // Helper for styled node buttons
+                let add_node_btn = |ui: &mut Ui, text: &str, tooltip: &str| -> bool {
+                    ui.add(
+                        egui::Button::new(egui::RichText::new(text).size(14.0))
+                            .min_size(Vec2::new(80.0, 24.0)),
+                    )
+                    .on_hover_text(tooltip)
+                    .clicked()
+                };
+
+                if add_node_btn(
+                    ui,
+                    "⚡ Trigger",
+                    "Add a Trigger node (Audio/MIDI/OSC/Keyboard)",
+                ) {
+                    if let Some(id) = self.active_module_id {
+                        if let Some(module) = manager.get_module_mut(id) {
+                            let pos = Self::find_free_position(&module.parts, (100.0, 100.0));
+                            module.add_part(mapmap_core::module::PartType::Trigger, pos);
+                        }
                 
                 // TRIGGER DROPDOWN
                 egui::menu::menu_button(ui, "⚡ Trigger", |ui| {
@@ -294,6 +315,16 @@ impl ModuleCanvas {
                     }
                 });
 
+                if add_node_btn(
+                    ui,
+                    "🎬 Source",
+                    "Add a Source node (Media/Shader/Live Input)",
+                ) {
+                    if let Some(id) = self.active_module_id {
+                        if let Some(module) = manager.get_module_mut(id) {
+                            let pos = Self::find_free_position(&module.parts, (200.0, 100.0));
+                            module.add_part(mapmap_core::module::PartType::Source, pos);
+                        }
                 // SOURCE DROPDOWN
                 egui::menu::menu_button(ui, "🎬 Source", |ui| {
                     ui.set_min_width(180.0);
@@ -1725,12 +1756,14 @@ impl ModuleCanvas {
         }
 
         // Draw wire preview while dragging (visual feedback)
-        if let Some((_, _, is_output, ref socket_type, start_pos)) = self.creating_connection.clone() {
+        if let Some((_, _, is_output, ref socket_type, start_pos)) =
+            self.creating_connection.clone()
+        {
             if let Some(mouse_pos) = pointer_pos {
                 // Draw bezier curve from start to mouse
-                let wire_color = Self::get_socket_color(&socket_type);
+                let wire_color = Self::get_socket_color(socket_type);
                 let control_offset = 50.0 * self.zoom;
-                
+
                 // Calculate control points for smooth curve
                 let (ctrl1, ctrl2) = if is_output {
                     // Dragging from output (right side) - curve goes right then to mouse
@@ -2026,16 +2059,16 @@ impl ModuleCanvas {
 
         // Apply resize operations
         for (part_id, delta) in resize_ops {
-             if let Some(part) = module.parts.iter_mut().find(|p| p.id == part_id) {
-                 // Initialize size if None
-                 let current_size = part.size.unwrap_or_else(|| {
-                     let h = 80.0 + (part.inputs.len().max(part.outputs.len()) as f32) * 20.0;
-                     (200.0, h)
-                 });
-                 let new_w = (current_size.0 + delta.x).max(100.0);
-                 let new_h = (current_size.1 + delta.y).max(50.0);
-                 part.size = Some((new_w, new_h));
-             }
+            if let Some(part) = module.parts.iter_mut().find(|p| p.id == part_id) {
+                // Initialize size if None
+                let current_size = part.size.unwrap_or_else(|| {
+                    let h = 80.0 + (part.inputs.len().max(part.outputs.len()) as f32) * 20.0;
+                    (200.0, h)
+                });
+                let new_w = (current_size.0 + delta.x).max(100.0);
+                let new_h = (current_size.1 + delta.y).max(50.0);
+                part.size = Some((new_w, new_h));
+            }
         }
 
         // Draw connection being created with visual feedback
@@ -2821,7 +2854,7 @@ impl ModuleCanvas {
                         for b in BlendModeType::all() {
                             if ui
                                 .selectable_label(
-                                    blend_mode.as_ref().map_or(false, |current| *current == *b),
+                                    blend_mode.as_ref().is_some_and(|current| *current == *b),
                                     b.name(),
                                 )
                                 .clicked()
