@@ -1,7 +1,8 @@
 use crate::i18n::LocaleManager;
 use egui::{Color32, Pos2, Rect, Sense, Stroke, Ui, Vec2};
 use mapmap_core::module::{
-    MapFlowModule, ModuleManager, ModulePart, ModulePartId, ModuleSocketType,
+    BlendModeType, EffectType as ModuleEffectType, LayerAssignmentType, MapFlowModule,
+    ModuleManager, ModulePart, ModulePartId, ModuleSocketType,
 };
 
 /// Information about a socket position for hit detection
@@ -773,24 +774,145 @@ impl ModuleCanvas {
                                                 match mod_type {
                                                     ModulizerType::Effect(effect) => {
                                                         ui.label("✨ Effect");
-                                                        ui.label(format!("Type: {:?}", effect));
+                                                        egui::ComboBox::from_id_source("effect_type")
+                                                            .selected_text(format!("{:?}", effect))
+                                                            .show_ui(ui, |ui| {
+                                                                // Basic
+                                                                ui.label("--- Basic ---");
+                                                                if ui.selectable_label(matches!(effect, ModuleEffectType::Blur), "Blur").clicked() { *effect = ModuleEffectType::Blur; }
+                                                                if ui.selectable_label(matches!(effect, ModuleEffectType::Sharpen), "Sharpen").clicked() { *effect = ModuleEffectType::Sharpen; }
+                                                                if ui.selectable_label(matches!(effect, ModuleEffectType::Invert), "Invert").clicked() { *effect = ModuleEffectType::Invert; }
+                                                                if ui.selectable_label(matches!(effect, ModuleEffectType::Threshold), "Threshold").clicked() { *effect = ModuleEffectType::Threshold; }
+                                                                // Color
+                                                                ui.label("--- Color ---");
+                                                                if ui.selectable_label(matches!(effect, ModuleEffectType::Brightness), "Brightness").clicked() { *effect = ModuleEffectType::Brightness; }
+                                                                if ui.selectable_label(matches!(effect, ModuleEffectType::Contrast), "Contrast").clicked() { *effect = ModuleEffectType::Contrast; }
+                                                                if ui.selectable_label(matches!(effect, ModuleEffectType::Saturation), "Saturation").clicked() { *effect = ModuleEffectType::Saturation; }
+                                                                if ui.selectable_label(matches!(effect, ModuleEffectType::HueShift), "Hue Shift").clicked() { *effect = ModuleEffectType::HueShift; }
+                                                                if ui.selectable_label(matches!(effect, ModuleEffectType::Colorize), "Colorize").clicked() { *effect = ModuleEffectType::Colorize; }
+                                                                // Distortion
+                                                                ui.label("--- Distort ---");
+                                                                if ui.selectable_label(matches!(effect, ModuleEffectType::Wave), "Wave").clicked() { *effect = ModuleEffectType::Wave; }
+                                                                if ui.selectable_label(matches!(effect, ModuleEffectType::Spiral), "Spiral").clicked() { *effect = ModuleEffectType::Spiral; }
+                                                                if ui.selectable_label(matches!(effect, ModuleEffectType::Pinch), "Pinch").clicked() { *effect = ModuleEffectType::Pinch; }
+                                                                if ui.selectable_label(matches!(effect, ModuleEffectType::Mirror), "Mirror").clicked() { *effect = ModuleEffectType::Mirror; }
+                                                                if ui.selectable_label(matches!(effect, ModuleEffectType::Kaleidoscope), "Kaleidoscope").clicked() { *effect = ModuleEffectType::Kaleidoscope; }
+                                                                // Stylize
+                                                                ui.label("--- Stylize ---");
+                                                                if ui.selectable_label(matches!(effect, ModuleEffectType::Pixelate), "Pixelate").clicked() { *effect = ModuleEffectType::Pixelate; }
+                                                                if ui.selectable_label(matches!(effect, ModuleEffectType::Halftone), "Halftone").clicked() { *effect = ModuleEffectType::Halftone; }
+                                                                if ui.selectable_label(matches!(effect, ModuleEffectType::EdgeDetect), "Edge Detect").clicked() { *effect = ModuleEffectType::EdgeDetect; }
+                                                                if ui.selectable_label(matches!(effect, ModuleEffectType::Posterize), "Posterize").clicked() { *effect = ModuleEffectType::Posterize; }
+                                                                if ui.selectable_label(matches!(effect, ModuleEffectType::Glitch), "Glitch").clicked() { *effect = ModuleEffectType::Glitch; }
+                                                                // Composite
+                                                                ui.label("--- Composite ---");
+                                                                if ui.selectable_label(matches!(effect, ModuleEffectType::RgbSplit), "RGB Split").clicked() { *effect = ModuleEffectType::RgbSplit; }
+                                                                if ui.selectable_label(matches!(effect, ModuleEffectType::ChromaticAberration), "Chromatic").clicked() { *effect = ModuleEffectType::ChromaticAberration; }
+                                                                if ui.selectable_label(matches!(effect, ModuleEffectType::VHS), "VHS").clicked() { *effect = ModuleEffectType::VHS; }
+                                                                if ui.selectable_label(matches!(effect, ModuleEffectType::FilmGrain), "Film Grain").clicked() { *effect = ModuleEffectType::FilmGrain; }
+                                                            });
+                                                        // TODO: Add effect-specific parameter sliders
+                                                        ui.add(egui::Slider::new(&mut 0.5_f32, 0.0..=1.0).text("Intensity"));
                                                     }
                                                     ModulizerType::BlendMode(blend) => {
                                                         ui.label("🎨 Blend Mode");
-                                                        ui.label(format!("Mode: {:?}", blend));
+                                                        egui::ComboBox::from_id_source("blend_mode")
+                                                            .selected_text(format!("{:?}", blend))
+                                                            .show_ui(ui, |ui| {
+                                                                if ui.selectable_label(matches!(blend, BlendModeType::Normal), "Normal").clicked() { *blend = BlendModeType::Normal; }
+                                                                if ui.selectable_label(matches!(blend, BlendModeType::Add), "Add").clicked() { *blend = BlendModeType::Add; }
+                                                                if ui.selectable_label(matches!(blend, BlendModeType::Multiply), "Multiply").clicked() { *blend = BlendModeType::Multiply; }
+                                                                if ui.selectable_label(matches!(blend, BlendModeType::Screen), "Screen").clicked() { *blend = BlendModeType::Screen; }
+                                                                if ui.selectable_label(matches!(blend, BlendModeType::Overlay), "Overlay").clicked() { *blend = BlendModeType::Overlay; }
+                                                                if ui.selectable_label(matches!(blend, BlendModeType::Difference), "Difference").clicked() { *blend = BlendModeType::Difference; }
+                                                                if ui.selectable_label(matches!(blend, BlendModeType::Exclusion), "Exclusion").clicked() { *blend = BlendModeType::Exclusion; }
+                                                            });
+                                                        ui.add(egui::Slider::new(&mut 1.0_f32, 0.0..=1.0).text("Opacity"));
                                                     }
                                                     ModulizerType::AudioReactive { source } => {
                                                         ui.label("🔊 Audio Reactive");
                                                         ui.horizontal(|ui| {
                                                             ui.label("Source:");
-                                                            ui.text_edit_singleline(source);
+                                                            egui::ComboBox::from_id_source("audio_source")
+                                                                .selected_text(source.as_str())
+                                                                .show_ui(ui, |ui| {
+                                                                    if ui.selectable_label(source == "SubBass", "SubBass").clicked() { *source = "SubBass".to_string(); }
+                                                                    if ui.selectable_label(source == "Bass", "Bass").clicked() { *source = "Bass".to_string(); }
+                                                                    if ui.selectable_label(source == "LowMid", "LowMid").clicked() { *source = "LowMid".to_string(); }
+                                                                    if ui.selectable_label(source == "Mid", "Mid").clicked() { *source = "Mid".to_string(); }
+                                                                    if ui.selectable_label(source == "HighMid", "HighMid").clicked() { *source = "HighMid".to_string(); }
+                                                                    if ui.selectable_label(source == "Presence", "Presence").clicked() { *source = "Presence".to_string(); }
+                                                                    if ui.selectable_label(source == "Brilliance", "Brilliance").clicked() { *source = "Brilliance".to_string(); }
+                                                                    if ui.selectable_label(source == "RMS", "RMS Volume").clicked() { *source = "RMS".to_string(); }
+                                                                    if ui.selectable_label(source == "Peak", "Peak").clicked() { *source = "Peak".to_string(); }
+                                                                    if ui.selectable_label(source == "BPM", "BPM").clicked() { *source = "BPM".to_string(); }
+                                                                });
                                                         });
+                                                        ui.add(egui::Slider::new(&mut 1.0_f32, 0.0..=2.0).text("Sensitivity"));
+                                                        ui.add(egui::Slider::new(&mut 0.1_f32, 0.0..=1.0).text("Smoothing"));
                                                     }
                                                 }
                                             }
                                             ModulePartType::LayerAssignment(layer) => {
-                                                ui.label("Layer Assignment:");
-                                                ui.label(format!("{:?}", layer));
+                                                ui.label("📋 Layer Assignment:");
+                                                match layer {
+                                                    LayerAssignmentType::SingleLayer { id, name, opacity, blend_mode } => {
+                                                        ui.label("🔲 Single Layer");
+                                                        ui.horizontal(|ui| {
+                                                            ui.label("ID:");
+                                                            let mut id_u32 = *id as u32;
+                                                            if ui.add(egui::Slider::new(&mut id_u32, 0..=99).text("")).changed() {
+                                                                *id = id_u32 as u64;
+                                                            }
+                                                        });
+                                                        ui.horizontal(|ui| {
+                                                            ui.label("Name:");
+                                                            ui.text_edit_singleline(name);
+                                                        });
+                                                        ui.add(egui::Slider::new(opacity, 0.0..=1.0).text("Opacity"));
+                                                        // Blend Mode selector
+                                                        let blend_text = blend_mode.as_ref().map(|b| format!("{:?}", b)).unwrap_or("None".to_string());
+                                                        egui::ComboBox::from_id_source("layer_blend")
+                                                            .selected_text(blend_text)
+                                                            .show_ui(ui, |ui| {
+                                                                if ui.selectable_label(blend_mode.is_none(), "None").clicked() { *blend_mode = None; }
+                                                                if ui.selectable_label(matches!(blend_mode, Some(BlendModeType::Normal)), "Normal").clicked() { *blend_mode = Some(BlendModeType::Normal); }
+                                                                if ui.selectable_label(matches!(blend_mode, Some(BlendModeType::Add)), "Add").clicked() { *blend_mode = Some(BlendModeType::Add); }
+                                                                if ui.selectable_label(matches!(blend_mode, Some(BlendModeType::Multiply)), "Multiply").clicked() { *blend_mode = Some(BlendModeType::Multiply); }
+                                                                if ui.selectable_label(matches!(blend_mode, Some(BlendModeType::Screen)), "Screen").clicked() { *blend_mode = Some(BlendModeType::Screen); }
+                                                                if ui.selectable_label(matches!(blend_mode, Some(BlendModeType::Overlay)), "Overlay").clicked() { *blend_mode = Some(BlendModeType::Overlay); }
+                                                            });
+                                                    }
+                                                    LayerAssignmentType::Group { name, opacity, blend_mode } => {
+                                                        ui.label("📂 Layer Group");
+                                                        ui.horizontal(|ui| {
+                                                            ui.label("Group Name:");
+                                                            ui.text_edit_singleline(name);
+                                                        });
+                                                        ui.add(egui::Slider::new(opacity, 0.0..=1.0).text("Group Opacity"));
+                                                        let blend_text = blend_mode.as_ref().map(|b| format!("{:?}", b)).unwrap_or("None".to_string());
+                                                        egui::ComboBox::from_id_source("group_blend")
+                                                            .selected_text(blend_text)
+                                                            .show_ui(ui, |ui| {
+                                                                if ui.selectable_label(blend_mode.is_none(), "None").clicked() { *blend_mode = None; }
+                                                                if ui.selectable_label(matches!(blend_mode, Some(BlendModeType::Normal)), "Normal").clicked() { *blend_mode = Some(BlendModeType::Normal); }
+                                                                if ui.selectable_label(matches!(blend_mode, Some(BlendModeType::Add)), "Add").clicked() { *blend_mode = Some(BlendModeType::Add); }
+                                                                if ui.selectable_label(matches!(blend_mode, Some(BlendModeType::Multiply)), "Multiply").clicked() { *blend_mode = Some(BlendModeType::Multiply); }
+                                                            });
+                                                    }
+                                                    LayerAssignmentType::AllLayers { opacity, blend_mode } => {
+                                                        ui.label("🎚️ All Layers (Master)");
+                                                        ui.add(egui::Slider::new(opacity, 0.0..=1.0).text("Master Opacity"));
+                                                        let blend_text = blend_mode.as_ref().map(|b| format!("{:?}", b)).unwrap_or("None".to_string());
+                                                        egui::ComboBox::from_id_source("master_blend")
+                                                            .selected_text(blend_text)
+                                                            .show_ui(ui, |ui| {
+                                                                if ui.selectable_label(blend_mode.is_none(), "None").clicked() { *blend_mode = None; }
+                                                                if ui.selectable_label(matches!(blend_mode, Some(BlendModeType::Normal)), "Normal").clicked() { *blend_mode = Some(BlendModeType::Normal); }
+                                                                if ui.selectable_label(matches!(blend_mode, Some(BlendModeType::Add)), "Add").clicked() { *blend_mode = Some(BlendModeType::Add); }
+                                                            });
+                                                    }
+                                                }
                                             }
                                             ModulePartType::Output(output) => {
                                                 ui.label("Output:");
