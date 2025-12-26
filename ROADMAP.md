@@ -327,37 +327,74 @@
   - ⬜ R32Float Validation Error in OscillatorRenderer
   - ⬜ Pipeline Sampler Error (NonFiltering)
 
-### 🔴 Bekannte Probleme (Gemeldet 2025-12-26)
+### 🟡 Bekannte Probleme (Gemeldet 2025-12-26)
 
-- 🔴 **Node-Verbindungen im Module Canvas**
-  - ⬜ Wire-Drag erstellt keine tatsächlichen Connections (kritisch!)
-  - ⬜ Socket-Typen matchen nicht korrekt
-  - ⬜ Visuelle Verbindung vorhanden, aber keine Datenverbindung
+- ✅ **Node-Verbindungen im Module Canvas** (FIXED 2025-12-26)
+  - ✅ Wire-Drag erstellt keine tatsächlichen Connections → button_down statt clicked
+  - ✅ Socket-Typen matchen nicht korrekt → Type-Check relaxiert
+  - ⬜ AudioAnalysis-Daten zu Node-Outputs verknüpfen (Runtime-Verdrahtung)
 
-- 🔴 **Audio Trigger Node - Fehlende Outputs**
-  - ⬜ Nur Beat Trigger Out vorhanden
-  - ⬜ FFT-Outputs fehlen (SubBass, Bass, LowMid, Mid, HighMid, Presence, Brilliance)
-  - ⬜ RMS-Volume Output fehlt
-  - ⬜ Peak-Volume Output fehlt
-  - ⬜ AudioAnalysis-Daten zu Node-Outputs verknüpfen
+- ✅ **Audio Trigger Node - Outputs** (ERWEITERT 2025-12-26)
+  - ✅ 11 Outputs: SubBass, Bass, LowMid, Mid, HighMid, Presence, Brilliance, RMS, Peak, Beat, BPM
 
-- 🔴 **Panel-Redundanz**
-  - ⬜ Node Inspector UND Properties Panel sind redundant
-  - ⬜ Zu EINEM Panel konsolidieren
+- 🟡 **Panel-Redundanz**
+  - ⬜ Node Inspector UND Properties Panel konsolidieren → NUR EIN Panel
 
-- 🔴 **MIDI-System Fehler**
-  - ⬜ "MIDI Feature nicht verfügbar" Meldung
-  - ⬜ MIDI-Ports werden nicht korrekt aufgelistet
-  - ⬜ MIDI Learn Funktion testen und fixen
+- ✅ **MIDI-System Fehler** (FIXED 2025-12-26)
+  - ✅ Feature-Flag von `cpal` auf `midi` korrigiert
+  - ⬜ MIDI-Ports korrekt auflisten (testen)
+  - ⬜ MIDI Learn Funktion testen
 
-- 🔴 **Level Meter Redesign**
-  - ⬜ Beide Meter mittig platzieren
-  - ⬜ Volle Höhe bis oberen App-Rand
-  - ⬜ STEREO für beide Varianten
-  - ⬜ Digitales Meter: doppelt so breit, beschriftete Skala
-  - ⬜ Digitales Meter: Einbaurahmen mit 4 Kreuzschlitz-Schrauben
-  - ⬜ Analoges Meter: Einbaurahmen mit 4 Schrauben
-  - ⬜ Analoges Meter: Scheibe/Glas-Effekt (wie Referenzbild)
+- 🟡 **Level Meter Redesign**
+  - ✅ STEREO für beide Varianten → StereoAudioMeter Widget
+  - ✅ Einbaurahmen mit 4 Phillips-Schrauben
+  - ✅ Beschriftete dB-Skala
+  - ⬜ In UI integrieren (mittig, volle Höhe)
+
+### 🔴 FEHLENDE MODULE-CANVAS PANELS (Vollständige Liste)
+
+Die folgenden Node-Typen sind im Code definiert aber haben noch keine oder unvollständige UI-Panels:
+
+#### Part-Typen (6 Hauptkategorien)
+- 🟡 **Trigger** - Schaltet andere Nodes
+  - ⬜ AudioFFT Panel (Band-Auswahl, Threshold-Slider, 11 Outputs vorhanden)
+  - ⬜ Random Panel (Min/Max Interval, Probability)
+  - ⬜ Fixed Panel (Interval, Offset)
+  - ⬜ MIDI Panel (Channel, Note, Device-Auswahl, MIDI Learn)
+  - ⬜ OSC Panel (Address, Port)
+  - ⬜ Shortcut Panel (Tastenkombination)
+  - ✅ Beat Panel (Legacy, ersetzt durch AudioFFT)
+
+- 🟡 **Source** - Medienquellen
+  - ⬜ MediaFile Panel (File Picker, Preview, Playback-Controls)
+  - ⬜ Shader Panel (Shader-Auswahl, Parameter-Editor)
+  - ⬜ LiveInput Panel (Device-Dropdown, Kamera/Capture)
+
+- 🟡 **Mask** - Masken für Compositing
+  - ⬜ File Mask Panel (File Picker)
+  - ⬜ Shape Mask Panel (Circle, Rectangle, Triangle, Star, Ellipse)
+  - ⬜ Gradient Mask Panel (Angle, Softness)
+
+- 🟡 **Modulator** - Effekte und Modifier
+  - ⬜ Effect Panel (24 Effekt-Typen: Blur, Sharpen, Invert, Threshold, Brightness, Contrast, Saturation, HueShift, Colorize, Wave, Spiral, Pinch, Mirror, Kaleidoscope, Pixelate, Halftone, EdgeDetect, Posterize, Glitch, RgbSplit, ChromaticAberration, VHS, FilmGrain)
+  - ⬜ BlendMode Panel (Normal, Add, Multiply, Screen, Overlay, Difference, Exclusion)
+  - ⬜ AudioReactive Panel (Source-Auswahl, Parameter-Mapping)
+
+- 🟡 **Layer Assignment** - Zuweist Medien zu Layers
+  - ⬜ SingleLayer Panel (Layer-Dropdown, Opacity, Blend Mode)
+  - ⬜ Group Panel (Gruppen-Dropdown)
+  - ⬜ AllLayers Panel (Master-Opacity, Master-Blend)
+
+- 🟡 **Output** - Ausgabeziele
+  - ⬜ Projector Panel (Projektor-Dropdown)
+  - ⬜ Preview Panel (Window-ID)
+
+#### Socket-Typen (für Wire-Kompatibilität)
+- ✅ Trigger (Signal-Flow)
+- ✅ Media (Bild/Video-Daten)
+- ⬜ Effect (Effekt-Kette) - UI fehlt
+- ✅ Layer (Layer-Referenz)
+- ✅ Output (Ausgabe-Referenz)
 
 ### Phase 7: Advanced Show Control (Module-Based Timeline) – PLANNED
 
