@@ -319,31 +319,52 @@ pub fn show(ctx: &egui::Context, ui_state: &mut AppUI) -> Vec<UIAction> {
 
                     ui.separator();
 
+                    // === SPACER - Center the Audio Meter ===
+                    // Calculate available width for the center area
+                    let available_width = ui.available_width();
+
                     // === AUDIO LEVEL METER (variable width, dB scale) ===
                     let audio_level = ui_state.current_audio_level;
-                    let db = if audio_level > 0.0001 {
-                        20.0 * audio_level.log10()
+                    // Ensure explicit f32 types to avoid build errors
+                    let db: f32 = if audio_level > 0.0001 {
+                        20.0f32 * audio_level.log10()
                     } else {
-                        -60.0
+                        -60.0f32
                     };
 
                     // Choose width based on style
-                    let meter_width = match ui_state.user_config.meter_style {
-                        crate::config::AudioMeterStyle::Retro => 160.0,
-                        crate::config::AudioMeterStyle::Digital => 180.0,
+                    let meter_width: f32 = match ui_state.user_config.meter_style {
+                        crate::config::AudioMeterStyle::Retro => 260.0, // Wide Retro Stereo
+                        crate::config::AudioMeterStyle::Digital => 360.0, // Wide Digital Stereo
                     };
 
-                    // Allow slightly more height for Retro look if needed
-                    let meter_height = match ui_state.user_config.meter_style {
-                        crate::config::AudioMeterStyle::Retro => 40.0,
-                        crate::config::AudioMeterStyle::Digital => 24.0,
-                    };
+                    // Use all available height in the toolbar row, but clamp to avoid infinite expansion
+                    // Min 40px, Max 120px
+                    let meter_height = ui.available_height().clamp(40.0, 120.0);
 
-                    ui.label("🔊");
-                    ui.add(
-                        AudioMeter::new(ui_state.user_config.meter_style, db)
-                            .desired_size(egui::vec2(meter_width, meter_height)),
+                    // Reserve space for Right-side stats panel (approximate width)
+                    let right_panel_width = 320.0;
+
+                    // Center calculation
+                    // We want: (Total_Remaining / 2) - (Meter / 2)
+                    let spacer_width = (available_width - right_panel_width - meter_width) / 2.0;
+
+                    if spacer_width > 0.0 {
+                        ui.add_space(spacer_width);
+                    }
+
+                    // Create the meter widget with explicit sizing logic
+                    let meter_size = egui::Vec2::new(meter_width, meter_height);
+
+                    // Note: Current backend is mono, so we duplicate signal for visual stereo
+                    let mut meter = AudioMeter::new(
+                        ui_state.user_config.meter_style,
+                        db, // Left
+                        db, // Right
                     );
+                    meter = meter.desired_size(meter_size);
+
+                    ui.add(meter);
 
                     // === SPACER - push performance to right ===
                     ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {

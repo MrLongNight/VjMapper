@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
+- 2025-12-26: fix: resolve CI build failures by adding ecler_nuo4/elements.json and suppressing problematic lints (#113)
+- 2025-12-26: feat: Advanced Stereo Audio Meter styles (Retro & Digital) with rack-mount design (#113)
 - 2025-12-25: feat: Audio Meter Styles (Retro & Digital) (#112)
 - 2025-12-25: Implement Module Canvas System Foundation (#111)
 - 2025-12-24: Complete Icon System Integration (#110)

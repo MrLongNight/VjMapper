@@ -1,3 +1,5 @@
+#![allow(clippy::type_complexity)]
+#![allow(clippy::manual_clamp)]
 //! MapFlow UI - ImGui and egui Integration
 //!
 //! This crate provides the user interface layer using ImGui (legacy) and egui (Phase 6+), including:
@@ -11,6 +13,7 @@
 
 // Phase 6: Advanced Authoring UI (egui-based)
 pub mod asset_manager;
+pub mod assignment_table_panel;
 pub mod audio_meter;
 pub mod audio_panel;
 pub mod config;

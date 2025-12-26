@@ -135,7 +135,7 @@ impl ModuleCanvas {
 
             // Create New Module
             if ui
-                .button("➕ New Module")
+                .button("âž• New Module")
                 .on_hover_text("Create a new module")
                 .clicked()
             {
@@ -149,10 +149,10 @@ impl ModuleCanvas {
             let has_module = self.active_module_id.is_some();
 
             ui.add_enabled_ui(has_module, |ui| {
-                // === SIGNAL FLOW ORDER: Trigger → Source → Mask → Modulator → Layer → Output ===
+                // === SIGNAL FLOW ORDER: Trigger â†’ Source â†’ Mask â†’ Modulator â†’ Layer â†’ Output ===
 
                 if ui
-                    .button("⚡ Trigger")
+                    .button("âš¡ Trigger")
                     .on_hover_text("Add a Trigger node (Audio/MIDI/OSC/Keyboard)")
                     .clicked()
                 {
@@ -165,7 +165,7 @@ impl ModuleCanvas {
                 }
 
                 if ui
-                    .button("🎬 Source")
+                    .button("ðŸŽ¬ Source")
                     .on_hover_text("Add a Source node (Media/Shader/Live Input)")
                     .clicked()
                 {
@@ -178,7 +178,7 @@ impl ModuleCanvas {
                 }
 
                 if ui
-                    .button("🎭 Mask")
+                    .button("ðŸŽ­ Mask")
                     .on_hover_text("Add a Mask node (File/Shape/Gradient)")
                     .clicked()
                 {
@@ -191,7 +191,7 @@ impl ModuleCanvas {
                 }
 
                 if ui
-                    .button("〰️ Modulator")
+                    .button("ã€°ï¸ Modulator")
                     .on_hover_text("Add a Modulator/Effect node")
                     .clicked()
                 {
@@ -204,7 +204,7 @@ impl ModuleCanvas {
                 }
 
                 if ui
-                    .button("📑 Layer")
+                    .button("ðŸ“‘ Layer")
                     .on_hover_text("Add a Layer node (Mapping/Mesh)")
                     .clicked()
                 {
@@ -217,7 +217,7 @@ impl ModuleCanvas {
                 }
 
                 if ui
-                    .button("📺 Output")
+                    .button("ðŸ“º Output")
                     .on_hover_text("Add an Output node (Projector/Preview)")
                     .clicked()
                 {
@@ -260,7 +260,7 @@ impl ModuleCanvas {
             ui.label("Zoom:");
 
             // Zoom out button
-            if ui.button("−").on_hover_text("Zoom out").clicked() {
+            if ui.button("âˆ’").on_hover_text("Zoom out").clicked() {
                 self.zoom = (self.zoom - 0.1).clamp(0.2, 3.0);
             }
 
@@ -281,7 +281,7 @@ impl ModuleCanvas {
 
             // Fit to view button
             if ui
-                .button("⊡")
+                .button("âŠ¡")
                 .on_hover_text("Fit to view / Reset zoom")
                 .clicked()
             {
@@ -316,7 +316,7 @@ impl ModuleCanvas {
                     );
                     let color_btn = ui
                         .add(
-                            egui::Button::new("🎨")
+                            egui::Button::new("ðŸŽ¨")
                                 .fill(color)
                                 .min_size(Vec2::splat(20.0)),
                         )
@@ -340,7 +340,11 @@ impl ModuleCanvas {
                 }
 
                 // Delete module button
-                if ui.button("🗑").on_hover_text("Delete this module").clicked() {
+                if ui
+                    .button("ðŸ—‘")
+                    .on_hover_text("Delete this module")
+                    .clicked()
+                {
                     manager.delete_module(module_id);
                     self.active_module_id = None;
                 }
@@ -349,7 +353,7 @@ impl ModuleCanvas {
 
                 // Search button
                 if ui
-                    .button("🔍")
+                    .button("ðŸ”")
                     .on_hover_text("Search nodes (Ctrl+F)")
                     .clicked()
                 {
@@ -357,7 +361,11 @@ impl ModuleCanvas {
                 }
 
                 // Auto-layout button
-                if ui.button("⊞").on_hover_text("Auto-layout nodes").clicked() {
+                if ui
+                    .button("âŠž")
+                    .on_hover_text("Auto-layout nodes")
+                    .clicked()
+                {
                     if let Some(module) = manager.get_module_mut(module_id) {
                         Self::auto_layout_parts(&mut module.parts);
                     }
@@ -365,7 +373,7 @@ impl ModuleCanvas {
 
                 // Presets button
                 if ui
-                    .button("📋")
+                    .button("ðŸ“‹")
                     .on_hover_text("Load preset template")
                     .clicked()
                 {
@@ -398,7 +406,7 @@ impl ModuleCanvas {
                     // Inspector panel (right side - 200px width)
                     ui.vertical(|ui| {
                         ui.set_min_width(200.0);
-                        ui.heading("📋 Node Inspector");
+                        ui.heading("ðŸ“‹ Node Inspector");
                         ui.separator();
 
                         // Get first selected part
@@ -418,11 +426,11 @@ impl ModuleCanvas {
                                                 ui.label("Trigger Type:");
                                                 match trigger {
                                                     TriggerType::Beat => {
-                                                        ui.label("🥁 Beat Sync");
+                                                        ui.label("ðŸ¥ Beat Sync");
                                                         ui.label("Triggers on BPM beat.");
                                                     }
                                                     TriggerType::AudioFFT { band, threshold } => {
-                                                        ui.label("🔊 Audio FFT");
+                                                        ui.label("ðŸ”Š Audio FFT");
                                                         ui.horizontal(|ui| {
                                                             ui.label("Band:");
                                                             egui::ComboBox::from_id_source(
@@ -488,7 +496,7 @@ impl ModuleCanvas {
                                                         max_interval_ms,
                                                         probability,
                                                     } => {
-                                                        ui.label("🎲 Random");
+                                                        ui.label("ðŸŽ² Random");
                                                         ui.add(
                                                             egui::Slider::new(
                                                                 min_interval_ms,
@@ -515,7 +523,7 @@ impl ModuleCanvas {
                                                         interval_ms,
                                                         offset_ms,
                                                     } => {
-                                                        ui.label("⏱️ Fixed Timer");
+                                                        ui.label("â±ï¸ Fixed Timer");
                                                         ui.add(
                                                             egui::Slider::new(
                                                                 interval_ms,
@@ -529,8 +537,8 @@ impl ModuleCanvas {
                                                         );
                                                     }
                                                     TriggerType::Midi { channel, note } => {
-                                                        ui.label("🎹 MIDI Trigger");
-                                                        
+                                                        ui.label("ðŸŽ¹ MIDI Trigger");
+
                                                         // Available MIDI ports dropdown
                                                         ui.horizontal(|ui| {
                                                             ui.label("Device:");
@@ -557,7 +565,7 @@ impl ModuleCanvas {
                                                                 ui.label("(MIDI disabled)");
                                                             }
                                                         });
-                                                        
+
                                                         ui.add(
                                                             egui::Slider::new(channel, 1..=16)
                                                                 .text("Channel"),
@@ -566,14 +574,14 @@ impl ModuleCanvas {
                                                             egui::Slider::new(note, 0..=127)
                                                                 .text("Note"),
                                                         );
-                                                        
+
                                                         // MIDI Learn button
-                                                        if ui.button("🎯 MIDI Learn").clicked() {
+                                                        if ui.button("ðŸŽ¯ MIDI Learn").clicked() {
                                                             // TODO: Start MIDI learn mode
                                                         }
                                                     }
                                                     TriggerType::Osc { address } => {
-                                                        ui.label("📡 OSC");
+                                                        ui.label("ðŸ“¡ OSC");
                                                         ui.horizontal(|ui| {
                                                             ui.label("Address:");
                                                             ui.text_edit_singleline(address);
@@ -583,7 +591,7 @@ impl ModuleCanvas {
                                                         key_code,
                                                         modifiers,
                                                     } => {
-                                                        ui.label("⌨️ Shortcut");
+                                                        ui.label("âŒ¨ï¸ Shortcut");
                                                         ui.horizontal(|ui| {
                                                             ui.label("Key:");
                                                             ui.text_edit_singleline(key_code);
@@ -604,13 +612,13 @@ impl ModuleCanvas {
                                                 ui.label("Source Type:");
                                                 match source {
                                                     SourceType::MediaFile { path } => {
-                                                        ui.label("📁 Media File");
+                                                        ui.label("ðŸ“ Media File");
                                                         ui.horizontal(|ui| {
                                                             ui.add(
                                                                 egui::TextEdit::singleline(path)
                                                                     .desired_width(120.0),
                                                             );
-                                                            if ui.button("📂").clicked() {
+                                                            if ui.button("ðŸ“‚").clicked() {
                                                                 if let Some(picked) =
                                                                     rfd::FileDialog::new()
                                                                         .add_filter(
@@ -633,14 +641,14 @@ impl ModuleCanvas {
                                                         });
                                                     }
                                                     SourceType::Shader { name, params: _ } => {
-                                                        ui.label("🎨 Shader");
+                                                        ui.label("ðŸŽ¨ Shader");
                                                         ui.horizontal(|ui| {
                                                             ui.label("Name:");
                                                             ui.text_edit_singleline(name);
                                                         });
                                                     }
                                                     SourceType::LiveInput { device_id } => {
-                                                        ui.label("📹 Live Input");
+                                                        ui.label("ðŸ“¹ Live Input");
                                                         ui.add(
                                                             egui::Slider::new(device_id, 0..=10)
                                                                 .text("Device ID"),
@@ -652,13 +660,13 @@ impl ModuleCanvas {
                                                 ui.label("Mask Type:");
                                                 match mask {
                                                     MaskType::File { path } => {
-                                                        ui.label("📁 Mask File");
+                                                        ui.label("ðŸ“ Mask File");
                                                         ui.horizontal(|ui| {
                                                             ui.add(
                                                                 egui::TextEdit::singleline(path)
                                                                     .desired_width(120.0),
                                                             );
-                                                            if ui.button("📂").clicked() {
+                                                            if ui.button("ðŸ“‚").clicked() {
                                                                 if let Some(picked) =
                                                                     rfd::FileDialog::new()
                                                                         .add_filter(
@@ -679,7 +687,7 @@ impl ModuleCanvas {
                                                         });
                                                     }
                                                     MaskType::Shape(shape) => {
-                                                        ui.label("🔷 Shape Mask");
+                                                        ui.label("ðŸ”· Shape Mask");
                                                         egui::ComboBox::from_id_source(
                                                             "mask_shape",
                                                         )
@@ -748,10 +756,10 @@ impl ModuleCanvas {
                                                         });
                                                     }
                                                     MaskType::Gradient { angle, softness } => {
-                                                        ui.label("🌈 Gradient Mask");
+                                                        ui.label("ðŸŒˆ Gradient Mask");
                                                         ui.add(
                                                             egui::Slider::new(angle, 0.0..=360.0)
-                                                                .text("Angle °"),
+                                                                .text("Angle Â°"),
                                                         );
                                                         ui.add(
                                                             egui::Slider::new(softness, 0.0..=1.0)
@@ -764,15 +772,15 @@ impl ModuleCanvas {
                                                 ui.label("Modulator:");
                                                 match mod_type {
                                                     ModulizerType::Effect(effect) => {
-                                                        ui.label("✨ Effect");
+                                                        ui.label("âœ¨ Effect");
                                                         ui.label(format!("Type: {:?}", effect));
                                                     }
                                                     ModulizerType::BlendMode(blend) => {
-                                                        ui.label("🎨 Blend Mode");
+                                                        ui.label("ðŸŽ¨ Blend Mode");
                                                         ui.label(format!("Mode: {:?}", blend));
                                                     }
                                                     ModulizerType::AudioReactive { source } => {
-                                                        ui.label("🔊 Audio Reactive");
+                                                        ui.label("ðŸ”Š Audio Reactive");
                                                         ui.horizontal(|ui| {
                                                             ui.label("Source:");
                                                             ui.text_edit_singleline(source);
@@ -788,7 +796,7 @@ impl ModuleCanvas {
                                                 ui.label("Output:");
                                                 match output {
                                                     OutputType::Projector { id, name } => {
-                                                        ui.label("📽️ Projector");
+                                                        ui.label("ðŸ“½ï¸ Projector");
                                                         ui.add(
                                                             egui::Slider::new(id, 0..=8).text("ID"),
                                                         );
@@ -798,7 +806,7 @@ impl ModuleCanvas {
                                                         });
                                                     }
                                                     OutputType::Preview { window_id: _ } => {
-                                                        ui.label("👁️ Preview Window");
+                                                        ui.label("ðŸ‘ï¸ Preview Window");
                                                     }
                                                 }
                                             }
@@ -813,7 +821,7 @@ impl ModuleCanvas {
                                             part.position.0, part.position.1
                                         ));
                                         if let Some((w, h)) = part.size {
-                                            ui.label(format!("Size: {:.0} × {:.0}", w, h));
+                                            ui.label(format!("Size: {:.0} Ã— {:.0}", w, h));
                                         }
                                         ui.label(format!("Inputs: {}", part.inputs.len()));
                                         ui.label(format!("Outputs: {}", part.outputs.len()));
@@ -830,9 +838,9 @@ impl ModuleCanvas {
             ui.centered_and_justified(|ui| {
                 ui.vertical_centered(|ui| {
                     ui.add_space(50.0);
-                    ui.heading("🔧 Module Canvas");
+                    ui.heading("ðŸ”§ Module Canvas");
                     ui.add_space(10.0);
-                    ui.label("Click '➕ New Module' to create a module.");
+                    ui.label("Click 'âž• New Module' to create a module.");
                     ui.label("Or select an existing module from the dropdown above.");
                 });
             });
@@ -1302,7 +1310,7 @@ impl ModuleCanvas {
                 self.dragging_part = None;
             }
 
-            // Check for delete button click (× in top-right corner of title bar)
+            // Check for delete button click (Ã— in top-right corner of title bar)
             let delete_button_rect = Rect::from_min_size(
                 Pos2::new(rect.max.x - 20.0 * self.zoom, rect.min.y),
                 Vec2::splat(20.0 * self.zoom),
@@ -1474,7 +1482,7 @@ impl ModuleCanvas {
             );
 
             ui.allocate_ui_at_rect(menu_rect.shrink(4.0), |ui| {
-                if ui.button("🗑 Delete Connection").clicked() {
+                if ui.button("ðŸ—‘ Delete Connection").clicked() {
                     if let Some(conn_idx) = self.context_menu_connection {
                         if conn_idx < module.connections.len() {
                             module.connections.remove(conn_idx);
@@ -1525,7 +1533,7 @@ impl ModuleCanvas {
         ui.allocate_ui_at_rect(inner_rect, |ui| {
             ui.vertical(|ui| {
                 ui.horizontal(|ui| {
-                    ui.label("🔍");
+                    ui.label("ðŸ”");
                     ui.text_edit_singleline(&mut self.search_filter);
                 });
                 ui.add_space(8.0);
@@ -1604,7 +1612,7 @@ impl ModuleCanvas {
         let inner_rect = popup_rect.shrink(12.0);
         ui.allocate_ui_at_rect(inner_rect, |ui| {
             ui.vertical(|ui| {
-                ui.heading("📋 Presets / Templates");
+                ui.heading("ðŸ“‹ Presets / Templates");
                 ui.add_space(8.0);
 
                 egui::ScrollArea::vertical()
@@ -2283,7 +2291,7 @@ impl ModuleCanvas {
             title_color,
         );
 
-        // Title text with icon (offset slightly left to make room for × button)
+        // Title text with icon (offset slightly left to make room for Ã— button)
         let title_text = format!("{} {}", icon, name);
         painter.text(
             Pos2::new(
@@ -2296,7 +2304,7 @@ impl ModuleCanvas {
             Color32::WHITE,
         );
 
-        // Delete button (× in top-right corner)
+        // Delete button (Ã— in top-right corner)
         let delete_button_pos = Pos2::new(
             rect.max.x - 12.0 * self.zoom,
             rect.min.y + title_height * 0.5,
@@ -2304,7 +2312,7 @@ impl ModuleCanvas {
         painter.text(
             delete_button_pos,
             egui::Align2::CENTER_CENTER,
-            "×",
+            "Ã—",
             egui::FontId::proportional(16.0 * self.zoom),
             Color32::from_rgba_unmultiplied(255, 100, 100, 200),
         );
@@ -2374,37 +2382,37 @@ impl ModuleCanvas {
             ModulePartType::Trigger(_) => (
                 Color32::from_rgb(60, 50, 70),   // bg
                 Color32::from_rgb(130, 80, 180), // title
-                "⚡",
+                "âš¡",
                 "Trigger",
             ),
             ModulePartType::Source(_) => (
                 Color32::from_rgb(50, 60, 70),
                 Color32::from_rgb(80, 140, 180),
-                "🎬",
+                "ðŸŽ¬",
                 "Source",
             ),
             ModulePartType::Mask(_) => (
                 Color32::from_rgb(60, 55, 70),
                 Color32::from_rgb(160, 100, 180),
-                "🎭",
+                "ðŸŽ­",
                 "Mask",
             ),
             ModulePartType::Modulizer(_) => (
                 Color32::from_rgb(60, 60, 50),
                 Color32::from_rgb(180, 140, 60),
-                "〰️",
+                "ã€°ï¸",
                 "Modulator",
             ),
             ModulePartType::LayerAssignment(_) => (
                 Color32::from_rgb(50, 70, 60),
                 Color32::from_rgb(80, 180, 120),
-                "📑",
+                "ðŸ“‘",
                 "Layer",
             ),
             ModulePartType::Output(_) => (
                 Color32::from_rgb(70, 50, 50),
                 Color32::from_rgb(180, 80, 80),
-                "📺",
+                "ðŸ“º",
                 "Output",
             ),
         }
@@ -2427,52 +2435,58 @@ impl ModuleCanvas {
         };
         match part_type {
             ModulePartType::Trigger(trigger_type) => match trigger_type {
-                TriggerType::AudioFFT { band, .. } => format!("🔊 Audio: {:?}", band),
-                TriggerType::Random { .. } => "🎲 Random".to_string(),
-                TriggerType::Fixed { interval_ms, .. } => format!("⏱️ {}ms", interval_ms),
-                TriggerType::Midi { channel, note } => format!("🎹 Ch{} N{}", channel, note),
-                TriggerType::Osc { address } => format!("📡 {}", address),
-                TriggerType::Shortcut { key_code, .. } => format!("⌨️ {}", key_code),
-                TriggerType::Beat => "🥁 Beat".to_string(),
+                TriggerType::AudioFFT { band, .. } => format!("ðŸ”Š Audio: {:?}", band),
+                TriggerType::Random { .. } => "ðŸŽ² Random".to_string(),
+                TriggerType::Fixed { interval_ms, .. } => format!("â±ï¸ {}ms", interval_ms),
+                TriggerType::Midi { channel, note } => format!("ðŸŽ¹ Ch{} N{}", channel, note),
+                TriggerType::Osc { address } => format!("ðŸ“¡ {}", address),
+                TriggerType::Shortcut { key_code, .. } => format!("âŒ¨ï¸ {}", key_code),
+                TriggerType::Beat => "ðŸ¥ Beat".to_string(),
             },
             ModulePartType::Source(source_type) => match source_type {
                 SourceType::MediaFile { path } => {
                     if path.is_empty() {
-                        "📁 Select file...".to_string()
+                        "ðŸ“ Select file...".to_string()
                     } else {
-                        format!("📁 {}", path.split(['/', '\\']).next_back().unwrap_or(path))
+                        format!(
+                            "ðŸ“ {}",
+                            path.split(['/', '\\']).next_back().unwrap_or(path)
+                        )
                     }
                 }
-                SourceType::Shader { name, .. } => format!("🎨 {}", name),
-                SourceType::LiveInput { device_id } => format!("📹 Device {}", device_id),
+                SourceType::Shader { name, .. } => format!("ðŸŽ¨ {}", name),
+                SourceType::LiveInput { device_id } => format!("ðŸ“¹ Device {}", device_id),
             },
             ModulePartType::Mask(mask_type) => match mask_type {
                 MaskType::File { path } => {
                     if path.is_empty() {
-                        "📁 Select mask...".to_string()
+                        "ðŸ“ Select mask...".to_string()
                     } else {
-                        format!("📁 {}", path.split(['/', '\\']).next_back().unwrap_or(path))
+                        format!(
+                            "ðŸ“ {}",
+                            path.split(['/', '\\']).next_back().unwrap_or(path)
+                        )
                     }
                 }
-                MaskType::Shape(shape) => format!("🔷 {:?}", shape),
-                MaskType::Gradient { angle, .. } => format!("🌈 Gradient {}°", *angle as i32),
+                MaskType::Shape(shape) => format!("ðŸ”· {:?}", shape),
+                MaskType::Gradient { angle, .. } => format!("ðŸŒˆ Gradient {}Â°", *angle as i32),
             },
             ModulePartType::Modulizer(modulizer_type) => match modulizer_type {
-                ModulizerType::Effect(effect) => format!("✨ {}", effect.name()),
-                ModulizerType::BlendMode(blend) => format!("🔀 {}", blend.name()),
-                ModulizerType::AudioReactive { source } => format!("🔊 {}", source),
+                ModulizerType::Effect(effect) => format!("âœ¨ {}", effect.name()),
+                ModulizerType::BlendMode(blend) => format!("ðŸ”€ {}", blend.name()),
+                ModulizerType::AudioReactive { source } => format!("ðŸ”Š {}", source),
             },
             ModulePartType::LayerAssignment(layer_type) => {
                 use mapmap_core::module::LayerAssignmentType;
                 match layer_type {
-                    LayerAssignmentType::SingleLayer { name, .. } => format!("📑 {}", name),
-                    LayerAssignmentType::Group { name } => format!("📁 {}", name),
-                    LayerAssignmentType::AllLayers => "📑 All Layers".to_string(),
+                    LayerAssignmentType::SingleLayer { name, .. } => format!("ðŸ“‘ {}", name),
+                    LayerAssignmentType::Group { name } => format!("ðŸ“ {}", name),
+                    LayerAssignmentType::AllLayers => "ðŸ“‘ All Layers".to_string(),
                 }
             }
             ModulePartType::Output(output_type) => match output_type {
-                OutputType::Projector { name, .. } => format!("📺 {}", name),
-                OutputType::Preview { window_id } => format!("👁 Preview {}", window_id),
+                OutputType::Projector { name, .. } => format!("ðŸ“º {}", name),
+                OutputType::Preview { window_id } => format!("ðŸ‘ Preview {}", window_id),
             },
         }
     }
@@ -2492,7 +2506,7 @@ impl ModuleCanvas {
         }
     }
 
-    /// Auto-layout parts in a grid by type (left to right: Trigger → Source → Mask → Modulator → Layer → Output)
+    /// Auto-layout parts in a grid by type (left to right: Trigger â†’ Source â†’ Mask â†’ Modulator â†’ Layer â†’ Output)
     fn auto_layout_parts(parts: &mut [mapmap_core::module::ModulePart]) {
         use mapmap_core::module::ModulePartType;
 

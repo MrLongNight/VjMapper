@@ -1,6 +1,8 @@
 //! MIDI input/output system
 
 #[cfg(feature = "midi")]
+mod assignment_table;
+#[cfg(feature = "midi")]
 mod clock;
 #[cfg(feature = "midi")]
 mod controller_element;
@@ -17,6 +19,8 @@ mod output;
 #[cfg(feature = "midi")]
 mod profiles;
 
+#[cfg(feature = "midi")]
+pub use assignment_table::*;
 #[cfg(feature = "midi")]
 pub use clock::*;
 #[cfg(feature = "midi")]
