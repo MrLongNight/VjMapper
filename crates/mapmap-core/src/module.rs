@@ -164,6 +164,98 @@ impl MapFlowModule {
         id
     }
 
+    /// Add a part with a specific ModulePartType (for dropdown menus)
+    pub fn add_part_with_type(
+        &mut self,
+        part_type: ModulePartType,
+        position: (f32, f32),
+    ) -> ModulePartId {
+        static NEXT_PART_ID: std::sync::atomic::AtomicU64 =
+            std::sync::atomic::AtomicU64::new(10000);
+        let id = NEXT_PART_ID.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+
+        let (inputs, outputs) = match &part_type {
+            ModulePartType::Trigger(_) => (
+                vec![], // No inputs - triggers are sources
+                vec![ModuleSocket {
+                    name: "Trigger Out".to_string(),
+                    socket_type: ModuleSocketType::Trigger,
+                }],
+            ),
+            ModulePartType::Source(_) => (
+                vec![ModuleSocket {
+                    name: "Trigger In".to_string(),
+                    socket_type: ModuleSocketType::Trigger,
+                }],
+                vec![ModuleSocket {
+                    name: "Media Out".to_string(),
+                    socket_type: ModuleSocketType::Media,
+                }],
+            ),
+            ModulePartType::Mask(_) => (
+                vec![
+                    ModuleSocket {
+                        name: "Media In".to_string(),
+                        socket_type: ModuleSocketType::Media,
+                    },
+                    ModuleSocket {
+                        name: "Mask In".to_string(),
+                        socket_type: ModuleSocketType::Media,
+                    },
+                ],
+                vec![ModuleSocket {
+                    name: "Media Out".to_string(),
+                    socket_type: ModuleSocketType::Media,
+                }],
+            ),
+            ModulePartType::Modulizer(_) => (
+                vec![
+                    ModuleSocket {
+                        name: "Media In".to_string(),
+                        socket_type: ModuleSocketType::Media,
+                    },
+                    ModuleSocket {
+                        name: "Trigger In".to_string(),
+                        socket_type: ModuleSocketType::Trigger,
+                    },
+                ],
+                vec![ModuleSocket {
+                    name: "Media Out".to_string(),
+                    socket_type: ModuleSocketType::Media,
+                }],
+            ),
+            ModulePartType::LayerAssignment(_) => (
+                vec![ModuleSocket {
+                    name: "Media In".to_string(),
+                    socket_type: ModuleSocketType::Media,
+                }],
+                vec![ModuleSocket {
+                    name: "Layer Out".to_string(),
+                    socket_type: ModuleSocketType::Layer,
+                }],
+            ),
+            ModulePartType::Output(_) => (
+                vec![ModuleSocket {
+                    name: "Layer In".to_string(),
+                    socket_type: ModuleSocketType::Layer,
+                }],
+                vec![], // No outputs - outputs are sinks
+            ),
+        };
+
+        let part = ModulePart {
+            id,
+            part_type,
+            position,
+            size: None,
+            inputs,
+            outputs,
+        };
+
+        self.parts.push(part);
+        id
+    }
+
     /// Update the position of a part
     pub fn update_part_position(&mut self, part_id: ModulePartId, new_position: (f32, f32)) {
         if let Some(part) = self.parts.iter_mut().find(|p| p.id == part_id) {
