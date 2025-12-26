@@ -1,8 +1,8 @@
 use crate::i18n::LocaleManager;
 use egui::{Color32, Pos2, Rect, Sense, Stroke, Ui, Vec2};
 use mapmap_core::module::{
-    BlendModeType, EffectType as ModuleEffectType, LayerAssignmentType, MapFlowModule,
-    ModuleManager, ModulePart, ModulePartId, ModuleSocketType,
+    EffectType as ModuleEffectType, MapFlowModule, ModuleManager, ModulePart, ModulePartId,
+    ModuleSocketType,
 };
 
 /// Information about a socket position for hit detection
