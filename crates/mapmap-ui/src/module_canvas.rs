@@ -2191,13 +2191,15 @@ impl ModuleCanvas {
             }
             ModulePartType::LayerAssignment(layer_type) => {
                 ui.label("Layer Type:");
-                let current = match layer_type {
+                let current_type_name = match layer_type {
                     LayerAssignmentType::SingleLayer { .. } => "Single Layer",
                     LayerAssignmentType::Group { .. } => "Group",
-                    LayerAssignmentType::AllLayers => "All Layers",
+                    LayerAssignmentType::AllLayers { .. } => "All Layers",
                 };
+
+                // Type Selector
                 egui::ComboBox::from_id_source("layer_type")
-                    .selected_text(current)
+                    .selected_text(current_type_name)
                     .show_ui(ui, |ui| {
                         if ui
                             .selectable_label(
@@ -2209,6 +2211,8 @@ impl ModuleCanvas {
                             *layer_type = LayerAssignmentType::SingleLayer {
                                 id: 0,
                                 name: "Layer 1".to_string(),
+                                opacity: 1.0,
+                                blend_mode: None,
                             };
                         }
                         if ui
@@ -2220,16 +2224,71 @@ impl ModuleCanvas {
                         {
                             *layer_type = LayerAssignmentType::Group {
                                 name: "Group 1".to_string(),
+                                opacity: 1.0,
+                                blend_mode: None,
                             };
                         }
                         if ui
                             .selectable_label(
-                                matches!(layer_type, LayerAssignmentType::AllLayers),
+                                matches!(layer_type, LayerAssignmentType::AllLayers { .. }),
                                 "All Layers",
                             )
                             .clicked()
                         {
-                            *layer_type = LayerAssignmentType::AllLayers;
+                            *layer_type = LayerAssignmentType::AllLayers {
+                                opacity: 1.0,
+                                blend_mode: None,
+                            };
+                        }
+                    });
+
+                ui.separator();
+
+                // Common Properties access
+                let (opacity, blend_mode) = match layer_type {
+                    LayerAssignmentType::SingleLayer {
+                        opacity,
+                        blend_mode,
+                        ..
+                    } => (opacity, blend_mode),
+                    LayerAssignmentType::Group {
+                        opacity,
+                        blend_mode,
+                        ..
+                    } => (opacity, blend_mode),
+                    LayerAssignmentType::AllLayers {
+                        opacity,
+                        blend_mode,
+                    } => (opacity, blend_mode),
+                };
+
+                // Opacity Slider
+                ui.label("Opacity:");
+                ui.add(egui::Slider::new(opacity, 0.0..=1.0).text("Value"));
+
+                // Blend Mode Selector
+                ui.label("Blend Mode:");
+                let current_blend = blend_mode.map(|b| b.name()).unwrap_or("Keep Original");
+                egui::ComboBox::from_id_source("layer_blend")
+                    .selected_text(current_blend)
+                    .show_ui(ui, |ui| {
+                        if ui
+                            .selectable_label(blend_mode.is_none(), "Keep Original")
+                            .clicked()
+                        {
+                            *blend_mode = None;
+                        }
+                        ui.separator();
+                        for b in BlendModeType::all() {
+                            if ui
+                                .selectable_label(
+                                    blend_mode.as_ref().map_or(false, |current| *current == *b),
+                                    b.name(),
+                                )
+                                .clicked()
+                            {
+                                *blend_mode = Some(*b);
+                            }
                         }
                     });
             }
@@ -2566,8 +2625,8 @@ impl ModuleCanvas {
                 use mapmap_core::module::LayerAssignmentType;
                 match layer_type {
                     LayerAssignmentType::SingleLayer { name, .. } => format!("📑 {}", name),
-                    LayerAssignmentType::Group { name } => format!("📁 {}", name),
-                    LayerAssignmentType::AllLayers => "📑 All Layers".to_string(),
+                    LayerAssignmentType::Group { name, .. } => format!("📁 {}", name),
+                    LayerAssignmentType::AllLayers { .. } => "📑 All Layers".to_string(),
                 }
             }
             ModulePartType::Output(output_type) => match output_type {
@@ -2776,7 +2835,10 @@ impl ModuleCanvas {
                         None,
                     ),
                     (
-                        ModulePartType::LayerAssignment(LayerAssignmentType::AllLayers),
+                        ModulePartType::LayerAssignment(LayerAssignmentType::AllLayers {
+                            opacity: 1.0,
+                            blend_mode: None,
+                        }),
                         (650.0, 100.0),
                         None,
                     ),
