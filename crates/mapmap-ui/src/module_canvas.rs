@@ -1149,12 +1149,14 @@ impl ModuleCanvas {
         // Handle socket clicks for creating connections
         let socket_radius = 8.0 * self.zoom;
         let pointer_pos = ui.input(|i| i.pointer.hover_pos());
+        let primary_down = ui.input(|i| i.pointer.button_down(egui::PointerButton::Primary));
+        let primary_released = ui.input(|i| i.pointer.any_released());
         let clicked = ui.input(|i| i.pointer.button_clicked(egui::PointerButton::Primary));
         let released = ui.input(|i| i.pointer.button_released(egui::PointerButton::Primary));
 
+        // Start connection on mouse down over socket
         if let Some(pos) = pointer_pos {
-            // Check if clicking on a socket
-            if clicked {
+            if primary_down && self.creating_connection.is_none() && self.dragging_part.is_none() {
                 for socket in &all_sockets {
                     if socket.position.distance(pos) < socket_radius {
                         // Start creating a connection
@@ -1170,17 +1172,17 @@ impl ModuleCanvas {
                 }
             }
 
-            // Check if releasing on a compatible socket
-            if released && self.creating_connection.is_some() {
-                if let Some((from_part, from_socket, from_is_output, ref from_type, _)) =
+            // Complete connection on release over compatible socket
+            if primary_released && self.creating_connection.is_some() {
+                if let Some((from_part, from_socket, from_is_output, ref _from_type, _)) =
                     self.creating_connection.clone()
                 {
                     for socket in &all_sockets {
-                        if socket.position.distance(pos) < socket_radius {
-                            // Validate connection: must be different parts, opposite directions, same type
+                        if socket.position.distance(pos) < socket_radius * 1.5 {
+                            // Validate connection: must be different parts, opposite directions
+                            // Type check relaxed for now - allow any connection for testing
                             if socket.part_id != from_part
                                 && socket.is_output != from_is_output
-                                && socket.socket_type == *from_type
                             {
                                 // Create connection (from output to input)
                                 if from_is_output {
@@ -1208,7 +1210,7 @@ impl ModuleCanvas {
         }
 
         // Clear connection if mouse released without hitting a socket
-        if released && self.creating_connection.is_some() {
+        if primary_released && self.creating_connection.is_some() {
             self.creating_connection = None;
         }
 
