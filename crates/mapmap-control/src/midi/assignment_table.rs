@@ -239,14 +239,8 @@ impl AssignmentTable {
 
 /// Get current timestamp as string
 fn chrono_now() -> String {
-    #[cfg(feature = "chrono")]
-    {
-        chrono::Local::now().format("%Y-%m-%d %H:%M:%S").to_string()
-    }
-    #[cfg(not(feature = "chrono"))]
-    {
-        "".to_string()
-    }
+    // Timestamp feature disabled - return empty string
+    String::new()
 }
 
 /// Predefined MapFlow functions
