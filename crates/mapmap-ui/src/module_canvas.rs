@@ -1206,7 +1206,7 @@ impl ModuleCanvas {
                                                         ));
                                                         
                                                         // Handles
-                                                        let mut draw_handle = |coord: &mut (f32, f32), name: &str| {
+                                                        let draw_handle = |coord: &mut (f32, f32), name: &str| {
                                                             let pos = to_screen(*coord);
                                                             let handle_radius = 6.0;
                                                             let handle_rect = Rect::from_center_size(pos, Vec2::splat(handle_radius * 2.0));
