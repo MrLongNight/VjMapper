@@ -300,7 +300,7 @@
   - ⬜ Multi-band Audio Outputs (9 Frequenzbänder)
   - ⬜ MIDI/OSC Device Selectors
   - ⬜ Mesh Editor für Layer
-  - ⬜ File Picker für Source/Mask
+  - ✅ File Picker für Source/Mask (COMPLETED 2025-12-27)
   - ✅ MeshRenderer in Layer-Compose-Loop integriert (COMPLETED 2025-12-26)
 
 - 🟡 **Assignment System**
@@ -349,7 +349,7 @@
   - ✅ STEREO für beide Varianten → StereoAudioMeter Widget
   - ✅ Einbaurahmen mit 4 Phillips-Schrauben
   - ✅ Beschriftete dB-Skala
-  - ⬜ In UI integrieren (mittig, volle Höhe)
+  - ✅ In UI integrieren (Audio Section, Left Sidebar) - COMPLETED 2025-12-27
 
 ### 🟢 MODULE-CANVAS PANELS (Implementiert 2025-12-26)
 

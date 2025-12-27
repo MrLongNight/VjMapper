@@ -26,7 +26,7 @@ use mapmap_render::{
     Compositor, EffectChainRenderer, MeshRenderer, OscillatorRenderer, QuadRenderer, TexturePool,
     WgpuBackend,
 };
-use mapmap_ui::{menu_bar, AppUI, EdgeBlendAction};
+use mapmap_ui::{menu_bar, stereo_audio_meter::StereoAudioMeter, AppUI, EdgeBlendAction};
 use rfd::FileDialog;
 use std::path::PathBuf;
 use std::thread;
@@ -946,6 +946,23 @@ impl App {
                                         .default_open(false)
                                         .show(ui, |ui| {
                                             let analysis = self.audio_analyzer.get_latest_analysis();
+                                            
+                                            // Stereo Audio Level Meter
+                                            let db_left = if analysis.rms_volume > 0.0 {
+                                                20.0 * analysis.rms_volume.log10()
+                                            } else {
+                                                -60.0
+                                            };
+                                            let db_right = db_left; // TODO: Add actual stereo separation
+                                            
+                                            ui.add(StereoAudioMeter::new(
+                                                self.ui_state.user_config.meter_style,
+                                                db_left,
+                                                db_right,
+                                            ).desired_size(egui::Vec2::new(100.0, 150.0)));
+                                            
+                                            ui.separator();
+                                            
                                             if let Some(action) = self.ui_state.audio_panel.ui(
                                                 ui,
                                                 &self.ui_state.i18n,

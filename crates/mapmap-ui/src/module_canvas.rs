@@ -1,5 +1,5 @@
 use crate::i18n::LocaleManager;
-use egui::{Color32, Pos2, Rect, Sense, Stroke, Ui, Vec2};
+use egui::{Color32, Pos2, Rect, Sense, Stroke, Ui, Vec2, TextureHandle};
 use mapmap_core::module::{
     AudioBand, BlendModeType, EffectType as ModuleEffectType, LayerAssignmentType, MapFlowModule,
     MaskShape, MaskType, MeshType, ModuleManager, ModulePart, ModulePartId, ModuleSocketType,
@@ -62,6 +62,8 @@ pub struct ModuleCanvas {
     midi_learn_part_id: Option<ModulePartId>,
     /// Whether we are currently panning the canvas (started on empty area)
     panning_canvas: bool,
+    /// Cached textures for plug icons
+    plug_icons: std::collections::HashMap<String, egui::TextureHandle>,
 }
 
 pub type PresetPart = (
@@ -127,11 +129,74 @@ impl Default for ModuleCanvas {
             context_menu_part: None,
             midi_learn_part_id: None,
             panning_canvas: false,
+            plug_icons: std::collections::HashMap::new(),
         }
     }
 }
 
 impl ModuleCanvas {
+    fn ensure_icons_loaded(&mut self, ctx: &egui::Context) {
+        if !self.plug_icons.is_empty() { return; }
+        
+        let paths = [
+            "resources/stecker_icons",
+            "../resources/stecker_icons",
+            r"C:\Users\Vinyl\Desktop\VJMapper\VjMapper\resources\stecker_icons"
+        ];
+        
+        let files = [
+            "audio-jack.svg", "audio-jack_2.svg", "plug.svg", "power-plug.svg", "usb-cable.svg"
+        ];
+
+        for path_str in paths {
+            let base_path = std::path::Path::new(path_str);
+            if base_path.exists() {
+                for file in files {
+                    let path = base_path.join(file);
+                    if let Some(texture) = Self::load_svg_icon(&path, ctx) {
+                        self.plug_icons.insert(file.to_string(), texture);
+                    }
+                }
+                if !self.plug_icons.is_empty() { break; }
+            }
+        }
+    }
+
+    fn load_svg_icon(path: &std::path::Path, ctx: &egui::Context) -> Option<TextureHandle> {
+        let svg_data = std::fs::read(path).ok()?;
+        let options = usvg::Options::default();
+        let fontdb = usvg::fontdb::Database::new();
+        let tree = usvg::Tree::from_data(&svg_data, &options, &fontdb).ok()?;
+        let size = tree.size();
+        let width = size.width().round() as u32;
+        let height = size.height().round() as u32;
+
+        let mut pixmap = tiny_skia::Pixmap::new(width, height)?;
+        resvg::render(&tree, usvg::Transform::default(), &mut pixmap.as_mut());
+
+        let mut pixels = Vec::with_capacity((width * height) as usize);
+        for pixel in pixmap.pixels() {
+            // Preserve original RGBA from SVG
+            pixels.push(egui::Color32::from_rgba_premultiplied(
+                pixel.red(),
+                pixel.green(),
+                pixel.blue(),
+                pixel.alpha(),
+            ));
+        }
+
+        let image = egui::ColorImage {
+            size: [width as usize, height as usize],
+            pixels,
+        };
+
+        Some(ctx.load_texture(
+            path.file_name()?.to_string_lossy(),
+            image,
+            egui::TextureOptions::LINEAR,
+        ))
+    }
+
     /// Set the active module ID
     pub fn set_active_module(&mut self, module_id: Option<u64>) {
         self.active_module_id = module_id;
@@ -1310,83 +1375,15 @@ impl ModuleCanvas {
                                         ui.label(format!("Outputs: {}", part.outputs.len()));
                                     });
                             }
+                        } else {
+                            ui.label("No node selected");
+                            ui.label("Click on a node to edit its properties");
                         }
                     });
                 });
             } else {
+                // No node selected - just render canvas full width
                 self.render_canvas(ui, module, locale);
-
-                // Context Menu Logic
-                if let Some(menu_pos) = self.context_menu_pos {
-                    ui.output_mut(|o| o.cursor_icon = egui::CursorIcon::Default);
-                    let menu_rect = Rect::from_min_size(menu_pos, Vec2::new(140.0, 100.0));
-
-                    // Check for click outside to close
-                    if ui.input(|i| i.pointer.any_pressed()) {
-                        let pointer = ui.input(|i| i.pointer.hover_pos());
-                        if let Some(pos) = pointer {
-                            if !menu_rect.contains(pos) {
-                                self.context_menu_pos = None;
-                                self.context_menu_connection = None;
-                                self.context_menu_part = None;
-                            }
-                        }
-                    }
-
-                    if self.context_menu_pos.is_some() {
-                        egui::Window::new("Context Menu")
-                            .fixed_pos(menu_pos)
-                            .collapsible(false)
-                            .resizable(false)
-                            .title_bar(false)
-                            .frame(egui::Frame::popup(ui.style()))
-                            .show(ui.ctx(), |ui| {
-                                if let Some(conn_idx) = self.context_menu_connection {
-                                    if ui.button("🗑 Delete Connection").clicked() {
-                                        if conn_idx < module.connections.len() {
-                                            module.connections.remove(conn_idx);
-                                        }
-                                        self.context_menu_pos = None;
-                                        self.context_menu_connection = None;
-                                    }
-                                }
-                                if let Some(part_id) = self.context_menu_part {
-                                    if ui.button("🗑 Delete Node").clicked() {
-                                        // Remove connections
-                                        module.connections.retain(|c| {
-                                            c.from_part != part_id && c.to_part != part_id
-                                        });
-                                        // Remove part
-                                        module.parts.retain(|p| p.id != part_id);
-                                        self.context_menu_pos = None;
-                                        self.context_menu_part = None;
-                                    }
-                                    if ui.button("📄 Duplicate Node").clicked() {
-                                        // Find part to duplicate
-                                        if let Some(part) =
-                                            module.parts.iter().find(|p| p.id == part_id).cloned()
-                                        {
-                                            // Generate new ID locally to avoid borrowing manager/module conflict
-                                            let new_id = module
-                                                .parts
-                                                .iter()
-                                                .map(|p| p.id)
-                                                .max()
-                                                .unwrap_or(0)
-                                                + 1;
-                                            let mut new_part = part.clone();
-                                            new_part.id = new_id;
-                                            new_part.position.0 += 20.0;
-                                            new_part.position.1 += 20.0;
-                                            module.parts.push(new_part);
-                                        }
-                                        self.context_menu_pos = None;
-                                        self.context_menu_part = None;
-                                    }
-                                }
-                            });
-                    }
-                }
             }
         } else {
             // Show a message if no module is selected
@@ -1403,6 +1400,7 @@ impl ModuleCanvas {
     }
 
     fn render_canvas(&mut self, ui: &mut Ui, module: &mut MapFlowModule, _locale: &LocaleManager) {
+        self.ensure_icons_loaded(ui.ctx());
         let (response, painter) = ui.allocate_painter(ui.available_size(), Sense::click_and_drag());
         let canvas_rect = response.rect;
 
@@ -2946,50 +2944,60 @@ impl ModuleCanvas {
                 let start_pos = to_screen(from_socket_world);
                 let end_pos = to_screen(to_socket_world);
 
-                // Draw Plugs
-                let plug_len = 15.0 * self.zoom;
-                let plug_width = 8.0 * self.zoom;
-                
-                // Source Plug (Right facing)
-                let start_plug_rect = Rect::from_min_max(
-                    start_pos,
-                    Pos2::new(start_pos.x + plug_len, start_pos.y + plug_width / 2.0)
-                ).translate(Vec2::new(0.0, -plug_width / 2.0));
-                
-                painter.rect_filled(start_plug_rect, 2.0, cable_color);
-                painter.rect_stroke(start_plug_rect, 2.0, Stroke::new(1.0, Color32::BLACK));
+                // Draw Plugs - plugs should point INTO the nodes
+                let plug_size = 20.0 * self.zoom;
 
-                // Target Plug (Left facing)
-                let end_plug_rect = Rect::from_min_max(
-                    Pos2::new(end_pos.x - plug_len, end_pos.y - plug_width / 2.0),
-                    Pos2::new(end_pos.x, end_pos.y + plug_width / 2.0)
-                );
-                
-                painter.rect_filled(end_plug_rect, 2.0, cable_color);
-                painter.rect_stroke(end_plug_rect, 2.0, Stroke::new(1.0, Color32::BLACK));
+                let icon_name = match socket_type {
+                    mapmap_core::module::ModuleSocketType::Trigger => "audio-jack.svg",
+                    mapmap_core::module::ModuleSocketType::Media => "plug.svg",
+                    mapmap_core::module::ModuleSocketType::Effect => "usb-cable.svg",
+                    mapmap_core::module::ModuleSocketType::Layer => "power-plug.svg",
+                    mapmap_core::module::ModuleSocketType::Output => "power-plug.svg",
+                };
 
-                // Draw Cable (Bezier)
-                // Start cable from end of plugs
-                let cable_start = Pos2::new(start_pos.x + plug_len, start_pos.y);
-                let cable_end = Pos2::new(end_pos.x - plug_len, end_pos.y);
+                // Draw Cable (Bezier) FIRST so plugs are on top
+                let cable_start = start_pos;
+                let cable_end = end_pos;
 
-                let control_offset = (cable_end.x - cable_start.x).abs() * 0.5;
-                let control_offset = control_offset.max(50.0 * self.zoom); // Minimum curve
+                let control_offset = (cable_end.x - cable_start.x).abs() * 0.4;
+                let control_offset = control_offset.max(40.0 * self.zoom);
 
                 let ctrl1 = Pos2::new(cable_start.x + control_offset, cable_start.y);
                 let ctrl2 = Pos2::new(cable_end.x - control_offset, cable_end.y);
 
-                // Draw shadow/outline first
-                 let steps = 40;
+                let steps = 30;
                 for i in 0..steps {
                     let t1 = i as f32 / steps as f32;
                     let t2 = (i + 1) as f32 / steps as f32;
                     let p1 = Self::bezier_point(cable_start, ctrl1, ctrl2, cable_end, t1);
                     let p2 = Self::bezier_point(cable_start, ctrl1, ctrl2, cable_end, t2);
-                    // Shadow/Outline
-                    painter.line_segment([p1, p2], Stroke::new(5.0 * self.zoom, shadow_color));
-                    // Inner Cable
-                    painter.line_segment([p1, p2], Stroke::new(3.0 * self.zoom, cable_color));
+                    // Shadow
+                    painter.line_segment([p1, p2], Stroke::new(4.0 * self.zoom, shadow_color));
+                    // Cable
+                    painter.line_segment([p1, p2], Stroke::new(2.5 * self.zoom, cable_color));
+                }
+                
+                // Draw Plugs on top of cable
+                if let Some(texture) = self.plug_icons.get(icon_name) {
+                    // Source Plug at OUTPUT socket - pointing LEFT (into node)
+                    let start_rect = Rect::from_center_size(
+                        start_pos,
+                        Vec2::splat(plug_size)
+                    );
+                    // Flip horizontally so plug points left (into node)
+                    painter.image(texture.id(), start_rect, Rect::from_min_max(Pos2::new(1.0, 0.0), Pos2::new(0.0, 1.0)), Color32::WHITE);
+                    
+                    // Target Plug at INPUT socket - pointing RIGHT (into node)
+                    let end_rect = Rect::from_center_size(
+                        end_pos,
+                        Vec2::splat(plug_size)
+                    );
+                    // Normal orientation (pointing right into node)
+                    painter.image(texture.id(), end_rect, Rect::from_min_max(Pos2::ZERO, Pos2::new(1.0, 1.0)), Color32::WHITE);
+                } else {
+                    // Fallback circles
+                    painter.circle_filled(start_pos, 6.0 * self.zoom, cable_color);
+                    painter.circle_filled(end_pos, 6.0 * self.zoom, cable_color);
                 }
             }
         }
