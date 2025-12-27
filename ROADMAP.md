@@ -313,7 +313,7 @@
 - 🟡 **Logging & Debug**
   - ✅ Logging-Modul (`logging.rs`) mit File-Appender und Rotation
   - ✅ LogConfig Struct mit Settings
-  - ⬜ Settings-UI für Logging (Log-Level, Pfad, Max-Files)
+  - ✅ Settings-UI für Logging (Log-Level, Pfad, Max-Files) - COMPLETED 2025-12-27
   - ⬜ Audio-Device Debug validieren (manueller Test)
 
 - ✅ **Ecler NUO 4 MIDI Integration** (COMPLETED 2025-12-25)

@@ -1134,6 +1134,62 @@ impl App {
                                     });
 
                                 ui.separator();
+
+                                // Logging Settings
+                                egui::CollapsingHeader::new(format!("📝 {}", self.ui_state.i18n.t("settings-logging")))
+                                    .default_open(false)
+                                    .show(ui, |ui| {
+                                        let log_config = &mut self.state.settings.log_config;
+                                        
+                                        ui.horizontal(|ui| {
+                                            ui.label("Log Level:");
+                                            let levels = ["trace", "debug", "info", "warn", "error"];
+                                            egui::ComboBox::from_id_source("log_level_select")
+                                                .selected_text(&log_config.level)
+                                                .show_ui(ui, |ui| {
+                                                    for level in levels {
+                                                        if ui.selectable_label(log_config.level == level, level).clicked() {
+                                                            log_config.level = level.to_string();
+                                                            self.state.dirty = true;
+                                                        }
+                                                    }
+                                                });
+                                        });
+
+                                        ui.horizontal(|ui| {
+                                            ui.label("Log Path:");
+                                            let path_str = log_config.log_path.to_string_lossy().to_string();
+                                            let mut path_edit = path_str.clone();
+                                            if ui.text_edit_singleline(&mut path_edit).changed() {
+                                                log_config.log_path = std::path::PathBuf::from(path_edit);
+                                                self.state.dirty = true;
+                                            }
+                                            if ui.button("📂").clicked() {
+                                                if let Some(folder) = rfd::FileDialog::new().pick_folder() {
+                                                    log_config.log_path = folder;
+                                                    self.state.dirty = true;
+                                                }
+                                            }
+                                        });
+
+                                        ui.horizontal(|ui| {
+                                            ui.label("Max Log Files:");
+                                            if ui.add(egui::DragValue::new(&mut log_config.max_files).speed(1).clamp_range(1..=100)).changed() {
+                                                self.state.dirty = true;
+                                            }
+                                        });
+
+                                        ui.horizontal(|ui| {
+                                            if ui.checkbox(&mut log_config.console_output, "Console Output").changed() {
+                                                self.state.dirty = true;
+                                            }
+                                            if ui.checkbox(&mut log_config.file_output, "File Output").changed() {
+                                                self.state.dirty = true;
+                                            }
+                                        });
+                                    });
+
+                                ui.separator();
                                 if ui.button("✕ Schließen").clicked() {
                                     close_settings = true;
                                 }
